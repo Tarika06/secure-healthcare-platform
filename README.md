@@ -160,7 +160,7 @@ SecureCare/
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/securecare.git
+git clone https://github.com/Tarika06/secure-healthcare-platform.git
 cd securecare
 
 # Install backend dependencies
@@ -269,6 +269,3 @@ This project is licensed under the ISC License.
 
 ---
 
-<p align="center">
-  <b>Built with ❤️ for secure healthcare data management</b>
-</p>
