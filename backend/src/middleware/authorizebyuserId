@@ -1,0 +1,28 @@
+const auditService = require("../services/auditService");
+
+module.exports = (allowedPrefixes) => {
+  return (req, res, next) => {
+    const userId = req.user.userId; // from JWT
+
+    if (!userId || userId.length === 0) {
+      return res.status(403).json({ message: "Invalid user identity" });
+    }
+
+    const prefix = userId.charAt(0).toUpperCase();
+
+    if (!userId || !allowedPrefixes.includes(prefix)) {
+      auditService.logAuditEvent({
+        userId: userId || "UNKNOWN",
+        action: "ACCESS_API",
+        resource: req.originalUrl,
+        method: req.method,
+        outcome: "DENIED",
+        reason: "RBAC_DENIED"
+      });
+
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    next();
+  };
+};

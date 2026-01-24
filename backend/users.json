@@ -1,0 +1,62 @@
+[
+  {
+    "userId": "P001",
+    "email": "patient1@hospital.com",
+    "passwordHash": "$2b$10$ZaSy4Er1nSOFCErHZfsA3.9.Rp0eN6IXN9L4N3YeqammfKz.2JjPm",
+    "status": "ACTIVE"
+  },
+  {
+    "userId": "P002",
+    "email": "patient2@hospital.com",
+    "passwordHash": "$2b$10$ZaSy4Er1nSOFCErHZfsA3.9.Rp0eN6IXN9L4N3YeqammfKz.2JjPm",
+    "status": "ACTIVE"
+  },
+  {
+    "userId": "P003",
+    "email": "patient3@hospital.com",
+    "passwordHash": "$2b$10$ZaSy4Er1nSOFCErHZfsA3.9.Rp0eN6IXN9L4N3YeqammfKz.2JjPm",
+    "status": "ACTIVE"
+  },
+  {
+    "userId": "P004",
+    "email": "patient4@hospital.com",
+    "passwordHash": "$2b$10$ZaSy4Er1nSOFCErHZfsA3.9.Rp0eN6IXN9L4N3YeqammfKz.2JjPm",
+    "status": "ACTIVE"
+  },
+  {
+    "userId": "P005",
+    "email": "patient5@hospital.com",
+    "passwordHash": "$2b$10$ZaSy4Er1nSOFCErHZfsA3.9.Rp0eN6IXN9L4N3YeqammfKz.2JjPm",
+    "status": "ACTIVE"
+  },
+  {
+    "userId": "D001",
+    "email": "doctor1@hospital.com",
+    "passwordHash": "$2b$10$ZaSy4Er1nSOFCErHZfsA3.9.Rp0eN6IXN9L4N3YeqammfKz.2JjPm",
+    "status": "ACTIVE"
+  },
+  {
+    "userId": "D002",
+    "email": "doctor2@hospital.com",
+    "passwordHash": "$2b$10$ZaSy4Er1nSOFCErHZfsA3.9.Rp0eN6IXN9L4N3YeqammfKz.2JjPm",
+    "status": "ACTIVE"
+  },
+  {
+    "userId": "D003",
+    "email": "doctor3@hospital.com",
+    "passwordHash": "$2b$10$ZaSy4Er1nSOFCErHZfsA3.9.Rp0eN6IXN9L4N3YeqammfKz.2JjPm",
+    "status": "ACTIVE"
+  },
+  {
+    "userId": "D004",
+    "email": "doctor4@hospital.com",
+    "passwordHash": "$2b$10$ZaSy4Er1nSOFCErHZfsA3.9.Rp0eN6IXN9L4N3YeqammfKz.2JjPm",
+    "status": "ACTIVE"
+  },
+  {
+    "userId": "D005",
+    "email": "doctor5@hospital.com",
+    "passwordHash": "$2b$10$ZaSy4Er1nSOFCErHZfsA3.9.Rp0eN6IXN9L4N3YeqammfKz.2JjPm",
+    "status": "ACTIVE"
+  }
+]
