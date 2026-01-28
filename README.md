@@ -217,11 +217,11 @@ Frontend will run on `http://localhost:5173`
 
 ### Patient Account
 - **User ID:** `P001`
-- **Password:** `password`
+- **Password:** `password123`
 
 ### Doctor Account
 - **User ID:** `D001`
-- **Password:** `password`
+- **Password:** `password123`
 
 ## 🔐 API Endpoints
 
