@@ -52,3 +52,9 @@ logs/
 *.tmp
 tmp/
 temp/
+
+# Backend dependencies
+backend/node_modules/
+
+# Environment variables
+backend/.env
