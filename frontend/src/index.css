@@ -123,4 +123,121 @@
   .notification-badge {
     @apply absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center;
   }
+
+  /* Animated Gradient Background */
+  .animated-gradient-bg {
+    background: linear-gradient(-45deg, #0f766e, #14b8a6, #2dd4bf, #0d9488, #115e59);
+    background-size: 400% 400%;
+    animation: gradient-shift 15s ease infinite;
+  }
+
+  /* Glass Card Enhanced */
+  .card-glass-hover {
+    @apply bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-white/20 p-6 transition-all duration-300;
+  }
+
+  .card-glass-hover:hover {
+    @apply bg-white/90 shadow-2xl scale-105 border-primary-200;
+  }
+
+  /* Glow Button */
+  .btn-glow {
+    @apply bg-primary-700 hover:bg-primary-800 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 shadow-lg;
+    box-shadow: 0 0 20px rgba(20, 184, 166, 0.4);
+  }
+
+  .btn-glow:hover {
+    box-shadow: 0 0 40px rgba(20, 184, 166, 0.6);
+    transform: translateY(-2px);
+  }
+
+  /* Floating Icon */
+  .floating-icon {
+    @apply absolute opacity-20 text-primary-500;
+    animation: float-animation 6s ease-in-out infinite;
+  }
+
+  /* Stat Card */
+  .stat-card {
+    @apply bg-white/90 backdrop-blur-sm rounded-xl p-6 text-center border border-primary-100 shadow-md transition-all duration-300;
+  }
+
+  .stat-card:hover {
+    @apply shadow-xl border-primary-200;
+    transform: translateY(-5px);
+  }
+
+  /* Testimonial Card */
+  .testimonial-card {
+    @apply bg-white rounded-xl p-6 shadow-lg border border-slate-100 relative;
+  }
+
+  .testimonial-card::before {
+    content: '"';
+    @apply absolute -top-4 left-6 text-6xl text-primary-200 font-serif;
+  }
+
+  /* Wave Separator */
+  .wave-separator {
+    position: relative;
+    width: 100%;
+    height: 80px;
+    overflow: hidden;
+  }
+
+  .wave-separator svg {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Pulse ring animation */
+  .pulse-ring {
+    @apply absolute rounded-full border-2 border-primary-400 opacity-75;
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Step connector line */
+  .step-connector {
+    @apply absolute top-1/2 left-full w-full h-0.5 bg-gradient-to-r from-primary-400 to-primary-200;
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float-animation {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
 }

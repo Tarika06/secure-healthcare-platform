@@ -106,14 +106,6 @@ const LoginPage = () => {
                             </Link>
                         </p>
                     </div>
-
-                    <div className="mt-6 pt-6 border-t border-slate-200">
-                        <p className="text-sm text-slate-600 text-center">
-                            Demo Credentials:<br />
-                            Patient: <span className="font-mono font-semibold">P001</span> / <span className="font-mono">password</span><br />
-                            Doctor: <span className="font-mono font-semibold">D001</span> / <span className="font-mono">password</span>
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>
@@ -121,3 +113,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
