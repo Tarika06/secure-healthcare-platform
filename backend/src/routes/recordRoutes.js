@@ -5,6 +5,7 @@ const User = require("../models/User");
 const authenticate = require("../middleware/authenticate");
 const authorizeByUserId = require("../middleware/authorizeByUserId");
 const auditLogger = require("../middleware/auditLogger");
+const encryptionService = require("../services/encryptionService");
 
 // Doctor creates a medical record for a patient
 router.post(
@@ -24,9 +25,9 @@ router.post(
             const newRecord = new MedicalRecord({
                 patientId,
                 title,
-                diagnosis,
-                details,
-                prescription: prescription || "",
+                diagnosis: encryptionService.encrypt(diagnosis),
+                details: encryptionService.encrypt(details),
+                prescription: prescription ? encryptionService.encrypt(prescription) : "",
                 recordType: recordType || "GENERAL",
                 createdBy: req.user.userId
             });
@@ -34,12 +35,15 @@ router.post(
             await newRecord.save();
 
             res.status(201).json({
-                message: "Medical record created successfully",
+                message: "Medical record created successfully (Encrypted)",
                 record: newRecord
             });
         } catch (error) {
             console.error("Error creating medical record:", error);
-            res.status(500).json({ message: "Error creating medical record" });
+            res.status(500).json({
+                message: "Error creating medical record",
+                error: error.message
+            });
         }
     }
 );
@@ -53,9 +57,18 @@ router.get(
         try {
             const records = await MedicalRecord.find({ patientId: req.user.userId }).sort({ createdAt: -1 });
 
+            // Decrypt records
+            const decryptedRecords = records.map(r => {
+                const doc = r.toObject();
+                doc.diagnosis = encryptionService.decrypt(doc.diagnosis);
+                doc.details = encryptionService.decrypt(doc.details);
+                doc.prescription = encryptionService.decrypt(doc.prescription);
+                return doc;
+            });
+
             res.json({
                 message: "Records retrieved successfully",
-                records
+                records: decryptedRecords
             });
         } catch (error) {
             console.error("Error fetching records:", error);
@@ -92,7 +105,17 @@ router.get(
             }
 
             const records = await MedicalRecord.find({ patientId }).sort({ createdAt: -1 });
-            res.json({ message: "Records retrieved successfully", records });
+
+            // Decrypt records
+            const decryptedRecords = records.map(r => {
+                const doc = r.toObject();
+                doc.diagnosis = encryptionService.decrypt(doc.diagnosis);
+                doc.details = encryptionService.decrypt(doc.details);
+                doc.prescription = encryptionService.decrypt(doc.prescription);
+                return doc;
+            });
+
+            res.json({ message: "Records retrieved successfully", records: decryptedRecords });
         } catch (error) {
             console.error("Error fetching patient records:", error);
             res.status(500).json({ message: "Error fetching records" });

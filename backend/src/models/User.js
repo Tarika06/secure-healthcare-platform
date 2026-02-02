@@ -17,14 +17,11 @@ const UserSchema = new mongoose.Schema({
       return "PATIENT";
     }
   },
+  specialty: { type: String, default: "" }, // For doctors
   status: {
     type: String,
     enum: ["ACTIVE", "SUSPENDED"],
     default: "ACTIVE"
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
 });
 
