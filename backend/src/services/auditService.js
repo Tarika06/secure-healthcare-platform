@@ -1,4 +1,6 @@
-const logAuditEvent = ({
+const AuditLog = require("../models/AuditLog");
+
+const logAuditEvent = async ({
   userId,
   action,
   resource,
@@ -16,11 +18,12 @@ const logAuditEvent = ({
     timestamp: new Date()
   };
 
-  // For now: log to console
-  console.log("AUDIT LOG:", auditEntry);
-
-  // Later:
-  // AuditLog.create(auditEntry);
+  try {
+    await AuditLog.create(auditEntry);
+    console.log("AUDIT LOG SAVED:", auditEntry);
+  } catch (error) {
+    console.error("FAILED TO SAVE AUDIT LOG:", error);
+  }
 };
 
 module.exports = {
