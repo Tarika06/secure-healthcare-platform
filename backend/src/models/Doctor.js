@@ -120,10 +120,9 @@ const DoctorSchema = new mongoose.Schema({
     }
 });
 
-// Update timestamp on save
-DoctorSchema.pre('save', function (next) {
+// Update timestamp on save (Mongoose 9+ uses async instead of next callback)
+DoctorSchema.pre('save', function() {
     this.updatedAt = new Date();
-    next();
 });
 
 // Index for efficient queries

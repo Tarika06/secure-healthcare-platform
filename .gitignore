@@ -52,3 +52,10 @@ logs/
 *.tmp
 tmp/
 temp/
+
+# Backup Files
+*.bak
+*.backup
+
+# User Data
+users.json

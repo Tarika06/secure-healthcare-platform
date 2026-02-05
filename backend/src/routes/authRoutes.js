@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const authService = require("../services/authService");
+const auditService = require("../services/auditService");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const RoleHistory = require("../models/RoleHistory");
 
 // Simple in-memory rate limiting for login attempts
 // In production, use Redis or a proper rate-limiting library
@@ -99,6 +101,26 @@ router.post("/register", async (req, res) => {
 
     await user.save();
 
+    // Record initial role assignment in history
+    await RoleHistory.recordChange({
+      userId: user.userId,
+      previousRole: null,
+      newRole: user.role,
+      changedBy: "SYSTEM",
+      reason: "Initial registration"
+    });
+
+    // Log successful registration
+    await auditService.logAuditEvent({
+      userId: user.userId,
+      action: "USER_CREATED",
+      resource: "/api/auth/register",
+      method: "POST",
+      outcome: "SUCCESS",
+      ipAddress: req.ip,
+      userAgent: req.get("User-Agent")
+    });
+
     res.status(201).json({
       message: "Registration successful",
       user: {
@@ -116,6 +138,9 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
+  const ipAddress = req.ip;
+  const userAgent = req.get("User-Agent");
+  
   try {
     const { userId, password } = req.body;
 
@@ -127,6 +152,7 @@ router.post("/login", async (req, res) => {
     // Check rate limit
     const rateCheck = checkRateLimit(userId);
     if (rateCheck.limited) {
+      await auditService.logLoginFailure(userId, "RATE_LIMITED", ipAddress, userAgent);
       return res.status(429).json({
         message: `Too many login attempts. Try again after ${rateCheck.unlockTime.toLocaleTimeString()}`
       });
@@ -140,8 +166,19 @@ router.post("/login", async (req, res) => {
     // Clear attempts on successful login
     clearLoginAttempts(userId);
 
+    // Log successful login
+    await auditService.logLoginSuccess(userId, ipAddress, userAgent);
+
     res.json({ token });
   } catch (e) {
+    // Log failed login attempt
+    await auditService.logLoginFailure(
+      req.body.userId || "UNKNOWN",
+      e.message || "INVALID_CREDENTIALS",
+      ipAddress,
+      userAgent
+    );
+    
     // Use generic error message to avoid leaking info about valid userIds
     res.status(401).json({ message: "Invalid credentials" });
   }
