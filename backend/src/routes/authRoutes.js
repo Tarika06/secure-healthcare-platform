@@ -4,11 +4,8 @@ const authService = require("../services/authService");
 const auditService = require("../services/auditService");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-const RoleHistory = require("../models/RoleHistory");
 
-<<<<<<< HEAD
 // Simple in-memory rate limiting for login attempts
-// In production, use Redis or a proper rate-limiting library
 const loginAttempts = new Map();
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
@@ -19,7 +16,6 @@ function checkRateLimit(userId) {
   const attempts = loginAttempts.get(key);
 
   if (attempts) {
-    // Clean up old attempts
     const recentAttempts = attempts.filter(time => now - time < LOCKOUT_DURATION_MS);
     loginAttempts.set(key, recentAttempts);
 
@@ -29,7 +25,6 @@ function checkRateLimit(userId) {
       return { limited: true, unlockTime };
     }
   }
-
   return { limited: false };
 }
 
@@ -48,22 +43,18 @@ router.post("/register", async (req, res) => {
   try {
     const { userId, email, password, firstName, lastName, role, specialty, acceptPrivacyPolicy } = req.body;
 
-    // Validate required fields
     if (!userId || !email || !password || !firstName || !lastName || !role) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Validate privacy policy acceptance
     if (!acceptPrivacyPolicy) {
       return res.status(400).json({ message: "You must accept the Privacy Policy & Data Processing terms" });
     }
 
-    // Validate role
     if (!["PATIENT", "DOCTOR"].includes(role)) {
       return res.status(400).json({ message: "Invalid role selected" });
     }
 
-    // Validate userId prefix matches role
     const prefix = userId.charAt(0).toUpperCase();
     if ((role === "PATIENT" && prefix !== "P") || (role === "DOCTOR" && prefix !== "D")) {
       return res.status(400).json({
@@ -71,7 +62,6 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // Validate userId format (prefix + numbers only)
     const userIdPattern = /^[PD][0-9]+$/i;
     if (!userIdPattern.test(userId)) {
       return res.status(400).json({
@@ -79,16 +69,13 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ userId }, { email }] });
     if (existingUser) {
       return res.status(400).json({ message: "User ID or Email already exists" });
     }
 
-    // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Create new user
     const user = new User({
       userId,
       email,
@@ -102,16 +89,6 @@ router.post("/register", async (req, res) => {
 
     await user.save();
 
-    // Record initial role assignment in history
-    await RoleHistory.recordChange({
-      userId: user.userId,
-      previousRole: null,
-      newRole: user.role,
-      changedBy: "SYSTEM",
-      reason: "Initial registration"
-    });
-
-    // Log successful registration
     await auditService.logAuditEvent({
       userId: user.userId,
       action: "USER_CREATED",
@@ -138,22 +115,17 @@ router.post("/register", async (req, res) => {
   }
 });
 
-=======
->>>>>>> 76b01f53ce3ab2940d23c698c81f388243641b02
 router.post("/login", async (req, res) => {
   const ipAddress = req.ip;
   const userAgent = req.get("User-Agent");
-  
+
   try {
     const { userId, password } = req.body;
 
-<<<<<<< HEAD
-    // Validate input
     if (!userId || !password) {
       return res.status(400).json({ message: "User ID and password are required" });
     }
 
-    // Check rate limit
     const rateCheck = checkRateLimit(userId);
     if (rateCheck.limited) {
       await auditService.logLoginFailure(userId, "RATE_LIMITED", ipAddress, userAgent);
@@ -162,36 +134,23 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Record this attempt
     recordLoginAttempt(userId);
 
     const token = await authService.login(userId, password);
 
-    // Clear attempts on successful login
     clearLoginAttempts(userId);
 
-    // Log successful login
     await auditService.logLoginSuccess(userId, ipAddress, userAgent);
 
     res.json({ token });
   } catch (e) {
-    // Log failed login attempt
     await auditService.logLoginFailure(
       req.body.userId || "UNKNOWN",
       e.message || "INVALID_CREDENTIALS",
       ipAddress,
       userAgent
     );
-    
-    // Use generic error message to avoid leaking info about valid userIds
     res.status(401).json({ message: "Invalid credentials" });
-=======
-    const token = await authService.login(userId, password);
-
-    res.json({ token });
-  } catch (e) {
-    res.status(401).json({ message: e.message });
->>>>>>> 76b01f53ce3ab2940d23c698c81f388243641b02
   }
 });
 

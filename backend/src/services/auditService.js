@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /**
  * Audit Service
  * 
@@ -6,9 +5,7 @@
  * - Persists all audit events to MongoDB
  * - Provides immutable, append-only logging
  * - Supports querying for compliance reporting
- * 
- * All authentication, authorization, and data access events
- * must be logged through this service.
+ * - Fail-safe: logs to console if DB write fails
  */
 
 const AuditLog = require("../models/AuditLog");
@@ -17,10 +14,6 @@ const AuditLog = require("../models/AuditLog");
  * Log an audit event to the database
  * @param {Object} eventData - Audit event data
  */
-=======
-const AuditLog = require("../models/AuditLog");
-
->>>>>>> 76b01f53ce3ab2940d23c698c81f388243641b02
 const logAuditEvent = async ({
   userId,
   action,
@@ -44,22 +37,25 @@ const logAuditEvent = async ({
       details: details || {},
       ipAddress,
       userAgent,
-      targetUserId
+      targetUserId,
+      timestamp: new Date()
     };
 
     // Persist to database
-    await AuditLog.log(auditEntry);
-    
-    // Also log to console for debugging (remove in production or use proper logger)
+    await AuditLog.create(auditEntry);
+
+    // Log to console in dev mode
     if (process.env.NODE_ENV !== "production") {
       console.log("AUDIT:", {
         timestamp: new Date().toISOString(),
-        ...auditEntry
+        userId: auditEntry.userId,
+        action: auditEntry.action,
+        outcome: auditEntry.outcome
       });
     }
   } catch (error) {
-    // Log to console as fallback - NEVER fail silently for audit logs
-    console.error("AUDIT LOG ERROR:", error);
+    // FAIL-SAFE: Log to console - NEVER fail silently for audit logs
+    console.error("AUDIT LOG DB ERROR:", error.message);
     console.error("FAILED AUDIT ENTRY:", {
       userId,
       action,
@@ -143,7 +139,6 @@ const logUserAccountChange = async (userId, targetUserId, action, details) => {
   });
 };
 
-<<<<<<< HEAD
 /**
  * Log role changes
  */
@@ -155,11 +150,7 @@ const logRoleChange = async (userId, targetUserId, previousRole, newRole, reason
     method: "PATCH",
     outcome: "SUCCESS",
     targetUserId,
-    details: {
-      previousRole,
-      newRole,
-      reason
-    }
+    details: { previousRole, newRole, reason }
   });
 };
 
@@ -177,10 +168,26 @@ const logRecordAccess = async (userId, recordId, action, outcome = "SUCCESS") =>
 };
 
 /**
+ * Log data access for GDPR compliance
+ */
+const logDataAccess = async (userId, patientId, accessType, recordCount) => {
+  await logAuditEvent({
+    userId,
+    action: "DATA_ACCESS",
+    resource: `/patient/${patientId}/records`,
+    method: "GET",
+    outcome: "SUCCESS",
+    targetUserId: patientId,
+    details: { accessType, recordCount }
+  });
+};
+
+/**
  * Query audit logs (admin only)
  */
 const queryAuditLogs = async (filters = {}, options = {}) => {
-  return AuditLog.queryLogs(filters, options);
+  const { limit = 100, skip = 0, sort = { timestamp: -1 } } = options;
+  return AuditLog.find(filters).sort(sort).skip(skip).limit(limit).lean();
 };
 
 /**
@@ -205,14 +212,16 @@ const getLoginHistory = async (options = {}) => {
  */
 const getAccessDeniedEvents = async (options = {}) => {
   return queryAuditLogs({ outcome: "DENIED" }, options);
-=======
-  try {
-    await AuditLog.create(auditEntry);
-    console.log("AUDIT LOG SAVED:", auditEntry);
-  } catch (error) {
-    console.error("FAILED TO SAVE AUDIT LOG:", error);
-  }
->>>>>>> 76b01f53ce3ab2940d23c698c81f388243641b02
+};
+
+/**
+ * Get patient data access history (for GDPR Right to Access)
+ */
+const getPatientAccessHistory = async (patientId, options = {}) => {
+  return queryAuditLogs(
+    { targetUserId: patientId, action: { $in: ["VIEW_EHR", "DATA_ACCESS", "RECORD_VIEWED"] } },
+    options
+  );
 };
 
 module.exports = {
@@ -224,8 +233,10 @@ module.exports = {
   logUserAccountChange,
   logRoleChange,
   logRecordAccess,
+  logDataAccess,
   queryAuditLogs,
   getUserAuditLogs,
   getLoginHistory,
-  getAccessDeniedEvents
+  getAccessDeniedEvents,
+  getPatientAccessHistory
 };
