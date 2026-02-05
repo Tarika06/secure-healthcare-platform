@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const RoleHistory = require("../models/RoleHistory");
 
+<<<<<<< HEAD
 // Simple in-memory rate limiting for login attempts
 // In production, use Redis or a proper rate-limiting library
 const loginAttempts = new Map();
@@ -137,6 +138,8 @@ router.post("/register", async (req, res) => {
   }
 });
 
+=======
+>>>>>>> 76b01f53ce3ab2940d23c698c81f388243641b02
 router.post("/login", async (req, res) => {
   const ipAddress = req.ip;
   const userAgent = req.get("User-Agent");
@@ -144,6 +147,7 @@ router.post("/login", async (req, res) => {
   try {
     const { userId, password } = req.body;
 
+<<<<<<< HEAD
     // Validate input
     if (!userId || !password) {
       return res.status(400).json({ message: "User ID and password are required" });
@@ -181,6 +185,13 @@ router.post("/login", async (req, res) => {
     
     // Use generic error message to avoid leaking info about valid userIds
     res.status(401).json({ message: "Invalid credentials" });
+=======
+    const token = await authService.login(userId, password);
+
+    res.json({ token });
+  } catch (e) {
+    res.status(401).json({ message: e.message });
+>>>>>>> 76b01f53ce3ab2940d23c698c81f388243641b02
   }
 });
 

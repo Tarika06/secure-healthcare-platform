@@ -17,6 +17,7 @@ const authorize = require("../middleware/authorize");
 const auditService = require("../services/auditService");
 const { isValidRole, getValidRoles } = require("../config/permissions");
 
+<<<<<<< HEAD
 // All admin routes require authentication and ADMIN role
 router.use(authenticate);
 router.use(authorize(["ADMIN"]));
@@ -50,6 +51,20 @@ router.get("/users", async (req, res) => {
         { firstName: { $regex: search, $options: "i" } },
         { lastName: { $regex: search, $options: "i" } }
       ];
+=======
+const authenticate = require("../middleware/authenticate")
+const authorizeByUserId = require("../middleware/authorizeByUserId");
+
+router.get(
+    "/dashboard",
+    authenticate,
+    authorizeByUserId(["A"]),
+    (req, res) => {
+        res.json({
+            message: "User access granted",
+            user: req.user
+        });
+>>>>>>> 76b01f53ce3ab2940d23c698c81f388243641b02
     }
     
     const users = await User.find(query)

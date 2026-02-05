@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * Audit Service
  * 
@@ -16,6 +17,10 @@ const AuditLog = require("../models/AuditLog");
  * Log an audit event to the database
  * @param {Object} eventData - Audit event data
  */
+=======
+const AuditLog = require("../models/AuditLog");
+
+>>>>>>> 76b01f53ce3ab2940d23c698c81f388243641b02
 const logAuditEvent = async ({
   userId,
   action,
@@ -138,6 +143,7 @@ const logUserAccountChange = async (userId, targetUserId, action, details) => {
   });
 };
 
+<<<<<<< HEAD
 /**
  * Log role changes
  */
@@ -199,6 +205,14 @@ const getLoginHistory = async (options = {}) => {
  */
 const getAccessDeniedEvents = async (options = {}) => {
   return queryAuditLogs({ outcome: "DENIED" }, options);
+=======
+  try {
+    await AuditLog.create(auditEntry);
+    console.log("AUDIT LOG SAVED:", auditEntry);
+  } catch (error) {
+    console.error("FAILED TO SAVE AUDIT LOG:", error);
+  }
+>>>>>>> 76b01f53ce3ab2940d23c698c81f388243641b02
 };
 
 module.exports = {
