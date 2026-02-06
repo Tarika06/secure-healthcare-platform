@@ -24,7 +24,8 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ["ACTIVE", "SUSPENDED"],
     default: "ACTIVE"
-  }
+  },
+  acceptPrivacyPolicy: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model("User", UserSchema);
