@@ -180,14 +180,23 @@ cd backend
 npm install
 ```
 
-3. Create `.env` file:
+3. Create `.env` file (copy from `.env.example`):
+```bash
+cp .env.example .env
+```
+
+4. Update `.env` with your MongoDB connection:
 ```env
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/securecare
+# Or for shared MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/securecare_db
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+ENCRYPTION_KEY=6465766c6f706d656e742d7365637265742d6b65792d33322d63686172732d21
 ```
 
-4. Start the backend server:
+> **Note for Teammates:** Ask the project owner for the MongoDB Atlas connection string if using a shared database.
+
+5. Start the backend server:
 ```bash
 npm run dev
 ```
@@ -217,11 +226,17 @@ Frontend will run on `http://localhost:5173`
 
 ### Patient Account
 - **User ID:** `P001`
-- **Password:** `password`
+- **Password:** `password123`
 
 ### Doctor Account
 - **User ID:** `D001`
-- **Password:** `password`
+- **Password:** `password123`
+
+### Admin Account
+- **User ID:** `A001`
+- **Password:** `password123`
+
+> **Note:** All demo accounts use `password123` as the password.
 
 ## 🔐 API Endpoints
 
