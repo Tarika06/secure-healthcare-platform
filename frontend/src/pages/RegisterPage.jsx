@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Shield, User, Mail, Lock, UserCircle, Stethoscope } from 'lucide-react';
+import { Shield, User, Mail, Lock, UserCircle, Stethoscope, Info } from 'lucide-react';
 import apiClient from '../api/client';
+import PolicyModal from '../components/PolicyModal';
 
 const RegisterPage = () => {
     const navigate = useNavigate();
@@ -16,6 +17,7 @@ const RegisterPage = () => {
         specialty: '',
         acceptPrivacyPolicy: false
     });
+    const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -98,7 +100,8 @@ const RegisterPage = () => {
                 <div className="card-glass">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 bg-red-700 rounded-full"></div>
                                 {error}
                             </div>
                         )}
@@ -110,30 +113,30 @@ const RegisterPage = () => {
                                 <button
                                     type="button"
                                     onClick={() => setFormData(prev => ({ ...prev, role: 'PATIENT' }))}
-                                    className={`p-4 rounded-lg border-2 transition-all ${formData.role === 'PATIENT'
-                                            ? 'border-primary-700 bg-primary-50'
-                                            : 'border-slate-300 hover:border-primary-300'
+                                    className={`p-4 rounded-xl border-2 transition-all duration-300 ${formData.role === 'PATIENT'
+                                        ? 'border-primary-600 bg-primary-50 ring-4 ring-primary-50'
+                                        : 'border-slate-200 hover:border-primary-200 bg-white'
                                         }`}
                                 >
-                                    <UserCircle className="h-8 w-8 mx-auto mb-2 text-primary-700" />
-                                    <span className="block font-semibold text-slate-900">Patient</span>
+                                    <UserCircle className={`h-8 w-8 mx-auto mb-2 transition-colors ${formData.role === 'PATIENT' ? 'text-primary-600' : 'text-slate-400'}`} />
+                                    <span className={`block font-bold ${formData.role === 'PATIENT' ? 'text-primary-900' : 'text-slate-600'}`}>Patient</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setFormData(prev => ({ ...prev, role: 'DOCTOR' }))}
-                                    className={`p-4 rounded-lg border-2 transition-all ${formData.role === 'DOCTOR'
-                                            ? 'border-primary-700 bg-primary-50'
-                                            : 'border-slate-300 hover:border-primary-300'
+                                    className={`p-4 rounded-xl border-2 transition-all duration-300 ${formData.role === 'DOCTOR'
+                                        ? 'border-primary-600 bg-primary-50 ring-4 ring-primary-50'
+                                        : 'border-slate-200 hover:border-primary-200 bg-white'
                                         }`}
                                 >
-                                    <Stethoscope className="h-8 w-8 mx-auto mb-2 text-primary-700" />
-                                    <span className="block font-semibold text-slate-900">Doctor</span>
+                                    <Stethoscope className={`h-8 w-8 mx-auto mb-2 transition-colors ${formData.role === 'DOCTOR' ? 'text-primary-600' : 'text-slate-400'}`} />
+                                    <span className={`block font-bold ${formData.role === 'DOCTOR' ? 'text-primary-900' : 'text-slate-600'}`}>Doctor</span>
                                 </button>
                             </div>
-                            <p className="mt-2 text-xs text-slate-500">
+                            <p className="mt-2 text-xs text-slate-500 font-medium">
                                 {formData.role === 'PATIENT'
-                                    ? 'User ID must start with "P" (e.g., P001, P002)'
-                                    : 'User ID must start with "D" (e.g., D001, D002)'}
+                                    ? 'User ID must start with "P" (e.g., P001)'
+                                    : 'User ID must start with "D" (e.g., D001)'}
                             </p>
                         </div>
 
@@ -165,50 +168,50 @@ const RegisterPage = () => {
                             </div>
                         </div>
 
-                        {/* User ID */}
-                        <div>
-                            <label className="label">User ID</label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                                <input
-                                    type="text"
-                                    name="userId"
-                                    value={formData.userId}
-                                    onChange={handleChange}
-                                    required
-                                    className="input-field pl-10"
-                                    placeholder={formData.role === 'PATIENT' ? 'P001' : 'D001'}
-                                />
+                        {/* User ID and Email */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="label">User ID</label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        name="userId"
+                                        value={formData.userId}
+                                        onChange={handleChange}
+                                        required
+                                        className="input-field pl-10"
+                                        placeholder={formData.role === 'PATIENT' ? 'P001' : 'D001'}
+                                    />
+                                </div>
                             </div>
-                        </div>
-
-                        {/* Email */}
-                        <div>
-                            <label className="label">Email Address</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    required
-                                    className="input-field pl-10"
-                                    placeholder="you@example.com"
-                                />
+                            <div>
+                                <label className="label">Email Address</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        required
+                                        className="input-field pl-10"
+                                        placeholder="you@example.com"
+                                    />
+                                </div>
                             </div>
                         </div>
 
                         {/* Specialty (for doctors) */}
                         {formData.role === 'DOCTOR' && (
-                            <div>
+                            <div className="animate-fade-in">
                                 <label className="label">Specialty</label>
                                 <input
                                     type="text"
                                     name="specialty"
                                     value={formData.specialty}
                                     onChange={handleChange}
-                                    className="input-field"
+                                    className="input-field border-primary-100"
                                     placeholder="e.g., Cardiology, Neurology"
                                 />
                             </div>
@@ -249,26 +252,35 @@ const RegisterPage = () => {
                         </div>
 
                         {/* Privacy Policy */}
-                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/60 shadow-inner">
                             <div className="flex items-start">
                                 <div className="flex items-center h-5">
                                     <input
+                                        id="acceptPrivacyPolicy"
                                         type="checkbox"
                                         name="acceptPrivacyPolicy"
                                         checked={formData.acceptPrivacyPolicy}
                                         onChange={handleChange}
                                         required
-                                        className="checkbox"
+                                        className="h-5 w-5 text-primary-600 border-slate-300 rounded focus:ring-primary-500 cursor-pointer"
                                     />
                                 </div>
-                                <div className="ml-3">
-                                    <label className="text-sm text-slate-700">
-                                        I agree to the <span className="font-semibold text-primary-700">Privacy Policy & Data Processing</span> terms
+                                <div className="ml-4">
+                                    <label htmlFor="acceptPrivacyPolicy" className="text-sm font-bold text-slate-800 cursor-pointer">
+                                        I agree to the <span className="text-primary-700">Privacy Policy & Data Processing</span> terms
                                     </label>
-                                    <p className="text-xs text-slate-500 mt-1">
-                                        <Shield className="h-3 w-3 inline mr-1" />
+                                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 font-medium">
+                                        <Shield className="h-3.5 w-3.5 text-primary-600" />
                                         Your data is protected under GDPR and HIPAA compliance standards
                                     </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPolicyModalOpen(true)}
+                                        className="text-xs text-primary-700 hover:text-primary-800 font-bold mt-3 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-primary-100 shadow-sm transition-all hover:shadow-md active:scale-95"
+                                    >
+                                        <Info className="h-3.5 w-3.5" />
+                                        View All HIPAA & GDPR Policies
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -277,25 +289,39 @@ const RegisterPage = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="btn-primary w-full"
+                            className={`btn-primary w-full py-4 text-lg shadow-xl shadow-primary-200 transition-all duration-300 ${loading ? 'opacity-70' : 'hover:-translate-y-1 hover:shadow-primary-300'}`}
                         >
-                            {loading ? 'Creating Account...' : 'Create Account'}
+                            {loading ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Creating Your Account...
+                                </span>
+                            ) : 'Create Secure Account'}
                         </button>
 
                         {/* Login Link */}
-                        <div className="text-center">
+                        <div className="text-center pt-4 border-t border-slate-100">
                             <p className="text-sm text-slate-600">
                                 Already have an account?{' '}
-                                <Link to="/login" className="font-medium text-primary-700 hover:text-primary-800">
-                                    Sign in
+                                <Link to="/login" className="font-bold text-primary-700 hover:text-primary-800 underline decoration-primary-200 underline-offset-4 decoration-2">
+                                    Sign in here
                                 </Link>
                             </p>
                         </div>
                     </form>
                 </div>
             </div>
+
+            <PolicyModal
+                isOpen={isPolicyModalOpen}
+                onClose={() => setIsPolicyModalOpen(false)}
+            />
         </div>
     );
 };
 
 export default RegisterPage;
+

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Modal = ({ isOpen, onClose, title, children, icon: Icon }) => {
+const Modal = ({ isOpen, onClose, title, children, icon: Icon, maxWidth = 'sm:max-w-lg' }) => {
     if (!isOpen) return null;
 
     return (
@@ -15,7 +15,7 @@ const Modal = ({ isOpen, onClose, title, children, icon: Icon }) => {
                 {/* Center modal */}
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-                <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full animate-slide-up">
+                <div className={`inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle ${maxWidth} w-full animate-slide-up`}>
                     <div className="bg-white px-6 pt-6 pb-4">
                         <div className="sm:flex sm:items-start">
                             {Icon && (
@@ -38,5 +38,6 @@ const Modal = ({ isOpen, onClose, title, children, icon: Icon }) => {
         </div>
     );
 };
+
 
 export default Modal;
