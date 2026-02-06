@@ -6,6 +6,9 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DoctorDashboard from './pages/doctor/DoctorDashboard';
 import PatientDashboard from './pages/patient/PatientDashboard';
+import NurseDashboard from './pages/nurse/NurseDashboard';
+import LabTechDashboard from './pages/lab/LabTechDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 function App() {
   return (
@@ -30,6 +33,33 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['PATIENT']}>
                 <PatientDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/nurse/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['NURSE']}>
+                <NurseDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/lab/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['LAB_TECHNICIAN']}>
+                <LabTechDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminDashboard />
               </ProtectedRoute>
             }
           />

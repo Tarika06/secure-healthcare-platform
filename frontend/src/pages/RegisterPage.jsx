@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Shield, User, Mail, Lock, UserCircle, Stethoscope } from 'lucide-react';
+import { Shield, User, Mail, Lock, UserCircle, Stethoscope, Activity, FlaskConical, ShieldCheck } from 'lucide-react';
 import apiClient from '../api/client';
 
 const RegisterPage = () => {
@@ -106,34 +106,59 @@ const RegisterPage = () => {
                         {/* Role Selection */}
                         <div>
                             <label className="label">I am a</label>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-4 gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setFormData(prev => ({ ...prev, role: 'PATIENT' }))}
-                                    className={`p-4 rounded-lg border-2 transition-all ${formData.role === 'PATIENT'
-                                            ? 'border-primary-700 bg-primary-50'
-                                            : 'border-slate-300 hover:border-primary-300'
+                                    className={`p-3 rounded-lg border-2 transition-all ${formData.role === 'PATIENT'
+                                        ? 'border-primary-700 bg-primary-50'
+                                        : 'border-slate-300 hover:border-primary-300'
                                         }`}
                                 >
-                                    <UserCircle className="h-8 w-8 mx-auto mb-2 text-primary-700" />
-                                    <span className="block font-semibold text-slate-900">Patient</span>
+                                    <UserCircle className="h-6 w-6 mx-auto mb-1 text-primary-700" />
+                                    <span className="block text-xs font-semibold text-slate-900">Patient</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setFormData(prev => ({ ...prev, role: 'DOCTOR' }))}
-                                    className={`p-4 rounded-lg border-2 transition-all ${formData.role === 'DOCTOR'
-                                            ? 'border-primary-700 bg-primary-50'
-                                            : 'border-slate-300 hover:border-primary-300'
+                                    className={`p-3 rounded-lg border-2 transition-all ${formData.role === 'DOCTOR'
+                                        ? 'border-primary-700 bg-primary-50'
+                                        : 'border-slate-300 hover:border-primary-300'
                                         }`}
                                 >
-                                    <Stethoscope className="h-8 w-8 mx-auto mb-2 text-primary-700" />
-                                    <span className="block font-semibold text-slate-900">Doctor</span>
+                                    <Stethoscope className="h-6 w-6 mx-auto mb-1 text-primary-700" />
+                                    <span className="block text-xs font-semibold text-slate-900">Doctor</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, role: 'NURSE' }))}
+                                    className={`p-3 rounded-lg border-2 transition-all ${formData.role === 'NURSE'
+                                        ? 'border-primary-700 bg-primary-50'
+                                        : 'border-slate-300 hover:border-primary-300'
+                                        }`}
+                                >
+                                    <Activity className="h-6 w-6 mx-auto mb-1 text-primary-700" />
+                                    <span className="block text-xs font-semibold text-slate-900">Nurse</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, role: 'LAB_TECHNICIAN' }))}
+                                    className={`p-3 rounded-lg border-2 transition-all ${formData.role === 'LAB_TECHNICIAN'
+                                        ? 'border-primary-700 bg-primary-50'
+                                        : 'border-slate-300 hover:border-primary-300'
+                                        }`}
+                                >
+                                    <FlaskConical className="h-6 w-6 mx-auto mb-1 text-primary-700" />
+                                    <span className="block text-xs font-semibold text-slate-900">Lab Tech</span>
                                 </button>
                             </div>
                             <p className="mt-2 text-xs text-slate-500">
-                                {formData.role === 'PATIENT'
-                                    ? 'User ID must start with "P" (e.g., P001, P002)'
-                                    : 'User ID must start with "D" (e.g., D001, D002)'}
+                                {{
+                                    'PATIENT': 'User ID must start with "P" (e.g., P001)',
+                                    'DOCTOR': 'User ID must start with "D" (e.g., D001)',
+                                    'NURSE': 'User ID must start with "N" (e.g., N001)',
+                                    'LAB_TECHNICIAN': 'User ID must start with "L" (e.g., L001)'
+                                }[formData.role]}
                             </p>
                         </div>
 

@@ -9,7 +9,7 @@
 const express = require("express");
 const router = express.Router();
 const authenticate = require("../middleware/authenticate");
-const authorizeByUserId = require("../middleware/authorizebyuserId");
+const authorizeByUserId = require("../middleware/authorizeByUserId");
 const AuditLog = require("../models/AuditLog");
 const User = require("../models/User");
 

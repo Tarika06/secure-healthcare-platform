@@ -243,12 +243,12 @@ router.get(
 
 /**
  * GET /api/records/patients/list
- * Get list of all patients (for doctor dropdown)
+ * Get list of all patients (for doctor/nurse dropdown)
  */
 router.get(
     "/patients/list",
     authenticate,
-    authorizeByUserId(["D"]),
+    authorizeByUserId(["D", "N"]),
     async (req, res) => {
         try {
             const patients = await User.find({

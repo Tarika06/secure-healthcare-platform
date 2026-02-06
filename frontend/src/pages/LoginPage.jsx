@@ -25,6 +25,10 @@ const LoginPage = () => {
                 navigate('/doctor/dashboard');
             } else if (user.role === 'PATIENT') {
                 navigate('/patient/dashboard');
+            } else if (user.role === 'NURSE') {
+                navigate('/nurse/dashboard');
+            } else if (user.role === 'LAB_TECHNICIAN') {
+                navigate('/lab/dashboard');
             } else if (user.role === 'ADMIN') {
                 navigate('/admin/dashboard');
             }
@@ -66,7 +70,7 @@ const LoginPage = () => {
                                 value={userId}
                                 onChange={(e) => setUserId(e.target.value)}
                                 className="input-field"
-                                placeholder="e.g., P001 or D001"
+                                placeholder="e.g., P001, D001, N001, L001, A001"
                                 required
                             />
                         </div>

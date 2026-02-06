@@ -38,7 +38,12 @@ const MedicalRecordSchema = new mongoose.Schema({
     metadata: {
         type: Object,
         default: {}
-    }
+    },
+    careNotes: [{
+        note: { type: String, required: true },
+        addedBy: { type: String, required: true },
+        addedAt: { type: Date, default: Date.now }
+    }]
 });
 
 module.exports = mongoose.model("MedicalRecord", MedicalRecordSchema);

@@ -8,11 +8,13 @@ const UserSchema = new mongoose.Schema({
   lastName: { type: String, default: "" },
   role: {
     type: String,
-    enum: ["PATIENT", "DOCTOR", "ADMIN"],
+    enum: ["PATIENT", "DOCTOR", "NURSE", "LAB_TECHNICIAN", "ADMIN"],
     default: function () {
       const prefix = this.userId.charAt(0).toUpperCase();
       if (prefix === "P") return "PATIENT";
       if (prefix === "D") return "DOCTOR";
+      if (prefix === "N") return "NURSE";
+      if (prefix === "L") return "LAB_TECHNICIAN";
       if (prefix === "A") return "ADMIN";
       return "PATIENT";
     }

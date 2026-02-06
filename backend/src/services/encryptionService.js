@@ -31,25 +31,25 @@ exports.encrypt = (text) => {
 
 exports.decrypt = (encryptedText) => {
     if (!encryptedText) return encryptedText;
-    
+
     // Check if text matches encrypted format: IV(32 hex):AuthTag(32 hex):EncryptedData(hex)
     const parts = encryptedText.split(':');
     if (parts.length !== 3) {
         // Not encrypted format, return as plain text
         return encryptedText;
     }
-    
+
     const [ivHex, authTagHex, encrypted] = parts;
-    
+
     // Validate hex format: IV should be 32 chars (16 bytes), AuthTag should be 32 chars (16 bytes)
-    const isValidHex = (str, expectedLength) => 
+    const isValidHex = (str, expectedLength) =>
         str && str.length === expectedLength && /^[0-9a-fA-F]+$/.test(str);
-    
+
     if (!isValidHex(ivHex, 32) || !isValidHex(authTagHex, 32) || !encrypted) {
         // Doesn't match encrypted format, return as plain text
         return encryptedText;
     }
-    
+
     try {
         const decipher = crypto.createDecipheriv(
             ALGORITHM,
@@ -69,23 +69,14 @@ exports.decrypt = (encryptedText) => {
 
 /**
  * Encrypt sensitive fields of a medical record before storage
- * NOTE: For development, encryption is bypassed. Enable in production.
+ * HIPAA/GDPR Compliant: All sensitive medical data is encrypted at rest
  */
 exports.encryptRecordFields = (record) => {
-    // For development - store as plain text
-    // In production, uncomment the encryption logic
-    return {
-        diagnosis: record.diagnosis || '',
-        details: record.details || '',
-        prescription: record.prescription || ''
-    };
-    /*
     return {
         diagnosis: record.diagnosis ? exports.encrypt(record.diagnosis) : '',
         details: record.details ? exports.encrypt(record.details) : '',
         prescription: record.prescription ? exports.encrypt(record.prescription) : ''
     };
-    */
 };
 
 /**
@@ -93,7 +84,7 @@ exports.encryptRecordFields = (record) => {
  */
 exports.decryptRecord = (record) => {
     if (!record) return record;
-    
+
     // Try to decrypt, if it fails or isn't encrypted format, return as-is
     const tryDecrypt = (text) => {
         if (!text) return '';
@@ -105,7 +96,7 @@ exports.decryptRecord = (record) => {
         }
         return decrypted;
     };
-    
+
     return {
         ...record,
         diagnosis: tryDecrypt(record.diagnosis),

@@ -51,21 +51,36 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "You must accept the Privacy Policy & Data Processing terms" });
     }
 
-    if (!["PATIENT", "DOCTOR"].includes(role)) {
+    // ADMIN registration is blocked - only one admin allowed (created via database)
+    if (role === "ADMIN") {
+      return res.status(400).json({ message: "Admin registration is not allowed. Contact system administrator." });
+    }
+
+    if (!["PATIENT", "DOCTOR", "NURSE", "LAB_TECHNICIAN"].includes(role)) {
       return res.status(400).json({ message: "Invalid role selected" });
     }
 
+    // Role to prefix mapping for validation
+    const rolePrefixMap = {
+      "PATIENT": "P",
+      "DOCTOR": "D",
+      "NURSE": "N",
+      "LAB_TECHNICIAN": "L"
+    };
+
     const prefix = userId.charAt(0).toUpperCase();
-    if ((role === "PATIENT" && prefix !== "P") || (role === "DOCTOR" && prefix !== "D")) {
+    const expectedPrefix = rolePrefixMap[role];
+
+    if (prefix !== expectedPrefix) {
       return res.status(400).json({
-        message: `User ID must start with ${role === "PATIENT" ? "P" : "D"} for ${role} role`
+        message: `User ID must start with "${expectedPrefix}" for ${role} role (e.g., ${expectedPrefix}001)`
       });
     }
 
-    const userIdPattern = /^[PD][0-9]+$/i;
+    const userIdPattern = /^[PDNL][0-9]+$/i;
     if (!userIdPattern.test(userId)) {
       return res.status(400).json({
-        message: "User ID must be in format: P### or D### (letter followed by numbers only)"
+        message: "User ID must be in format: [P/D/N/L]### (role letter followed by numbers)"
       });
     }
 

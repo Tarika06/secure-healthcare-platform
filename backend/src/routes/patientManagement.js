@@ -153,6 +153,90 @@ router.get('/nurse/vitals/:patientId', authenticate, authorizeByUserId(['N']), a
 });
 
 // ============================================================
+// 3b. NURSE: View Care Notes (Read-only, No Sensitive Data)
+// ============================================================
+router.get('/nurse/notes/:patientId', authenticate, authorizeByUserId(['N']), async (req, res) => {
+    try {
+        const { patientId } = req.params;
+
+        const records = await MedicalRecord.find({ patientId }).sort({ createdAt: -1 });
+
+        // Only return care notes - NO diagnosis, details, or prescription
+        const notesOnly = records.map(r => ({
+            recordId: r._id,
+            recordType: r.recordType,
+            title: r.title,
+            careNotes: r.careNotes || [],
+            createdAt: r.createdAt
+        }));
+
+        logAuditEvent({
+            userId: req.user.userId,
+            action: 'VIEW_CARE_NOTES',
+            resource: patientId,
+            outcome: 'SUCCESS',
+            method: 'GET'
+        });
+
+        res.json({
+            message: 'Care notes retrieved successfully',
+            patientId,
+            records: notesOnly
+        });
+    } catch (error) {
+        console.error('Error fetching care notes:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
+// 3c. NURSE: Add Care Note to a Record
+// ============================================================
+router.post('/nurse/notes/:recordId', authenticate, authorizeByUserId(['N']), async (req, res) => {
+    try {
+        const { recordId } = req.params;
+        const { note } = req.body;
+        const nurseId = req.user.userId;
+
+        if (!note || note.trim() === '') {
+            return res.status(400).json({ message: 'Note content is required' });
+        }
+
+        const record = await MedicalRecord.findById(recordId);
+        if (!record) {
+            return res.status(404).json({ message: 'Record not found' });
+        }
+
+        // Add the care note
+        record.careNotes = record.careNotes || [];
+        record.careNotes.push({
+            note: note.trim(),
+            addedBy: nurseId,
+            addedAt: new Date()
+        });
+
+        await record.save();
+
+        logAuditEvent({
+            userId: nurseId,
+            action: 'ADD_CARE_NOTE',
+            resource: recordId,
+            outcome: 'SUCCESS',
+            method: 'POST',
+            targetUserId: record.patientId
+        });
+
+        res.status(201).json({
+            message: 'Care note added successfully',
+            careNotes: record.careNotes
+        });
+    } catch (error) {
+        console.error('Error adding care note:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================
 // 4. LAB TECH: Upload Lab Results
 // ============================================================
 router.post('/lab/upload', authenticate, authorizeByUserId(['L']), async (req, res) => {
