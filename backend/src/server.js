@@ -42,6 +42,6 @@ app.use("/api/pm", require("./routes/patientManagement"));  // Alias
 app.use("/api/gdpr", require("./routes/gdprRoutes"));       // Direct GDPR access
 
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+app.listen(process.env.PORT || 5000, () => {
+  console.log(`Server running on port ${process.env.PORT || 5000}`);
 });
