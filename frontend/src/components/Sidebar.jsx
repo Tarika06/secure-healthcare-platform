@@ -1,17 +1,22 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3, ClipboardList } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3, ClipboardList, Activity, Upload, Plus, Eye, Bell, Stethoscope, FlaskConical, Settings } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onItemClick, user }) => {
+    const navigate = useNavigate();
+
     const patientMenuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/patient/dashboard', tab: 'overview' },
         { icon: FileText, label: 'My Records', path: '/patient/dashboard', tab: 'records' },
-        { icon: Shield, label: 'Consent Manager', path: '/patient/dashboard', tab: 'consent', badge: pendingConsents }
+        { icon: Shield, label: 'Consent Manager', path: '/patient/dashboard', tab: 'consent', badge: pendingConsents },
+        { icon: Eye, label: 'Access History', path: '/patient/dashboard', tab: 'history' }
     ];
 
     const doctorMenuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/doctor/dashboard', tab: 'overview' },
-        { icon: FileText, label: 'Create Report', path: '/doctor/dashboard', tab: 'create' },
+        { icon: ClipboardList, label: 'My Records', path: '/doctor/dashboard', tab: 'myrecords' },
+        { icon: Plus, label: 'Create Report', path: '/doctor/dashboard', tab: 'create' },
         { icon: Users, label: 'Patients', path: '/doctor/dashboard', tab: 'patients' }
     ];
 
@@ -21,43 +26,139 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
         { icon: ClipboardList, label: 'Audit Logs', id: 'audit' }
     ];
 
-    // Determine which role to use
     const effectiveRole = role || user?.role;
 
-    // If custom items are passed (used by AdminDashboard), render those
+    const getRoleIcon = () => {
+        switch (effectiveRole) {
+            case 'ADMIN': return Shield;
+            case 'DOCTOR': return Stethoscope;
+            case 'PATIENT': return Users;
+            case 'NURSE': return Activity;
+            case 'LAB_TECHNICIAN': return FlaskConical;
+            default: return LayoutDashboard;
+        }
+    };
+
+    const getRoleLabel = () => {
+        switch (effectiveRole) {
+            case 'ADMIN': return 'Administrator';
+            case 'DOCTOR': return 'Doctor Portal';
+            case 'PATIENT': return 'Patient Portal';
+            case 'NURSE': return 'Nurse Station';
+            case 'LAB_TECHNICIAN': return 'Lab Portal';
+            default: return 'Dashboard';
+        }
+    };
+
+    const RoleIcon = getRoleIcon();
+
+    const renderMenuItem = (item, isActive) => {
+        const Icon = item.icon;
+        return (
+            <div className="relative">
+                <div className={isActive ? 'nav-item-glass-active' : 'nav-item-glass group'}>
+                    <div className={`transition-transform duration-300 ${isActive ? '' : 'group-hover:scale-110'}`}>
+                        <Icon className="h-5 w-5" />
+                    </div>
+                    <span className={isActive ? 'font-medium' : 'font-normal'}>{item.label}</span>
+                    {item.badge > 0 && (
+                        <span className="ml-auto notification-badge">
+                            {item.badge}
+                        </span>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    // Custom items mode (Admin sidebar)
     if (items && onItemClick) {
         return (
-            <div className="w-64 bg-white border-r border-slate-200 h-screen flex flex-col">
-                <div className="p-6 border-b border-slate-200">
-                    <h1 className="text-2xl font-bold text-primary-700">SecureCare<span className="text-primary-500">+</span></h1>
-                    <p className="text-xs text-slate-500 mt-1">Admin Panel</p>
+            <div className="sidebar-glass w-72">
+                {/* Header with Logo */}
+                <div className="p-6 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <img src={logo} alt="SecureCare" className="w-12 h-12 object-contain" />
+                        <div>
+                            <h1 className="text-xl font-bold text-gradient">SecureCare<span className="text-primary-400">+</span></h1>
+                            <p className="text-xs text-slate-500 flex items-center gap-1">
+                                <RoleIcon className="w-3 h-3" />
+                                {getRoleLabel()}
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <nav className="flex-1 p-4 space-y-1">
-                    {items.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                            <button
-                                key={item.id}
-                                onClick={() => onItemClick(item.id)}
-                                className={`sidebar-link w-full text-left ${activeItem === item.id ? 'bg-primary-50 text-primary-700' : ''}`}
-                            >
-                                <Icon className="h-5 w-5" />
-                                <span>{item.label}</span>
-                            </button>
-                        );
-                    })}
+
+                {/* User Info Card */}
+                {user && (
+                    <div
+                        className="user-card-glass"
+                        onClick={() => {
+                            const profilePath = effectiveRole === 'ADMIN' ? '/admin/profile'
+                                : effectiveRole === 'DOCTOR' ? '/doctor/profile'
+                                    : effectiveRole === 'PATIENT' ? '/patient/profile'
+                                        : effectiveRole === 'NURSE' ? '/nurse/profile'
+                                            : '/lab/profile';
+                            navigate(profilePath);
+                        }}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white font-semibold text-sm group-hover:scale-105 transition-transform">
+                                {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-slate-800 truncate">{user.firstName} {user.lastName}</p>
+                                <p className="text-xs text-slate-500 truncate">{user.userId}</p>
+                            </div>
+                            <div className="text-slate-400 group-hover:text-primary-600 transition-colors">
+                                <Settings className="w-4 h-4" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Navigation */}
+                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-4 mb-3">Navigation</p>
+                    {items.map((item) => (
+                        <div
+                            key={item.id}
+                            onClick={() => onItemClick(item.id)}
+                        >
+                            {renderMenuItem(item, activeItem === item.id)}
+                        </div>
+                    ))}
                 </nav>
-                <div className="p-4 border-t border-slate-200">
-                    <button onClick={onLogout} className="sidebar-link w-full text-red-600 hover:bg-red-50">
-                        <LogOut className="h-5 w-5" />
-                        <span>Logout</span>
+
+                {/* Footer */}
+                <div className="p-4 border-t border-slate-100 space-y-2">
+                    <button
+                        onClick={() => {
+                            const profilePath = effectiveRole === 'ADMIN' ? '/admin/profile'
+                                : effectiveRole === 'DOCTOR' ? '/doctor/profile'
+                                    : effectiveRole === 'PATIENT' ? '/patient/profile'
+                                        : effectiveRole === 'NURSE' ? '/nurse/profile'
+                                            : '/lab/profile';
+                            navigate(profilePath);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-all duration-300 group"
+                    >
+                        <Settings className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">View Profile</span>
+                    </button>
+                    <button
+                        onClick={onLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-all duration-300 group"
+                    >
+                        <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">Logout</span>
                     </button>
                 </div>
             </div>
         );
     }
 
-    // Default menu items based on role
+    // Default role-based menu
     let menuItems;
     if (effectiveRole === 'ADMIN') {
         menuItems = adminMenuItems;
@@ -68,58 +169,71 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
     }
 
     return (
-        <div className="w-64 bg-white border-r border-slate-200 h-screen flex flex-col">
-            {/* Logo */}
-            <div className="p-6 border-b border-slate-200">
-                <h1 className="text-2xl font-bold text-primary-700">SecureCare<span className="text-primary-500">+</span></h1>
-                <p className="text-xs text-slate-500 mt-1">Healthcare Management</p>
+        <div className="sidebar-glass w-72">
+            {/* Header with Logo */}
+            <div className="p-6 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                    <img src={logo} alt="SecureCare" className="w-12 h-12 object-contain" />
+                    <div>
+                        <h1 className="text-xl font-bold text-gradient">SecureCare<span className="text-primary-400">+</span></h1>
+                        <p className="text-xs text-slate-500 flex items-center gap-1">
+                            <RoleIcon className="w-3 h-3" />
+                            {getRoleLabel()}
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            {/* Menu */}
-            <nav className="flex-1 p-4 space-y-1">
+            {/* Navigation */}
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-4 mb-3">Menu</p>
                 {menuItems.map((item) => {
-                    const Icon = item.icon;
-                    
-                    // For admin with id-based items
-                    if (item.id) {
-                        return (
-                            <a
-                                key={item.label}
-                                href={`/admin/dashboard?tab=${item.id}`}
-                                className="sidebar-link group relative"
-                            >
-                                <Icon className="h-5 w-5" />
-                                <span>{item.label}</span>
-                            </a>
-                        );
-                    }
-                    
+                    const isActive = item.id
+                        ? window.location.search.includes(`tab=${item.id}`)
+                        : window.location.search.includes(`tab=${item.tab}`);
+
                     return (
                         <a
                             key={item.label}
-                            href={`${item.path}?tab=${item.tab}`}
-                            className="sidebar-link group relative"
+                            href={item.id ? `/admin/dashboard?tab=${item.id}` : `${item.path}?tab=${item.tab}`}
+                            className="block"
                         >
-                            <Icon className="h-5 w-5" />
-                            <span>{item.label}</span>
-                            {item.badge > 0 && (
-                                <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                                    {item.badge}
-                                </span>
-                            )}
+                            {renderMenuItem(item, isActive)}
                         </a>
                     );
                 })}
             </nav>
 
-            {/* Logout */}
-            <div className="p-4 border-t border-slate-200">
+            {/* Security Badge */}
+            <div className="mx-4 mb-4 p-3 rounded-xl bg-gradient-to-r from-primary-50 to-teal-50 border border-primary-100">
+                <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary-600" />
+                    <span className="text-xs font-medium text-primary-700">256-bit Encrypted</span>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 space-y-2">
+                <button
+                    onClick={() => {
+                        const profilePath = effectiveRole === 'ADMIN' ? '/admin/profile'
+                            : effectiveRole === 'DOCTOR' ? '/doctor/profile'
+                                : effectiveRole === 'PATIENT' ? '/patient/profile'
+                                    : effectiveRole === 'NURSE' ? '/nurse/profile'
+                                        : '/lab/profile';
+                        navigate(profilePath);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-all duration-300 group"
+                >
+                    <Settings className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                    <span className="font-medium">View Profile</span>
+                </button>
                 <button
                     onClick={onLogout}
-                    className="sidebar-link w-full text-red-600 hover:bg-red-50"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-all duration-300 group"
                 >
-                    <LogOut className="h-5 w-5" />
-                    <span>Logout</span>
+                    <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                    <span className="font-medium">Logout</span>
                 </button>
             </div>
         </div>

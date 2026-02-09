@@ -1,38 +1,43 @@
 import React from 'react';
+import { X, AlertTriangle } from 'lucide-react';
 
-const Modal = ({ isOpen, onClose, title, children, icon: Icon }) => {
+const Modal = ({ isOpen, onClose, title, icon: Icon = AlertTriangle, children, size = 'md' }) => {
     if (!isOpen) return null;
 
+    const sizeClasses = {
+        sm: 'max-w-sm',
+        md: 'max-w-md',
+        lg: 'max-w-lg',
+        xl: 'max-w-xl'
+    };
+
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                {/* Background overlay */}
-                <div
-                    className="fixed inset-0 transition-opacity bg-slate-900 bg-opacity-75"
-                    onClick={onClose}
-                ></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+                onClick={onClose}
+            />
 
-                {/* Center modal */}
-                <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-
-                <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full animate-slide-up">
-                    <div className="bg-white px-6 pt-6 pb-4">
-                        <div className="sm:flex sm:items-start">
-                            {Icon && (
-                                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-14 w-14 rounded-full bg-primary-100 sm:mx-0 sm:h-12 sm:w-12">
-                                    <Icon className="h-7 w-7 text-primary-700" />
-                                </div>
-                            )}
-                            <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
-                                <h3 className="text-xl font-bold leading-6 text-slate-900">
-                                    {title}
-                                </h3>
-                                <div className="mt-4">
-                                    {children}
-                                </div>
-                            </div>
-                        </div>
+            {/* Modal */}
+            <div className={`relative w-full ${sizeClasses[size]} bg-white rounded-2xl shadow-2xl animate-slide-up overflow-hidden`}>
+                {/* Header */}
+                <div className="flex items-center gap-4 p-6 border-b border-slate-100">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-6 h-6 text-amber-600" />
                     </div>
+                    <h3 className="text-xl font-bold text-slate-900 flex-1">{title}</h3>
+                    <button
+                        onClick={onClose}
+                        className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+                    >
+                        <X className="w-5 h-5 text-slate-500" />
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                    {children}
                 </div>
             </div>
         </div>

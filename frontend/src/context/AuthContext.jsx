@@ -52,6 +52,15 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const refreshUser = async () => {
+        try {
+            const response = await apiClient.get('/user/profile');
+            setUser(response.data);
+        } catch (error) {
+            console.error('Error refreshing profile:', error);
+        }
+    };
+
     return (
         <AuthContext.Provider
             value={{
@@ -61,6 +70,7 @@ export const AuthProvider = ({ children }) => {
                 isLoading,
                 login,
                 logout,
+                refreshUser,
             }}
         >
             {children}

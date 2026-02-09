@@ -6,6 +6,7 @@ const UserSchema = new mongoose.Schema({
   passwordHash: String,
   firstName: { type: String, default: "" },
   lastName: { type: String, default: "" },
+  phone: { type: String, default: "" },
   role: {
     type: String,
     enum: ["PATIENT", "DOCTOR", "NURSE", "LAB_TECHNICIAN", "ADMIN"],
@@ -25,6 +26,7 @@ const UserSchema = new mongoose.Schema({
     enum: ["ACTIVE", "SUSPENDED"],
     default: "ACTIVE"
   }
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model("User", UserSchema);
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList } from 'lucide-react';
+import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, Heart, TrendingUp } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Modal from '../../components/Modal';
 import { useAuth } from '../../context/AuthContext';
@@ -22,10 +22,15 @@ const DoctorDashboard = () => {
     const [showAccessModal, setShowAccessModal] = useState(false);
     const [accessError, setAccessError] = useState(null);
     const [accessInfo, setAccessInfo] = useState(null);
+    const [mounted, setMounted] = useState(false);
 
     const [reportForm, setReportForm] = useState({
         patientId: '', title: '', diagnosis: '', details: '', prescription: '', recordType: 'GENERAL'
     });
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         if (activeTab === 'patients' || activeTab === 'create') fetchPatients();
@@ -94,114 +99,305 @@ const DoctorDashboard = () => {
 
     const handleLogout = () => { logout(); navigate('/login'); };
 
-    return (
-        <div className="flex h-screen bg-slate-50">
-            <Sidebar role="DOCTOR" onLogout={handleLogout} />
-            <div className="flex-1 overflow-y-auto">
-                <div className="container-medical">
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-slate-900">Doctor Dashboard</h1>
-                        <p className="text-slate-600 mt-1">Dr. {user?.firstName} {user?.lastName}{user?.specialty && ` • ${user.specialty}`}</p>
-                    </div>
-
-                    <div className="flex gap-4 border-b border-slate-200 mb-8 overflow-x-auto">
-                        <button onClick={() => navigate('/doctor/dashboard?tab=overview')} className={`pb-3 px-1 border-b-2 font-medium transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'border-primary-700 text-primary-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Dashboard</button>
-                        <button onClick={() => navigate('/doctor/dashboard?tab=myrecords')} className={`pb-3 px-1 border-b-2 font-medium transition-colors whitespace-nowrap ${activeTab === 'myrecords' ? 'border-primary-700 text-primary-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><ClipboardList className="h-5 w-5 inline mr-2" />My Records</button>
-                        <button onClick={() => navigate('/doctor/dashboard?tab=create')} className={`pb-3 px-1 border-b-2 font-medium transition-colors whitespace-nowrap ${activeTab === 'create' ? 'border-primary-700 text-primary-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Plus className="h-5 w-5 inline mr-2" />Create Report</button>
-                        <button onClick={() => navigate('/doctor/dashboard?tab=patients')} className={`pb-3 px-1 border-b-2 font-medium transition-colors whitespace-nowrap ${activeTab === 'patients' ? 'border-primary-700 text-primary-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}><Users className="h-5 w-5 inline mr-2" />Patients</button>
-                    </div>
-
-                    {activeTab === 'overview' && (
-                        <div className="grid md:grid-cols-4 gap-6">
-                            <div className="card-medical"><div className="flex items-center gap-4"><div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center"><FileText className="h-6 w-6 text-blue-600" /></div><div><p className="text-sm text-slate-600">Records Created</p><p className="text-2xl font-bold text-slate-900">{dashboardStats?.recordsCreated || 0}</p></div></div></div>
-                            <div className="card-medical"><div className="flex items-center gap-4"><div className="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-green-600" /></div><div><p className="text-sm text-slate-600">Active Consents</p><p className="text-2xl font-bold text-slate-900">{dashboardStats?.activeConsents || 0}</p></div></div></div>
-                            <div className="card-medical"><div className="flex items-center gap-4"><div className="h-12 w-12 rounded-lg bg-yellow-100 flex items-center justify-center"><AlertCircle className="h-6 w-6 text-yellow-600" /></div><div><p className="text-sm text-slate-600">Pending Requests</p><p className="text-2xl font-bold text-slate-900">{dashboardStats?.pendingRequests || 0}</p></div></div></div>
-                            <div className="card-medical"><div className="flex items-center gap-4"><div className="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center"><Users className="h-6 w-6 text-purple-600" /></div><div><p className="text-sm text-slate-600">Patients Served</p><p className="text-2xl font-bold text-slate-900">{dashboardStats?.patientsServed || 0}</p></div></div></div>
-                        </div>
-                    )}
-
-                    {activeTab === 'myrecords' && (
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-900 mb-6">My Created Records</h2>
-                            <p className="text-slate-600 mb-6">Records you have created for patients (visible without consent).</p>
-                            {loading ? <div className="text-center py-12"><p>Loading...</p></div> : myCreatedRecords.length === 0 ? (
-                                <div className="card text-center py-12">
-                                    <ClipboardList className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                                    <h3 className="text-lg font-semibold text-slate-900 mb-2">No Records Created Yet</h3>
-                                    <button onClick={() => navigate('/doctor/dashboard?tab=create')} className="btn-primary">Create Report</button>
-                                </div>
-                            ) : (
-                                <div className="grid gap-4">
-                                    {myCreatedRecords.map(record => (
-                                        <div key={record._id} className="card hover:shadow-lg transition-shadow">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className={`px-2 py-1 text-xs rounded-full font-medium ${record.recordType === 'PRESCRIPTION' ? 'bg-purple-100 text-purple-700' : record.recordType === 'LAB_RESULT' ? 'bg-blue-100 text-blue-700' : record.recordType === 'DIAGNOSIS' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>{record.recordType}</span>
-                                                <span className="text-sm text-slate-500">{new Date(record.createdAt).toLocaleDateString()}</span>
-                                            </div>
-                                            <h3 className="text-lg font-semibold text-slate-900">{record.title}</h3>
-                                            <p className="text-sm text-slate-600">Patient: {record.patientName}</p>
-                                            <p className="text-slate-700 mt-2"><strong>Diagnosis:</strong> {record.diagnosis}</p>
-                                            <p className="text-slate-600 mt-1 text-sm">{record.details}</p>
-                                            {record.prescription && <p className="text-slate-600 mt-2 text-sm bg-green-50 p-2 rounded"><strong>Rx:</strong> {record.prescription}</p>}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {activeTab === 'create' && (
-                        <div className="max-w-3xl">
-                            <h2 className="text-2xl font-bold text-slate-900 mb-6">Create Medical Report</h2>
-                            <form onSubmit={handleCreateReport} className="card space-y-6">
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    <div><label className="label">Patient ID</label><select value={reportForm.patientId} onChange={(e) => setReportForm({ ...reportForm, patientId: e.target.value })} required className="input-field"><option value="">Select Patient</option>{patients.map(p => <option key={p.userId} value={p.userId}>{p.userId} - {p.firstName} {p.lastName}</option>)}</select></div>
-                                    <div><label className="label">Record Type</label><select value={reportForm.recordType} onChange={(e) => setReportForm({ ...reportForm, recordType: e.target.value })} className="input-field"><option value="GENERAL">General</option><option value="LAB_RESULT">Lab Result</option><option value="PRESCRIPTION">Prescription</option><option value="DIAGNOSIS">Diagnosis</option><option value="IMAGING">Imaging</option><option value="VITALS">Vitals</option></select></div>
-                                </div>
-                                <div><label className="label">Title</label><input type="text" value={reportForm.title} onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })} required className="input-field" placeholder="e.g., Annual Checkup" /></div>
-                                <div><label className="label">Diagnosis</label><input type="text" value={reportForm.diagnosis} onChange={(e) => setReportForm({ ...reportForm, diagnosis: e.target.value })} required className="input-field" placeholder="Primary diagnosis" /></div>
-                                <div><label className="label">Details</label><textarea value={reportForm.details} onChange={(e) => setReportForm({ ...reportForm, details: e.target.value })} required rows="4" className="input-field" placeholder="Observations..." /></div>
-                                <div><label className="label">Prescription (Optional)</label><textarea value={reportForm.prescription} onChange={(e) => setReportForm({ ...reportForm, prescription: e.target.value })} rows="3" className="input-field" placeholder="Medications..." /></div>
-                                <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Creating...' : 'Create Report'}</button>
-                            </form>
-                        </div>
-                    )}
-
-                    {activeTab === 'patients' && (
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-900 mb-6">Patient Management</h2>
-                            {patients.length === 0 ? <div className="card text-center py-12"><Users className="h-16 w-16 text-slate-300 mx-auto mb-4" /><h3 className="text-lg font-semibold text-slate-900">No Patients Found</h3></div> : (
-                                <div className="grid gap-4">
-                                    {patients.map(patient => (
-                                        <div key={patient.userId} className="card hover:shadow-lg transition-shadow">
-                                            <div className="flex items-center justify-between">
-                                                <div><h3 className="text-lg font-semibold text-slate-900">{patient.firstName} {patient.lastName}</h3><p className="text-sm text-slate-600">ID: {patient.userId} • {patient.email}</p></div>
-                                                <button onClick={() => handleViewPatientRecords(patient)} className="btn-primary">View Records</button>
-                                            </div>
-                                            {selectedPatient?.userId === patient.userId && patientRecords.length > 0 && (
-                                                <div className="mt-4 pt-4 border-t border-slate-200">
-                                                    {accessInfo && !accessInfo.fullAccess && <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4"><p className="text-yellow-800 text-sm">{accessInfo.message}</p>{accessInfo.hiddenRecordCount > 0 && <p className="text-yellow-600 text-xs mt-1">{accessInfo.hiddenRecordCount} additional records require consent</p>}</div>}
-                                                    <h4 className="font-semibold text-slate-900 mb-3">Medical Timeline</h4>
-                                                    <div className="space-y-3">{patientRecords.map(record => <div key={record._id} className="flex gap-3 p-3 bg-slate-50 rounded-lg"><div className="flex-shrink-0 w-2 bg-primary-700 rounded-full"></div><div className="flex-1"><p className="font-medium text-slate-900">{record.title}</p><p className="text-sm text-slate-600">{record.diagnosis}</p><p className="text-xs text-slate-500 mt-1">{new Date(record.createdAt).toLocaleDateString()}</p></div></div>)}</div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+    const StatCard = ({ icon: Icon, label, value, colorClass, delay }) => (
+        <div
+            className={`stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+            style={{ transitionDelay: `${delay}ms` }}
+        >
+            <div className="flex items-center gap-4">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colorClass}`}>
+                    <Icon className="w-7 h-7" />
+                </div>
+                <div>
+                    <p className="text-sm font-medium text-slate-500">{label}</p>
+                    <p className="text-3xl font-bold text-slate-900 mt-1">{value ?? 0}</p>
                 </div>
             </div>
+        </div>
+    );
 
-            {showAccessModal && (
-                <Modal isOpen={showAccessModal} onClose={() => setShowAccessModal(false)} title="Access Restricted" icon={ShieldAlert}>
-                    <div className="space-y-4">
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4"><p className="text-yellow-800 text-sm">{accessError?.message || 'Patient consent required.'}</p></div>
-                        <div className="flex gap-3"><button onClick={handleRequestConsent} className="btn-primary flex-1">Request Consent</button><button onClick={() => setShowAccessModal(false)} className="btn-outline flex-1">Cancel</button></div>
+    const getRecordTypeBadge = (type) => {
+        const styles = {
+            PRESCRIPTION: 'bg-purple-100 text-purple-700 ring-1 ring-purple-200',
+            LAB_RESULT: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200',
+            DIAGNOSIS: 'bg-red-100 text-red-700 ring-1 ring-red-200',
+            IMAGING: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',
+            VITALS: 'bg-green-100 text-green-700 ring-1 ring-green-200',
+            GENERAL: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200'
+        };
+        return styles[type] || styles.GENERAL;
+    };
+
+    const tabs = [
+        { id: 'overview', label: 'Dashboard', icon: TrendingUp },
+        { id: 'myrecords', label: 'My Records', icon: ClipboardList },
+        { id: 'create', label: 'Create Report', icon: Plus },
+        { id: 'patients', label: 'Patients', icon: Users }
+    ];
+
+    return (
+        <div className="flex min-h-screen dashboard-glass-bg">
+            <Sidebar role="DOCTOR" onLogout={handleLogout} />
+
+            <div className="flex-1 overflow-y-auto">
+                <div className="max-w-7xl mx-auto px-6 py-8">
+                    {/* Header */}
+                    <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                        <div className="flex items-center gap-4 mb-2">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                                <Stethoscope className="h-7 w-7 text-white" />
+                            </div>
+                            <div
+                                className={`stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                style={{ transitionDelay: `${delay}ms` }}
+                            >
+                            </div>
+                        </div>
+
+                        {/* Tab Navigation */}
+                        <div className={`flex gap-2 mb-8 overflow-x-auto pb-2 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => navigate(`/doctor/dashboard?tab=${tab.id}`)}
+                                    className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${activeTab === tab.id
+                                        ? 'bg-gradient-to-r from-primary-600 to-teal-600 text-white shadow-lg shadow-primary-500/25'
+                                        : 'text-slate-600 hover:bg-slate-100'
+                                        }`}
+                                >
+                                    <tab.icon className="w-5 h-5" />
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Overview Tab */}
+                        {activeTab === 'overview' && (
+                            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <StatCard icon={FileText} label="Records Created" value={dashboardStats?.recordsCreated} colorClass="icon-container-blue" delay={100} />
+                                <StatCard icon={CheckCircle} label="Active Consents" value={dashboardStats?.activeConsents} colorClass="icon-container-green" delay={200} />
+                                <StatCard icon={AlertCircle} label="Pending Requests" value={dashboardStats?.pendingRequests} colorClass="icon-container-amber" delay={300} />
+                                <StatCard icon={Users} label="Patients Served" value={dashboardStats?.patientsServed} colorClass="icon-container-purple" delay={400} />
+                            </div>
+                        )}
+
+                        {/* My Records Tab */}
+                        {activeTab === 'myrecords' && (
+                            <div className={`transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-slate-900">My Created Records</h2>
+                                        <p className="text-slate-500 mt-1">Records you have created for patients</p>
+                                    </div>
+                                </div>
+
+                                {loading ? (
+                                    <div className="flex items-center justify-center py-16">
+                                        <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+                                    </div>
+                                ) : myCreatedRecords.length === 0 ? (
+                                    <div className="card text-center py-16">
+                                        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 flex items-center justify-center">
+                                            <ClipboardList className="w-10 h-10 text-slate-400" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-slate-900 mb-2">No Records Created Yet</h3>
+                                        <p className="text-slate-500 mb-6">Start by creating a medical report for a patient</p>
+                                        <button onClick={() => navigate('/doctor/dashboard?tab=create')} className="btn-primary">
+                                            <Plus className="w-5 h-5 mr-2" />Create Report
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="grid gap-4">
+                                        {myCreatedRecords.map((record, idx) => (
+                                            <div
+                                                key={record._id}
+                                                className="card-glass-white hover:shadow-xl transition-all duration-300"
+                                                style={{ animationDelay: `${idx * 100}ms` }}
+                                            >
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getRecordTypeBadge(record.recordType)}`}>
+                                                            {record.recordType}
+                                                        </span>
+                                                        <span className="text-sm text-slate-400 flex items-center gap-1">
+                                                            <Calendar className="w-4 h-4" />
+                                                            {new Date(record.createdAt).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <h3 className="text-lg font-bold text-slate-900 mb-1">{record.title}</h3>
+                                                <p className="text-sm text-slate-500 mb-3">Patient: {record.patientName}</p>
+                                                <div className="space-y-2">
+                                                    <p className="text-slate-700"><strong className="text-slate-900">Diagnosis:</strong> {record.diagnosis}</p>
+                                                    <p className="text-slate-600 text-sm">{record.details}</p>
+                                                    {record.prescription && (
+                                                        <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                                                            <p className="text-green-800 text-sm"><strong>Rx:</strong> {record.prescription}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Create Report Tab */}
+                        {activeTab === 'create' && (
+                            <div className={`max-w-3xl transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                                <div className="mb-6">
+                                    <h2 className="text-2xl font-bold text-slate-900">Create Medical Report</h2>
+                                    <p className="text-slate-500 mt-1">Generate a new medical record for a patient</p>
+                                </div>
+
+                                <form onSubmit={handleCreateReport} className="card space-y-6">
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="label">Patient</label>
+                                            <select value={reportForm.patientId} onChange={(e) => setReportForm({ ...reportForm, patientId: e.target.value })} required className="input-field">
+                                                <option value="">Select Patient</option>
+                                                {patients.map(p => <option key={p.userId} value={p.userId}>{p.userId} - {p.firstName} {p.lastName}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="label">Record Type</label>
+                                            <select value={reportForm.recordType} onChange={(e) => setReportForm({ ...reportForm, recordType: e.target.value })} className="input-field">
+                                                <option value="GENERAL">General</option>
+                                                <option value="LAB_RESULT">Lab Result</option>
+                                                <option value="PRESCRIPTION">Prescription</option>
+                                                <option value="DIAGNOSIS">Diagnosis</option>
+                                                <option value="IMAGING">Imaging</option>
+                                                <option value="VITALS">Vitals</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="label">Title</label>
+                                        <input type="text" value={reportForm.title} onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })} required className="input-field" placeholder="e.g., Annual Checkup Report" />
+                                    </div>
+
+                                    <div>
+                                        <label className="label">Diagnosis</label>
+                                        <input type="text" value={reportForm.diagnosis} onChange={(e) => setReportForm({ ...reportForm, diagnosis: e.target.value })} required className="input-field" placeholder="Primary diagnosis" />
+                                    </div>
+
+                                    <div>
+                                        <label className="label">Details</label>
+                                        <textarea value={reportForm.details} onChange={(e) => setReportForm({ ...reportForm, details: e.target.value })} required rows="4" className="input-field" placeholder="Detailed observations and findings..." />
+                                    </div>
+
+                                    <div>
+                                        <label className="label">Prescription (Optional)</label>
+                                        <textarea value={reportForm.prescription} onChange={(e) => setReportForm({ ...reportForm, prescription: e.target.value })} rows="3" className="input-field" placeholder="Medications, dosage, and instructions..." />
+                                    </div>
+
+                                    <button type="submit" disabled={loading} className="btn-glow w-full">
+                                        {loading ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                Creating...
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <Plus className="w-5 h-5" />
+                                                Create Medical Report
+                                            </span>
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* Patients Tab */}
+                        {activeTab === 'patients' && (
+                            <div className={`transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                                <div className="mb-6">
+                                    <h2 className="text-2xl font-bold text-slate-900">Patient Management</h2>
+                                    <p className="text-slate-500 mt-1">View and manage patient records</p>
+                                </div>
+
+                                {patients.length === 0 ? (
+                                    <div className="card text-center py-16">
+                                        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 flex items-center justify-center">
+                                            <Users className="w-10 h-10 text-slate-400" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-slate-900">No Patients Found</h3>
+                                    </div>
+                                ) : (
+                                    <div className="grid gap-4">
+                                        {patients.map((patient, idx) => (
+                                            <div
+                                                key={patient.userId}
+                                                className="card-glass-white hover:shadow-xl transition-all duration-300"
+                                                style={{ animationDelay: `${idx * 50}ms` }}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white font-semibold">
+                                                            {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-lg font-bold text-slate-900">{patient.firstName} {patient.lastName}</h3>
+                                                            <p className="text-sm text-slate-500">ID: {patient.userId} • {patient.email}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={() => handleViewPatientRecords(patient)} className="btn-primary">
+                                                        View Records
+                                                    </button>
+                                                </div>
+
+                                                {selectedPatient?.userId === patient.userId && patientRecords.length > 0 && (
+                                                    <div className="mt-6 pt-6 border-t border-slate-200">
+                                                        {accessInfo && !accessInfo.fullAccess && (
+                                                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                                                                <p className="text-amber-800 text-sm font-medium">{accessInfo.message}</p>
+                                                                {accessInfo.hiddenRecordCount > 0 && (
+                                                                    <p className="text-amber-600 text-xs mt-1">{accessInfo.hiddenRecordCount} additional records require consent</p>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        <h4 className="font-bold text-slate-900 mb-4">Medical Timeline</h4>
+                                                        <div className="space-y-3">
+                                                            {patientRecords.map(record => (
+                                                                <div key={record._id} className="flex gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                                                                    <div className="flex-shrink-0 w-1 bg-gradient-to-b from-primary-500 to-teal-500 rounded-full" />
+                                                                    <div className="flex-1">
+                                                                        <p className="font-semibold text-slate-900">{record.title}</p>
+                                                                        <p className="text-sm text-slate-600">{record.diagnosis}</p>
+                                                                        <p className="text-xs text-slate-400 mt-1">{new Date(record.createdAt).toLocaleDateString()}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                </Modal>
-            )}
+                </div>
+
+                {/* Access Modal */}
+                {showAccessModal && (
+                    <Modal isOpen={showAccessModal} onClose={() => setShowAccessModal(false)} title="Access Restricted" icon={ShieldAlert}>
+                        <div className="space-y-4">
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                                <p className="text-amber-800 text-sm">{accessError?.message || 'Patient consent required.'}</p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={handleRequestConsent} className="btn-primary flex-1">Request Consent</button>
+                                <button onClick={() => setShowAccessModal(false)} className="btn-outline flex-1">Cancel</button>
+                            </div>
+                        </div>
+                    </Modal>
+                )}
+            </div>
         </div>
     );
 };

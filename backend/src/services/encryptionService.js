@@ -104,3 +104,78 @@ exports.decryptRecord = (record) => {
         prescription: tryDecrypt(record.prescription)
     };
 };
+
+/**
+ * HIPAA/GDPR Compliant: Encrypt PII (Personally Identifiable Information)
+ * Encrypts sensitive user profile fields like phone numbers
+ */
+exports.encryptPII = (data) => {
+    if (!data) return data;
+
+    const encrypted = {};
+
+    // Fields that require encryption under HIPAA/GDPR
+    const piiFields = ['phone', 'email'];
+
+    for (const [key, value] of Object.entries(data)) {
+        if (piiFields.includes(key) && value) {
+            encrypted[key] = exports.encrypt(value);
+        } else {
+            encrypted[key] = value;
+        }
+    }
+
+    return encrypted;
+};
+
+/**
+ * HIPAA/GDPR Compliant: Decrypt PII for authorized access
+ * Decrypts sensitive user profile fields for display
+ */
+exports.decryptPII = (data) => {
+    if (!data) return data;
+
+    const decrypted = {};
+
+    // Fields that may be encrypted
+    const piiFields = ['phone', 'email'];
+
+    for (const [key, value] of Object.entries(data)) {
+        if (piiFields.includes(key) && value) {
+            decrypted[key] = exports.decrypt(value);
+        } else {
+            decrypted[key] = value;
+        }
+    }
+
+    return decrypted;
+};
+
+/**
+ * Encrypt a user document's sensitive fields before storage
+ * HIPAA: Protected Health Information (PHI) must be encrypted at rest
+ * GDPR: Personal data must be protected with appropriate technical measures
+ */
+exports.encryptUserFields = (user) => {
+    return {
+        phone: user.phone ? exports.encrypt(user.phone) : ''
+    };
+};
+
+/**
+ * Decrypt a user document's sensitive fields for authorized viewing
+ */
+exports.decryptUserFields = (user) => {
+    if (!user) return user;
+
+    const tryDecrypt = (text) => {
+        if (!text) return '';
+        return exports.decrypt(text);
+    };
+
+    return {
+        ...user,
+        phone: tryDecrypt(user.phone)
+    };
+};
+

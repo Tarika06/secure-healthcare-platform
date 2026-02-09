@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import ProfilePage from './components/ProfilePage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -27,12 +28,28 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/doctor/profile"
+            element={
+              <ProtectedRoute allowedRoles={['DOCTOR']}>
+                <ProfilePage role="DOCTOR" dashboardPath="/doctor/dashboard" />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/patient/dashboard"
             element={
               <ProtectedRoute allowedRoles={['PATIENT']}>
                 <PatientDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/patient/profile"
+            element={
+              <ProtectedRoute allowedRoles={['PATIENT']}>
+                <ProfilePage role="PATIENT" dashboardPath="/patient/dashboard" />
               </ProtectedRoute>
             }
           />
@@ -45,12 +62,28 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/nurse/profile"
+            element={
+              <ProtectedRoute allowedRoles={['NURSE']}>
+                <ProfilePage role="NURSE" dashboardPath="/nurse/dashboard" />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/lab/dashboard"
             element={
               <ProtectedRoute allowedRoles={['LAB_TECHNICIAN']}>
                 <LabTechDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lab/profile"
+            element={
+              <ProtectedRoute allowedRoles={['LAB_TECHNICIAN']}>
+                <ProfilePage role="LAB_TECHNICIAN" dashboardPath="/lab/dashboard" />
               </ProtectedRoute>
             }
           />
@@ -63,11 +96,19 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/profile"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <ProfilePage role="ADMIN" dashboardPath="/admin/dashboard" />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/unauthorized"
             element={
-              <div className="min-h-screen flex items-center justify-center bg-slate-50">
+              <div className="min-h-screen flex items-center justify-center dashboard-bg">
                 <div className="card max-w-md text-center">
                   <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
                   <p className="text-slate-600">You don't have permission to access this page.</p>
@@ -85,3 +126,4 @@ function App() {
 }
 
 export default App;
+
