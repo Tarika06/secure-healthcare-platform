@@ -4,31 +4,34 @@ const cors = require("cors");
 const connectDB = require("./config/database");
 
 const app = express();
+
 connectDB();
 
 // CORS configuration - allow any localhost port for development
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    
+
     // Allow any localhost port
     if (origin.match(/^http:\/\/localhost:\d+$/)) {
       return callback(null, true);
     }
-    
+
     // Allow configured origins
     const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",");
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    
+
     callback(new Error("Not allowed by CORS"));
   },
   credentials: true
 }));
 
 app.use(express.json());
+app.use(require("./middleware/checkBlockedIP"));
+
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/patient", require("./routes/patientRoutes"));
 app.use("/api/patient/gdpr", require("./routes/gdprRoutes"));
@@ -40,6 +43,7 @@ app.use("/api/consent", require("./routes/consentRoutes"));
 app.use("/api/mgmt", require("./routes/patientManagement"));
 app.use("/api/pm", require("./routes/patientManagement"));  // Alias
 app.use("/api/gdpr", require("./routes/gdprRoutes"));       // Direct GDPR access
+app.use("/api/alerts", require("./routes/alertRoutes"));
 
 
 app.listen(5000, () => {

@@ -76,7 +76,10 @@ const NurseDashboard = () => {
         }
     };
 
-    const handleLogout = () => { logout(); navigate('/login'); };
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
 
     const filteredPatients = patients.filter(p =>
         `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -130,8 +133,8 @@ const NurseDashboard = () => {
                                             key={patient.userId}
                                             onClick={() => handleSelectPatient(patient)}
                                             className={`w-full text-left p-3 rounded-lg transition-all ${selectedPatient?.userId === patient.userId
-                                                    ? 'bg-primary-100 border-primary-300'
-                                                    : 'hover:bg-slate-50 border-slate-200'
+                                                ? 'bg-primary-100 border-primary-300'
+                                                : 'hover:bg-slate-50 border-slate-200'
                                                 } border`}
                                         >
                                             <div className="flex items-center gap-3">

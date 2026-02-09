@@ -92,7 +92,10 @@ const DoctorDashboard = () => {
         } catch (error) { alert(error.response?.data?.message || 'Failed to send consent request'); }
     };
 
-    const handleLogout = () => { logout(); navigate('/login'); };
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
 
     return (
         <div className="flex h-screen bg-slate-50">
@@ -136,6 +139,7 @@ const DoctorDashboard = () => {
                                         <div key={record._id} className="card hover:shadow-lg transition-shadow">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className={`px-2 py-1 text-xs rounded-full font-medium ${record.recordType === 'PRESCRIPTION' ? 'bg-purple-100 text-purple-700' : record.recordType === 'LAB_RESULT' ? 'bg-blue-100 text-blue-700' : record.recordType === 'DIAGNOSIS' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>{record.recordType}</span>
+                                                <span className="px-2 py-1 text-[10px] rounded bg-red-50 text-red-600 border border-red-100 font-bold uppercase tracking-tighter">HIPAA</span>
                                                 <span className="text-sm text-slate-500">{new Date(record.createdAt).toLocaleDateString()}</span>
                                             </div>
                                             <h3 className="text-lg font-semibold text-slate-900">{record.title}</h3>
@@ -180,9 +184,29 @@ const DoctorDashboard = () => {
                                             </div>
                                             {selectedPatient?.userId === patient.userId && patientRecords.length > 0 && (
                                                 <div className="mt-4 pt-4 border-t border-slate-200">
-                                                    {accessInfo && !accessInfo.fullAccess && <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4"><p className="text-yellow-800 text-sm">{accessInfo.message}</p>{accessInfo.hiddenRecordCount > 0 && <p className="text-yellow-600 text-xs mt-1">{accessInfo.hiddenRecordCount} additional records require consent</p>}</div>}
+                                                    {accessInfo && !accessInfo.fullAccess && (
+                                                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+                                                            <div>
+                                                                <p className="text-yellow-800 text-sm">{accessInfo.message}</p>
+                                                                {accessInfo.hiddenRecordCount > 0 && (
+                                                                    <p className="text-yellow-600 text-xs mt-1">
+                                                                        {accessInfo.hiddenRecordCount} additional records require consent
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setAccessError({ patientId: patient.userId });
+                                                                    handleRequestConsent();
+                                                                }}
+                                                                className="btn-primary text-xs py-1.5 px-3"
+                                                            >
+                                                                Request Consent
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                     <h4 className="font-semibold text-slate-900 mb-3">Medical Timeline</h4>
-                                                    <div className="space-y-3">{patientRecords.map(record => <div key={record._id} className="flex gap-3 p-3 bg-slate-50 rounded-lg"><div className="flex-shrink-0 w-2 bg-primary-700 rounded-full"></div><div className="flex-1"><p className="font-medium text-slate-900">{record.title}</p><p className="text-sm text-slate-600">{record.diagnosis}</p><p className="text-xs text-slate-500 mt-1">{new Date(record.createdAt).toLocaleDateString()}</p></div></div>)}</div>
+                                                    <div className="space-y-3">{patientRecords.map(record => <div key={record._id} className="flex gap-3 p-3 bg-slate-50 rounded-lg"><div className="flex-shrink-0 w-2 bg-primary-700 rounded-full"></div><div className="flex-1"><div className="flex justify-between items-start"><p className="font-medium text-slate-900">{record.title}</p><span className="px-2 py-0.5 text-[8px] rounded bg-red-50 text-red-600 border border-red-100 font-bold uppercase">HIPAA</span></div><p className="text-sm text-slate-600">{record.diagnosis}</p><p className="text-xs text-slate-500 mt-1">{new Date(record.createdAt).toLocaleDateString()}</p></div></div>)}</div>
                                                 </div>
                                             )}
                                         </div>

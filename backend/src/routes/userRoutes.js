@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const authenticate = require("../middleware/authenticate");
+const auditService = require("../services/auditService");
 
 // Get authenticated user profile
 router.get("/profile", authenticate, async (req, res) => {
@@ -11,6 +12,8 @@ router.get("/profile", authenticate, async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
+
+        await auditService.logDataAccess(user.userId, user.userId, "VIEW_PROFILE");
 
         res.json({
             userId: user.userId,

@@ -11,6 +11,11 @@ exports.login = async (userId, password) => {
   const match = await bcrypt.compare(password, user.passwordHash);
   if (!match) throw new Error("Invalid credentials");
 
+  // Update online status
+  user.isOnline = true;
+  user.lastLogin = new Date();
+  await user.save();
+
   return jwt.sign(
     {
       userId: user.userId,

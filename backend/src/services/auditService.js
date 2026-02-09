@@ -8,6 +8,7 @@
  * - Fail-safe: logs to console if DB write fails
  */
 
+const LoggerService = require("./LoggerService");
 const AuditLog = require("../models/AuditLog");
 
 /**
@@ -19,12 +20,13 @@ const logAuditEvent = async ({
   action,
   resource,
   method,
-  outcome,
+  outcome = "SUCCESS",
   reason,
-  details,
+  details = {},
   ipAddress,
   userAgent,
-  targetUserId
+  targetUserId,
+  complianceCategory = "INTERNAL"
 }) => {
   try {
     const auditEntry = {
@@ -34,15 +36,16 @@ const logAuditEvent = async ({
       httpMethod: method,
       outcome,
       reason,
-      details: details || {},
+      details,
       ipAddress,
       userAgent,
       targetUserId,
-      timestamp: new Date()
+      complianceCategory,
+      // timestamp and hash handled by LoggerService
     };
 
-    // Persist to database
-    await AuditLog.create(auditEntry);
+    // Persist to database via Immutable Logger
+    await LoggerService.log(auditEntry);
 
     // Log to console in dev mode
     if (process.env.NODE_ENV !== "production") {
@@ -50,7 +53,8 @@ const logAuditEvent = async ({
         timestamp: new Date().toISOString(),
         userId: auditEntry.userId,
         action: auditEntry.action,
-        outcome: auditEntry.outcome
+        outcome: auditEntry.outcome,
+        complianceCategory: auditEntry.complianceCategory
       });
     }
   } catch (error) {
@@ -61,6 +65,7 @@ const logAuditEvent = async ({
       action,
       resource,
       outcome,
+      complianceCategory,
       timestamp: new Date().toISOString()
     });
   }
@@ -77,7 +82,8 @@ const logLoginSuccess = async (userId, ipAddress, userAgent) => {
     method: "POST",
     outcome: "SUCCESS",
     ipAddress,
-    userAgent
+    userAgent,
+    complianceCategory: "SECURITY"
   });
 };
 
@@ -93,7 +99,8 @@ const logLoginFailure = async (userId, reason, ipAddress, userAgent) => {
     outcome: "FAILURE",
     reason,
     ipAddress,
-    userAgent
+    userAgent,
+    complianceCategory: "SECURITY"
   });
 };
 
@@ -106,7 +113,8 @@ const logAccessGranted = async (userId, resource, method) => {
     action: "ACCESS_GRANTED",
     resource,
     method,
-    outcome: "SUCCESS"
+    outcome: "SUCCESS",
+    complianceCategory: "SECURITY"
   });
 };
 
@@ -120,7 +128,8 @@ const logAccessDenied = async (userId, resource, method, reason) => {
     resource,
     method,
     outcome: "DENIED",
-    reason
+    reason,
+    complianceCategory: "SECURITY"
   });
 };
 
@@ -163,22 +172,40 @@ const logRecordAccess = async (userId, recordId, action, outcome = "SUCCESS") =>
     action,
     resource: `/api/records/${recordId}`,
     method: "GET",
-    outcome
+    outcome,
+    complianceCategory: "HIPAA"
   });
 };
 
 /**
  * Log data access for GDPR compliance
  */
-const logDataAccess = async (userId, patientId, accessType, recordCount) => {
+const logDataAccess = async (userId, patientId, accessType, details = {}) => {
   await logAuditEvent({
     userId,
     action: "DATA_ACCESS",
-    resource: `/patient/${patientId}/records`,
+    resource: `/api/patient/${patientId}`,
     method: "GET",
     outcome: "SUCCESS",
     targetUserId: patientId,
-    details: { accessType, recordCount }
+    details: { accessType, ...details },
+    complianceCategory: "GDPR"
+  });
+};
+
+/**
+ * Log consent actions
+ */
+const logConsentAction = async (userId, patientId, action, details = {}) => {
+  await logAuditEvent({
+    userId,
+    action,
+    resource: `/api/consent`,
+    method: "POST",
+    outcome: "SUCCESS",
+    targetUserId: patientId,
+    details,
+    complianceCategory: "GDPR"
   });
 };
 
@@ -234,6 +261,7 @@ module.exports = {
   logRoleChange,
   logRecordAccess,
   logDataAccess,
+  logConsentAction,
   queryAuditLogs,
   getUserAuditLogs,
   getLoginHistory,

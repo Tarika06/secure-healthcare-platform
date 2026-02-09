@@ -4,6 +4,7 @@ const Consent = require("../models/Consent");
 const User = require("../models/User");
 const authenticate = require("../middleware/authenticate");
 const authorizeByUserId = require("../middleware/authorizeByUserId");
+const auditService = require("../services/auditService");
 
 // Doctor requests consent from patient
 router.post(
@@ -45,6 +46,10 @@ router.post(
 
             await consent.save();
 
+            await auditService.logConsentAction(doctorId, patientId, "CONSENT_REQUESTED", {
+                consentId: consent._id
+            });
+
             res.status(201).json({
                 message: "Consent request sent successfully",
                 consent
@@ -83,6 +88,10 @@ router.post(
 
             await consent.save();
 
+            await auditService.logConsentAction(patientId, consent.doctorId, "CONSENT_GRANTED", {
+                consentId: consent._id
+            });
+
             res.json({
                 message: "Consent granted successfully",
                 consent
@@ -119,6 +128,10 @@ router.post(
 
             await consent.save();
 
+            await auditService.logConsentAction(patientId, consent.doctorId, "CONSENT_DENIED", {
+                consentId: consent._id
+            });
+
             res.json({
                 message: "Consent denied",
                 consent
@@ -154,6 +167,10 @@ router.post(
             consent.respondedAt = new Date();
 
             await consent.save();
+
+            await auditService.logConsentAction(patientId, consent.doctorId, "CONSENT_REVOKED", {
+                consentId: consent._id
+            });
 
             res.json({
                 message: "Consent revoked successfully",
