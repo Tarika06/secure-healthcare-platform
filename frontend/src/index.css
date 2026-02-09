@@ -797,6 +797,25 @@
   @apply icon-container bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600;
 }
 
+/* ========================================
+     DARK MODE TOGGLE - Curtain Effect
+     ======================================== */
+/* ========================================
+     DARK MODE TOGGLE - Curtain Effect
+     ======================================== */
+/* ========================================
+     DARK MODE TOGGLE - Curtain Effect REMOVED
+     ======================================== */
+/* No curtain: Using simple CSS transition-colors on root elements */
+
+/* Fix for Hero Slideshow in Dark Mode 
+   The curtain uses mix-blend-mode: difference which inverts colors.
+   To keep the images looking "normal" (not inverted), we invert them back using a filter,
+   which cancels out the curtain's inversion.
+*/
+/* CSS Inversion Logic Removed now that we use class-based dark mode */
+/* .theme-toggle-checkbox:checked ... { filter: invert(1); } */
+
 .icon-container-green {
   @apply icon-container bg-gradient-to-br from-green-100 to-emerald-100 text-green-600;
 }
