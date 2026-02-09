@@ -179,9 +179,9 @@ const PatientDashboard = () => {
             <div className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto px-6 py-8">
                     {/* Header */}
-                    <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                    <div className={`mb-8 transition-all duration-700 border-none shadow-none bg-transparent outline-none ring-0 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                         <div className="flex items-center gap-4 mb-2">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center shadow-lg shadow-primary-500/25">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center">
                                 <Heart className="h-7 w-7 text-white" />
                             </div>
                             <div>
@@ -216,7 +216,7 @@ const PatientDashboard = () => {
 
                     {/* Overview Tab */}
                     {activeTab === 'overview' && (
-                        <div className="space-y-8">
+                        <div className="space-y-8 animate-fade-in">
                             {/* Stats */}
                             <div className="grid md:grid-cols-3 gap-6">
                                 <StatCard icon={FileText} label="Total Records" value={records.length} colorClass="icon-container-blue" delay={100} />
@@ -276,7 +276,7 @@ const PatientDashboard = () => {
 
                     {/* Records Tab */}
                     {activeTab === 'records' && (
-                        <div className={`transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h2 className="text-2xl font-bold text-slate-900">My Medical Records</h2>
@@ -306,7 +306,7 @@ const PatientDashboard = () => {
 
                     {/* Consent Tab */}
                     {activeTab === 'consent' && (
-                        <div className={`space-y-8 transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`space-y-8 animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             {/* Pending Requests */}
                             <div>
                                 <div className="flex items-center gap-3 mb-6">
@@ -397,7 +397,7 @@ const PatientDashboard = () => {
 
                     {/* Access History Tab */}
                     {activeTab === 'history' && (
-                        <div className={`transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="mb-6">
                                 <h2 className="text-2xl font-bold text-slate-900">Access History</h2>
                                 <p className="text-slate-500 mt-1">Track who has accessed your medical records (GDPR compliance)</p>
@@ -439,7 +439,7 @@ const PatientDashboard = () => {
 
                     {/* Privacy & GDPR Tab */}
                     {activeTab === 'privacy' && (
-                        <div className={`space-y-8 transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`space-y-8 animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="mb-6">
                                 <h2 className="text-2xl font-bold text-slate-900">Data Privacy & Rights</h2>
                                 <p className="text-slate-500 mt-1">Manage your data portability and check compliance (GDPR & HIPAA)</p>

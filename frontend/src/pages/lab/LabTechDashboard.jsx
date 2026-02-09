@@ -130,7 +130,7 @@ const LabTechDashboard = () => {
 
                         {/* Upload Tab */}
                         {activeTab === 'upload' && (
-                            <div className={`transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                            <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                                 <div className="mb-6">
                                     <h2 className="text-2xl font-bold text-slate-900">Upload Lab Results</h2>
                                     <p className="text-slate-500 mt-1">Submit test results for a patient</p>
@@ -241,7 +241,7 @@ const LabTechDashboard = () => {
 
                         {/* History Tab */}
                         {activeTab === 'history' && (
-                            <div className={`transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                            <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                                 <div className="mb-6">
                                     <h2 className="text-2xl font-bold text-slate-900">Upload History</h2>
                                     <p className="text-slate-500 mt-1">View all lab results you've uploaded</p>

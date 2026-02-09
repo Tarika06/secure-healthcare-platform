@@ -10,21 +10,22 @@ import PatientDashboard from './pages/patient/PatientDashboard';
 import NurseDashboard from './pages/nurse/NurseDashboard';
 import LabTechDashboard from './pages/lab/LabTechDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import PageWrapper from './components/PageWrapper';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
+          <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
+          <Route path="/register" element={<PageWrapper><RegisterPage /></PageWrapper>} />
 
           <Route
             path="/doctor/dashboard"
             element={
               <ProtectedRoute allowedRoles={['DOCTOR']}>
-                <DoctorDashboard />
+                <PageWrapper><DoctorDashboard /></PageWrapper>
               </ProtectedRoute>
             }
           />
@@ -32,7 +33,7 @@ function App() {
             path="/doctor/profile"
             element={
               <ProtectedRoute allowedRoles={['DOCTOR']}>
-                <ProfilePage role="DOCTOR" dashboardPath="/doctor/dashboard" />
+                <PageWrapper><ProfilePage role="DOCTOR" dashboardPath="/doctor/dashboard" /></PageWrapper>
               </ProtectedRoute>
             }
           />
@@ -41,7 +42,7 @@ function App() {
             path="/patient/dashboard"
             element={
               <ProtectedRoute allowedRoles={['PATIENT']}>
-                <PatientDashboard />
+                <PageWrapper><PatientDashboard /></PageWrapper>
               </ProtectedRoute>
             }
           />
@@ -49,7 +50,7 @@ function App() {
             path="/patient/profile"
             element={
               <ProtectedRoute allowedRoles={['PATIENT']}>
-                <ProfilePage role="PATIENT" dashboardPath="/patient/dashboard" />
+                <PageWrapper><ProfilePage role="PATIENT" dashboardPath="/patient/dashboard" /></PageWrapper>
               </ProtectedRoute>
             }
           />
@@ -58,7 +59,7 @@ function App() {
             path="/nurse/dashboard"
             element={
               <ProtectedRoute allowedRoles={['NURSE']}>
-                <NurseDashboard />
+                <PageWrapper><NurseDashboard /></PageWrapper>
               </ProtectedRoute>
             }
           />
@@ -66,7 +67,7 @@ function App() {
             path="/nurse/profile"
             element={
               <ProtectedRoute allowedRoles={['NURSE']}>
-                <ProfilePage role="NURSE" dashboardPath="/nurse/dashboard" />
+                <PageWrapper><ProfilePage role="NURSE" dashboardPath="/nurse/dashboard" /></PageWrapper>
               </ProtectedRoute>
             }
           />
@@ -75,7 +76,7 @@ function App() {
             path="/lab/dashboard"
             element={
               <ProtectedRoute allowedRoles={['LAB_TECHNICIAN']}>
-                <LabTechDashboard />
+                <PageWrapper><LabTechDashboard /></PageWrapper>
               </ProtectedRoute>
             }
           />
@@ -83,7 +84,7 @@ function App() {
             path="/lab/profile"
             element={
               <ProtectedRoute allowedRoles={['LAB_TECHNICIAN']}>
-                <ProfilePage role="LAB_TECHNICIAN" dashboardPath="/lab/dashboard" />
+                <PageWrapper><ProfilePage role="LAB_TECHNICIAN" dashboardPath="/lab/dashboard" /></PageWrapper>
               </ProtectedRoute>
             }
           />
@@ -92,7 +93,7 @@ function App() {
             path="/admin/dashboard"
             element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminDashboard />
+                <PageWrapper><AdminDashboard /></PageWrapper>
               </ProtectedRoute>
             }
           />
@@ -100,7 +101,7 @@ function App() {
             path="/admin/profile"
             element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
-                <ProfilePage role="ADMIN" dashboardPath="/admin/dashboard" />
+                <PageWrapper><ProfilePage role="ADMIN" dashboardPath="/admin/dashboard" /></PageWrapper>
               </ProtectedRoute>
             }
           />

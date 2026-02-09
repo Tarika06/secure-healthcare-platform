@@ -189,7 +189,7 @@ const NurseDashboard = () => {
                                         <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin" />
                                     </div>
                                 ) : activeTab === 'vitals' ? (
-                                    <div>
+                                    <div className="animate-fade-in">
                                         <div className="flex items-center gap-3 mb-6">
                                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-100 to-rose-100 flex items-center justify-center">
                                                 <Heart className="w-5 h-5 text-red-600" />
@@ -237,7 +237,7 @@ const NurseDashboard = () => {
                                         )}
                                     </div>
                                 ) : (
-                                    <div>
+                                    <div className="animate-fade-in">
                                         <div className="flex items-center gap-3 mb-6">
                                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
                                                 <FileText className="w-5 h-5 text-blue-600" />

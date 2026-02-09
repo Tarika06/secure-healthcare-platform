@@ -221,7 +221,7 @@ const AdminDashboard = () => {
 
                         {/* Overview Tab */}
                         {activeTab === 'overview' && (
-                            <div className="space-y-8">
+                            <div className="space-y-8 animate-fade-in">
                                 {/* Stats Grid */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <StatCard
@@ -299,7 +299,7 @@ const AdminDashboard = () => {
 
                         {/* Users Tab */}
                         {activeTab === 'users' && (
-                            <div className={`card transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+                            <div className={`card animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center">
@@ -375,7 +375,7 @@ const AdminDashboard = () => {
 
                         {/* Alerts Tab */}
                         {activeTab === 'alerts' && (
-                            <div className={`card transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+                            <div className={`card animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                                 <div className="flex justify-between items-center mb-6">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-100 to-orange-100 flex items-center justify-center">
@@ -494,7 +494,7 @@ const AdminDashboard = () => {
 
                         {/* Audit Tab */}
                         {activeTab === 'audit' && (
-                            <div className={`card min-h-[500px] transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+                            <div className={`card animate-fade-in min-h-[500px] transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                                 <div className="flex justify-between items-center mb-6">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">

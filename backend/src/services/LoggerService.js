@@ -53,7 +53,7 @@ class LoggerService {
                 // 1. Get the last log entry to retrieve its hash
                 const lastLog = await AuditLog.findOne().sort({ timestamp: -1 });
 
-                const previousHash = lastLog ? lastLog.hash : "0"; // Genesis hash is "0"
+                const previousHash = (lastLog && lastLog.hash) ? lastLog.hash : "0"; // Genesis hash is "0"
 
                 // 2. Prepare data for hashing
                 const timestamp = new Date();
