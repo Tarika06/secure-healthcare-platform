@@ -25,7 +25,9 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ["ACTIVE", "SUSPENDED"],
     default: "ACTIVE"
-  }
+  },
+  isOnline: { type: Boolean, default: false },
+  lastLogin: { type: Date }
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", UserSchema);

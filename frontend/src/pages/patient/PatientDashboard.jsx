@@ -70,7 +70,10 @@ const PatientDashboard = () => {
         catch (error) { alert('Failed to revoke consent'); }
     };
 
-    const handleLogout = () => { logout(); navigate('/login'); };
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
 
     const StatCard = ({ icon: Icon, label, value, colorClass, delay }) => (
         <div

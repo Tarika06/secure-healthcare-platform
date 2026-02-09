@@ -74,7 +74,10 @@ const LabTechDashboard = () => {
         }
     };
 
-    const handleLogout = () => { logout(); navigate('/login'); };
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
 
     const filteredPatients = patients.filter(p =>
         `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -100,7 +103,7 @@ const LabTechDashboard = () => {
     ];
 
     return (
-        <div className="flex min-h-screen dashboard-glass-bg">
+        <div className="flex h-screen overflow-hidden dashboard-glass-bg">
             <div className="flex">
                 <Sidebar
                     items={sidebarItems}
@@ -111,7 +114,7 @@ const LabTechDashboard = () => {
                 />
 
                 <main className="flex-1 p-8">
-                    <div className="max-w-5xl mx-auto">
+                    <div className="max-w-full mx-auto">
                         {/* Header */}
                         <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                             <div className="flex items-center gap-4 mb-2">
@@ -137,42 +140,26 @@ const LabTechDashboard = () => {
                                     {/* Patient Selection */}
                                     <div>
                                         <label className="label">Select Patient</label>
-                                        <div className="relative mb-3">
-                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                            <input
-                                                type="text"
-                                                placeholder="Search patients..."
-                                                value={searchTerm}
-                                                onChange={(e) => setSearchTerm(e.target.value)}
-                                                className="input-field pl-11"
-                                            />
-                                        </div>
-
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-48 overflow-y-auto p-1">
-                                            {filteredPatients.map((patient) => (
-                                                <button
-                                                    key={patient.userId}
-                                                    type="button"
-                                                    onClick={() => setUploadForm({ ...uploadForm, patientId: patient.userId })}
-                                                    className={`p-3 rounded-xl text-left transition-all duration-300 border ${uploadForm.patientId === patient.userId
-                                                        ? 'bg-gradient-to-r from-primary-50 to-teal-50 border-primary-300 shadow-md ring-2 ring-primary-200'
-                                                        : 'hover:bg-slate-50 border-slate-200 hover:border-slate-300'
-                                                        }`}
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold ${uploadForm.patientId === patient.userId
-                                                            ? 'bg-gradient-to-br from-primary-500 to-teal-500'
-                                                            : 'bg-slate-400'
-                                                            }`}>
-                                                            {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className="font-medium text-slate-900 text-sm truncate">{patient.firstName} {patient.lastName}</p>
-                                                            <p className="text-xs text-slate-500">{patient.userId}</p>
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            ))}
+                                        <div className="relative">
+                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                            <select
+                                                value={uploadForm.patientId}
+                                                onChange={(e) => setUploadForm({ ...uploadForm, patientId: e.target.value })}
+                                                className="input-field pl-11 appearance-none"
+                                                required
+                                            >
+                                                <option value="">Select a patient...</option>
+                                                {patients.map((patient) => (
+                                                    <option key={patient.userId} value={patient.userId}>
+                                                        {patient.firstName} {patient.lastName} ({patient.userId})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
                                         </div>
                                     </div>
 

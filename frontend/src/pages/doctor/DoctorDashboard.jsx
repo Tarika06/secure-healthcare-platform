@@ -203,11 +203,11 @@ const DoctorDashboard = () => {
     ];
 
     return (
-        <div className="flex min-h-screen dashboard-bg-doctor bg-dots">
+        <div className="flex h-screen overflow-hidden dashboard-bg-doctor bg-dots">
             <Sidebar role="DOCTOR" onLogout={handleLogout} />
 
             <div className="flex-1 overflow-y-auto">
-                <div className="max-w-7xl mx-auto px-6 py-8">
+                <div className="max-w-full mx-auto px-6 py-8">
                     {/* Header */}
                     <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                         <div className="flex items-center gap-4 mb-2">

@@ -5,6 +5,7 @@ const authenticate = require("../middleware/authenticate");
 const User = require("../models/User");
 const { logAuditEvent } = require("../services/auditService");
 const { encrypt, decrypt } = require("../services/encryptionService");
+const auditService = require("../services/auditService");
 
 // Get authenticated user profile
 router.get("/profile", authenticate, async (req, res) => {
@@ -17,6 +18,8 @@ router.get("/profile", authenticate, async (req, res) => {
 
         // HIPAA/GDPR: Decrypt PII for authorized viewing
         const decryptedPhone = user.phone ? decrypt(user.phone) : "";
+
+        await auditService.logDataAccess(user.userId, user.userId, "VIEW_PROFILE");
 
         res.json({
             userId: user.userId,

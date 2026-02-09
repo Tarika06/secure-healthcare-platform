@@ -52,10 +52,18 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
+    const logout = async () => {
+        try {
+            if (user && user.userId) {
+                await apiClient.post('/auth/logout', { userId: user.userId });
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            localStorage.removeItem('token');
+            setToken(null);
+            setUser(null);
+        }
     };
 
     const refreshUser = async () => {

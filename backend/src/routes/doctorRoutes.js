@@ -12,6 +12,7 @@ const authenticate = require("../middleware/authenticate");
 const authorizeByUserId = require("../middleware/authorizeByUserId");
 const MedicalRecord = require("../models/MedicalRecord");
 const Consent = require("../models/Consent");
+const auditService = require("../services/auditService");
 
 /**
  * GET /api/doctor/dashboard
@@ -42,6 +43,12 @@ router.get(
 
       // Get unique patients this doctor has created records for
       const uniquePatients = await MedicalRecord.distinct("patientId", { createdBy: doctorId });
+
+      await auditService.logDataAccess(doctorId, doctorId, "VIEW_DOCTOR_DASHBOARD", {
+        recordsCreated,
+        activeConsents,
+        patientsServed: uniquePatients.length
+      });
 
       res.json({
         message: "Doctor dashboard access granted",

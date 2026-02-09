@@ -222,7 +222,8 @@ router.get(
                     totalRecords: allRecords.length,
                     accessibleRecords: accessibleRecords.length,
                     accessType: hasConsent ? "FULL_CONSENT" : "OWN_RECORDS_ONLY"
-                }
+                },
+                complianceCategory: "HIPAA"
             });
 
             res.json({
@@ -248,7 +249,7 @@ router.get(
 router.get(
     "/patients/list",
     authenticate,
-    authorizeByUserId(["D", "N"]),
+    authorizeByUserId(["D", "N", "L"]),
     async (req, res) => {
         try {
             const patients = await User.find({
@@ -257,6 +258,15 @@ router.get(
                     { userId: { $regex: /^P/i } }
                 ]
             }).select("userId firstName lastName email");
+
+            await auditService.logAuditEvent({
+                userId: req.user.userId,
+                action: "PATIENT_LIST_VIEWED",
+                resource: "/api/records/patients/list",
+                method: "GET",
+                outcome: "SUCCESS",
+                details: { patientCount: patients.length }
+            });
 
             res.json({
                 message: "Patients retrieved successfully",

@@ -806,6 +806,50 @@
 }
 
 .icon-container-purple {
+  @apply icon-container bg-gradient-to-br from-purple-100 to-fuchsia-100 text-purple-600;
+}
+
+/* ========================================
+   SCROLLBAR - Custom
+   ======================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+
+
+.icon-container-amber {
+  @apply icon-container bg-gradient-to-br from-amber-100 to-orange-100 text-amber-600;
+}
+
+.icon-container-purple {
   @apply icon-container bg-gradient-to-br from-purple-100 to-violet-100 text-purple-600;
 }
 
@@ -813,25 +857,7 @@
   @apply icon-container bg-gradient-to-br from-red-100 to-rose-100 text-red-600;
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #64748b 0%, #475569 100%);
-}
 
 /* Selection Styling */
 ::selection {

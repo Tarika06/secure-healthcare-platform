@@ -78,7 +78,10 @@ const NurseDashboard = () => {
         }
     };
 
-    const handleLogout = () => { logout(); navigate('/login'); };
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
 
     const filteredPatients = patients.filter(p =>
         `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,7 +94,7 @@ const NurseDashboard = () => {
     ];
 
     return (
-        <div className="flex min-h-screen dashboard-glass-bg">
+        <div className="flex h-screen overflow-hidden dashboard-glass-bg">
             <div className="flex">
                 <Sidebar
                     items={sidebarItems}
@@ -108,7 +111,7 @@ const NurseDashboard = () => {
                 />
 
                 <main className="flex-1 p-8">
-                    <div className="max-w-7xl mx-auto">
+                    <div className="max-w-full mx-auto">
                         {/* Header */}
                         <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                             <div className="flex items-center gap-4 mb-2">

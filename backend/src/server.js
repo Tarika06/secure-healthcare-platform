@@ -6,7 +6,6 @@ const connectDB = require("./config/database");
 const app = express();
 // connectDB() called in startServer
 
-
 // CORS configuration - allow any localhost port for development
 app.use(cors({
   origin: function (origin, callback) {
@@ -30,6 +29,8 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(require("./middleware/checkBlockedIP"));
+
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/patient", require("./routes/patientRoutes"));
 app.use("/api/patient/gdpr", require("./routes/gdprRoutes"));
@@ -41,6 +42,7 @@ app.use("/api/consent", require("./routes/consentRoutes"));
 app.use("/api/mgmt", require("./routes/patientManagement"));
 app.use("/api/pm", require("./routes/patientManagement"));  // Alias
 app.use("/api/gdpr", require("./routes/gdprRoutes"));       // Direct GDPR access
+app.use("/api/alerts", require("./routes/alertRoutes"));
 
 
 const startServer = async () => {
