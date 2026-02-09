@@ -267,4 +267,31 @@ router.get(
     }
 );
 
+// Check if doctor has a pending consent request for specific patient
+router.get(
+    "/pending-status/:patientId",
+    authenticate,
+    authorizeByUserId(["D"]),
+    async (req, res) => {
+        try {
+            const { patientId } = req.params;
+            const doctorId = req.user.userId;
+
+            const consent = await Consent.findOne({
+                patientId,
+                doctorId,
+                status: "PENDING"
+            });
+
+            res.json({
+                pending: !!consent,
+                consent: consent || null
+            });
+        } catch (error) {
+            console.error("Error checking pending consent:", error);
+            res.status(500).json({ message: "Error checking pending consent" });
+        }
+    }
+);
+
 module.exports = router;

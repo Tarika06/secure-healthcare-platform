@@ -17,6 +17,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     }
 
     if (allowedRoles && !allowedRoles.includes(user?.role)) {
+        console.warn('Access Denied details:', { userRole: user?.role, allowedRoles, userId: user?.userId });
         return <Navigate to="/unauthorized" replace />;
     }
 

@@ -10,13 +10,19 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         if (token) {
-            fetchProfile();
+            // Only fetch if user is not already set (prevents double fetch on login)
+            if (!user) {
+                fetchProfile();
+            } else {
+                setIsLoading(false);
+            }
         } else {
             setIsLoading(false);
         }
-    }, [token]);
+    }, [token, user]);
 
     const fetchProfile = async () => {
+        setIsLoading(true);
         try {
             const response = await apiClient.get('/user/profile');
             setUser(response.data);
