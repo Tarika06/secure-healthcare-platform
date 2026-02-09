@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Lock, Heart, ArrowLeft, Eye, EyeOff, CheckCircle, Sparkles } from 'lucide-react';
+import { Shield, Lock, Heart, ArrowLeft, Eye, EyeOff, CheckCircle, Sparkles, Info } from 'lucide-react';
 import logo from '../assets/logo.png';
+import PolicyModal from '../components/PolicyModal';
 
 const LoginPage = () => {
     const [userId, setUserId] = useState('');
     const [password, setPassword] = useState('');
+    const [acceptPrivacyPolicy, setAcceptPrivacyPolicy] = useState(false);
+    const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -22,6 +25,12 @@ const LoginPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        if (!acceptPrivacyPolicy) {
+            setError('You must agree to the Privacy Policy & Data Processing terms to proceed.');
+            return;
+        }
+
         setIsLoading(true);
 
         try {
@@ -207,6 +216,38 @@ const LoginPage = () => {
                             </div>
                         </div>
 
+                        {/* Privacy Policy Checkbox - INTEGRATED FROM MERGE */}
+                        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors group">
+                            <div className="flex items-start">
+                                <div className="flex items-center h-5">
+                                    <input
+                                        id="privacy-policy"
+                                        type="checkbox"
+                                        checked={acceptPrivacyPolicy}
+                                        onChange={(e) => setAcceptPrivacyPolicy(e.target.checked)}
+                                        className="h-4 w-4 text-primary-600 border-slate-300 rounded focus:ring-primary-500 transition-all cursor-pointer"
+                                    />
+                                </div>
+                                <div className="ml-3">
+                                    <label htmlFor="privacy-policy" className="text-sm font-medium text-slate-700 cursor-pointer">
+                                        I agree to the <span className="text-primary-700">Privacy Policy & Data Processing</span> terms
+                                    </label>
+                                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                        <Shield className="h-3 w-3 text-primary-500" />
+                                        Your data is protected under GDPR and HIPAA standards
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPolicyModalOpen(true)}
+                                        className="text-xs text-primary-600 hover:text-primary-700 font-semibold mt-2 flex items-center gap-1 transition-colors"
+                                    >
+                                        <Info className="h-3 w-3" />
+                                        View detailed policies
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Error Message */}
                         {error && (
                             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-3 animate-slide-up">
@@ -225,7 +266,7 @@ const LoginPage = () => {
                         >
                             <span className={`flex items-center justify-center gap-2 transition-all duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
                                 <Lock className="w-5 h-5" />
-                                Sign In Securely
+                                <span className="font-semibold">Sign In Securely</span>
                             </span>
                             {isLoading && (
                                 <div className="absolute inset-0 flex items-center justify-center">
@@ -259,10 +300,16 @@ const LoginPage = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+
+            <PolicyModal
+                isOpen={isPolicyModalOpen}
+                onClose={() => setIsPolicyModalOpen(false)}
+            />
+        </div >
     );
 };
 
 export default LoginPage;
+

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import {
     Shield, Lock, FileCheck, Users, Activity, ArrowRight,
     Heart, Stethoscope, Pill, Clock, CheckCircle,
-    Server, Database, Key, UserCheck, Zap, Globe
+    Server, Database, Key, UserCheck, Zap, Globe, FileText
 } from 'lucide-react';
+import PolicyModal from '../components/PolicyModal';
+import TeamModal from '../components/TeamModal';
 
 // Floating Icons Component
 const FloatingIcons = () => {
@@ -27,7 +29,7 @@ const FloatingIcons = () => {
                     className="floating-icon"
                     style={{
                         ...item.style,
-                        animation: `float - animation 6s ease -in -out infinite`,
+                        animation: `float-animation 6s ease-in-out infinite`,
                         animationDelay: item.style.animationDelay,
                     }}
                 >
@@ -65,13 +67,13 @@ const AnimatedCounter = ({ end, duration = 2000, suffix = '' }) => {
             },
             { threshold: 0.1 }
         );
-        const element = document.getElementById(`counter - ${end} `);
+        const element = document.getElementById(`counter-${end}`);
         if (element) observer.observe(element);
         return () => observer.disconnect();
     }, [end]);
 
     return (
-        <span id={`counter - ${end} `}>
+        <span id={`counter-${end}`}>
             {count.toLocaleString()}{suffix}
         </span>
     );
@@ -79,6 +81,8 @@ const AnimatedCounter = ({ end, duration = 2000, suffix = '' }) => {
 
 const HomePage = () => {
     const [scrollY, setScrollY] = useState(0);
+    const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+    const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => setScrollY(window.scrollY);
@@ -254,7 +258,7 @@ const HomePage = () => {
                                 key={index}
                                 className="card-glass-hover group cursor-pointer"
                             >
-                                <div className={`inline - flex items - center justify - center h - 16 w - 16 rounded - 2xl bg - gradient - to - br ${feature.color} mb - 6 shadow - lg group - hover: scale - 110 transition - transform duration - 300`}>
+                                <div className={`inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br ${feature.color} mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                                     <feature.icon className="h-8 w-8 text-white" />
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-primary-700 transition-colors">
@@ -396,7 +400,14 @@ const HomePage = () => {
                         <div>
                             <h4 className="text-white font-semibold mb-4">Company</h4>
                             <ul className="space-y-2 text-sm">
-                                <li><a href="#" className="hover:text-primary-400 transition-colors">About Us</a></li>
+                                <li>
+                                    <button
+                                        onClick={() => setIsTeamModalOpen(true)}
+                                        className="hover:text-primary-400 transition-colors text-left"
+                                    >
+                                        About Us
+                                    </button>
+                                </li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Careers</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Blog</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Contact</a></li>
@@ -407,7 +418,14 @@ const HomePage = () => {
                         <div>
                             <h4 className="text-white font-semibold mb-4">Legal</h4>
                             <ul className="space-y-2 text-sm">
-                                <li><a href="#" className="hover:text-primary-400 transition-colors">Privacy Policy</a></li>
+                                <li>
+                                    <button
+                                        onClick={() => setIsPolicyModalOpen(true)}
+                                        className="hover:text-primary-400 transition-colors text-left"
+                                    >
+                                        Privacy Policy
+                                    </button>
+                                </li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Terms of Service</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">HIPAA Compliance</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">GDPR</a></li>
@@ -423,6 +441,15 @@ const HomePage = () => {
                     </div>
                 </div>
             </footer>
+
+            <PolicyModal
+                isOpen={isPolicyModalOpen}
+                onClose={() => setIsPolicyModalOpen(false)}
+            />
+            <TeamModal
+                isOpen={isTeamModalOpen}
+                onClose={() => setIsTeamModalOpen(false)}
+            />
         </div>
     );
 };

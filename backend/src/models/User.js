@@ -27,7 +27,8 @@ const UserSchema = new mongoose.Schema({
     default: "ACTIVE"
   },
   isOnline: { type: Boolean, default: false },
-  lastLogin: { type: Date }
+  lastLogin: { type: Date },
+  acceptPrivacyPolicy: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", UserSchema);
