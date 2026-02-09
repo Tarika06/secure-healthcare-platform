@@ -19,9 +19,26 @@ Based on the project requirements and modern best practices:
 
 ---
 
-## 3. Architecture Diagrams
+## 3. Project Requirements
 
-### 3.1 High-Level Architecture
+### 3.1 Functional Requirements
+*   **Automated Builds**: Application builds automatically on code commit.
+*   **CI Pipeline**: Automated tests executed in CI pipeline.
+*   **Containerization**: Application containerized using Docker.
+*   **Cloud Deployment**: Deployed to cloud environment (AWS).
+*   **Observability**: Monitoring and logging enabled.
+
+### 3.2 Non-Functional Requirements
+*   **High Availability**: Designed for uptime and fault tolerance.
+*   **Security**: Secure secrets management and vulnerability scanning.
+*   **Rollback Strategy**: Ability to revert to previous stable versions.
+*   **Code Quality**: Automated linting and static analysis.
+
+---
+
+## 4. Architecture Diagrams
+
+### 4.1 High-Level Architecture
 ```mermaid
 graph TD
     User[Clients] -->|HTTPS| LB[Load Balancer]
@@ -31,7 +48,7 @@ graph TD
     Backend --> Gemini[Gemini API]
 ```
 
-### 3.2 CI/CD Pipeline Flow
+### 4.2 CI/CD Pipeline Flow
 ```mermaid
 graph LR
     Dev[Developer] -->|Push Code| GitHub[GitHub Repo]
@@ -48,9 +65,31 @@ graph LR
     end
 ```
 
+### 4.3 Deployment Flow
+```mermaid
+graph TD
+    subgraph "CI/CD (GitHub Actions)"
+        Code[Code Commit] --> Build[Build & Test]
+        Build -->|Success| Image[Build Docker Image]
+        Image -->|Push| Registry[Docker Registry (ECR/DockerHub)]
+    end
+    
+    subgraph "Deployment (AWS)"
+        Registry -->|Pull| Orchestrator[ECS / Kubernetes]
+        Orchestrator -->|Deploy| Containers[App Containers]
+        Containers -->|Health Check| LB[Load Balancer]
+        LB -->|Traffic| Users[Live Traffic]
+    end
+
+    subgraph "Rollback Strategy"
+        Monitor[CloudWatch Alarms] -->|Failure| Rollback[Revert to Previous Tag]
+        Rollback --> Orchestrator
+    end
+```
+
 ---
 
-## 4. Implementation Phases
+## 5. Implementation Phases
 
 ### Phase 1: Planning & Setup
 *   **Repository Setup**: GitHub repository initialized with main and feature branches.
@@ -162,19 +201,19 @@ volumes:
 
 ---
 
-## 5. Deliverables Checklist
+## 6. Deliverables Checklist
 - [x] Version Control (GitHub) Status: **Active**
 - [ ] CI/CD Pipeline (`.github/workflows/ci.yml`) Status: **Drafted**
 - [ ] Dockerfiles (Frontend/Backend) Status: **Drafted**
 - [ ] Infrastructure Code (Terraform) Status: **Pending**
 - [ ] Final Report Status: **Drafted (This Document)**
 
-## 6. Known Issues & Improvements
+## 7. Known Issues & Improvements
 *   **Current**: No automated rollback strategy yet (planned for Sprint 3).
 *   **Improvement**: Implement Blue/Green deployment to minimize downtime.
 *   **Improvement**: Add end-to-end (E2E) testing with Cypress in the CI pipeline.
 
-## 7. Bonus / Advanced Strategy
+## 8. Bonus / Advanced Strategy
 *   **Cost Optimization**: Use AWS Spot Instances for non-critical workloads.
 *   **Auto-Scaling**: Configure AWS Auto Scaling Groups (ASG) based on CPU/Memory usage.
 *   **Disaster Recovery**: Automated database backups to S3 with cross-region replication.
