@@ -71,7 +71,7 @@ graph TD
     subgraph "CI/CD (GitHub Actions)"
         Code[Code Commit] --> Build[Build & Test]
         Build -->|Success| Image[Build Docker Image]
-        Image -->|Push| Registry[Docker Registry (ECR/DockerHub)]
+        Image -->|Push| Registry["Docker Registry (ECR/DockerHub)"]
     end
     
     subgraph "Deployment (AWS)"
