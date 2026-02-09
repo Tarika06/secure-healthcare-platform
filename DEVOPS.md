@@ -1,4 +1,4 @@
-# DevOps Documentation for Sprint 2 - SecureCare
+# DevOps Documentation for SecureCare +
 
 ## 1. Overview
 This document outlines the DevOps strategy, tools, and implementation plan for the **SecureCare** project for Sprint 2. The goal is to establish a robust CI/CD pipeline, containerize the application, and prepare for cloud deployment with monitoring and security best practices.
