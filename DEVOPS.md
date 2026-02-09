@@ -25,8 +25,8 @@ Based on the project requirements and modern best practices:
 ```mermaid
 graph TD
     User[Clients] -->|HTTPS| LB[Load Balancer]
-    LB --> Frontend[Frontend (React)]
-    Frontend -->|API Calls| Backend[Backend (Node.js/Express)]
+    LB --> Frontend["Frontend (React)"]
+    Frontend -->|API Calls| Backend["Backend (Node.js/Express)"]
     Backend --> DB[(MongoDB)]
     Backend --> Gemini[Gemini API]
 ```
@@ -39,7 +39,7 @@ graph LR
     subgraph CI Pipeline
         CI --> Build[Build & Lint]
         Build --> Test[Unit Tests]
-        Test --> Scan[Security Scan (Snyk)]
+        Test --> Scan["Security Scan (Snyk)"]
         Scan --> Docker[Build Docker Image]
     end
     subgraph CD Pipeline
