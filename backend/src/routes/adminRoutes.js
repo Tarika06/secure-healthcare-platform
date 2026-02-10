@@ -81,6 +81,15 @@ router.get("/users", async (req, res) => {
 
     const total = await User.countDocuments(query);
 
+    await auditService.logAuditEvent({
+      userId: req.user.userId,
+      action: "ADMIN_USER_SEARCH",
+      resource: "/api/admin/users",
+      method: "GET",
+      outcome: "SUCCESS",
+      details: { filters: { role, status, search }, resultCount: users.length }
+    });
+
     res.json({
       users,
       pagination: {
@@ -110,6 +119,8 @@ router.get("/users/:userId", async (req, res) => {
     }
 
     const roleHistory = await RoleHistory.getUserHistory(req.params.userId);
+
+    await auditService.logDataAccess(req.user.userId, user.userId, "ADMIN_VIEW_USER_DETAILS");
 
     res.json({ user, roleHistory });
   } catch (error) {
@@ -284,10 +295,89 @@ router.get("/audit-logs", async (req, res) => {
     const options = { skip: (page - 1) * limit, limit: parseInt(limit) };
     const logs = await auditService.queryAuditLogs(filters, options);
 
+    await auditService.logAuditEvent({
+      userId: req.user.userId,
+      action: "ADMIN_VIEW_AUDIT_LOGS",
+      resource: "/api/admin/audit-logs",
+      method: "GET",
+      outcome: "SUCCESS",
+      complianceCategory: "SECURITY"
+    });
+
     res.json({ logs, pagination: { page: parseInt(page), limit: parseInt(limit) } });
   } catch (error) {
     console.error("Error fetching audit logs:", error);
     res.status(500).json({ message: "Error fetching audit logs" });
+  }
+});
+
+/**
+ * GET /api/admin/audit-logs/export
+ * Export audit logs as CSV
+ */
+router.get("/audit-logs/export", async (req, res) => {
+  try {
+    const logs = await auditService.queryAuditLogs({}, { limit: 1000 }); // Export last 1000 logs
+
+    // Simple CSV conversion
+    const headers = "Timestamp,User,Target,Action,Resource,Outcome,Compliance,IP\n";
+    const rows = logs.map(log => {
+      return `${new Date(log.timestamp).toISOString()},${log.userId},${log.targetUserId || ""},${log.action},${log.resource},${log.outcome},${log.complianceCategory || "INTERNAL"},${log.ipAddress}\n`;
+    }).join("");
+
+    await auditService.logAuditEvent({
+      userId: req.user.userId,
+      action: "ADMIN_EXPORT_AUDIT_LOGS",
+      resource: "/api/admin/audit-logs/export",
+      method: "GET",
+      outcome: "SUCCESS",
+      complianceCategory: "SECURITY"
+    });
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=audit_logs.csv");
+    res.status(200).send(headers + rows);
+  } catch (error) {
+    console.error("Export Error:", error);
+    res.status(500).json({ message: "Export failed" });
+  }
+});
+
+/**
+ * GET /api/admin/system/verify-logs
+ * Verify integrity of audit logs
+ */
+router.get("/system/verify-logs", async (req, res) => {
+  try {
+    const LoggerService = require("../services/LoggerService");
+    const result = await LoggerService.verifyChain();
+
+    if (result.valid) {
+      await auditService.logAuditEvent({
+        userId: req.user.userId,
+        action: "LOG_VERIFICATION",
+        resource: "/api/admin/system/verify-logs",
+        method: "GET",
+        outcome: "SUCCESS",
+        complianceCategory: "SECURITY",
+        details: { count: result.count }
+      });
+      res.json({ message: "Log integrity verified", ...result });
+    } else {
+      await auditService.logAuditEvent({
+        userId: req.user.userId,
+        action: "LOG_VERIFICATION",
+        resource: "/api/admin/system/verify-logs",
+        method: "GET",
+        outcome: "FAILURE",
+        complianceCategory: "SECURITY",
+        details: { errors: result.errors }
+      });
+      res.status(500).json({ message: "Log integrity check failed", ...result });
+    }
+  } catch (error) {
+    console.error("Verification Error:", error);
+    res.status(500).json({ message: "Verification failed" });
   }
 });
 

@@ -203,11 +203,11 @@ const DoctorDashboard = () => {
     ];
 
     return (
-        <div className="flex min-h-screen dashboard-bg-doctor bg-dots">
+        <div className="flex h-screen overflow-hidden dashboard-bg-doctor bg-dots">
             <Sidebar role="DOCTOR" onLogout={handleLogout} />
 
             <div className="flex-1 overflow-y-auto">
-                <div className="max-w-7xl mx-auto px-6 py-8">
+                <div className="max-w-full mx-auto px-6 py-8">
                     {/* Header */}
                     <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                         <div className="flex items-center gap-4 mb-2">
@@ -240,7 +240,7 @@ const DoctorDashboard = () => {
 
                     {/* Overview Tab */}
                     {activeTab === 'overview' && (
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
                             <StatCard icon={FileText} label="Records Created" value={dashboardStats?.recordsCreated} colorClass="icon-container-blue" delay={100} />
                             <StatCard icon={CheckCircle} label="Active Consents" value={dashboardStats?.activeConsents} colorClass="icon-container-green" delay={200} />
                             <StatCard icon={AlertCircle} label="Pending Requests" value={dashboardStats?.pendingRequests} colorClass="icon-container-amber" delay={300} />
@@ -250,7 +250,7 @@ const DoctorDashboard = () => {
 
                     {/* My Records Tab */}
                     {activeTab === 'myrecords' && (
-                        <div className={`transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h2 className="text-2xl font-bold text-slate-900">My Created Records</h2>
@@ -312,7 +312,7 @@ const DoctorDashboard = () => {
 
                     {/* Create Report Tab */}
                     {activeTab === 'create' && (
-                        <div className={`max-w-3xl transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`max-w-3xl animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="mb-6">
                                 <h2 className="text-2xl font-bold text-slate-900">Create Medical Report</h2>
                                 <p className="text-slate-500 mt-1">Generate a new medical record for a patient</p>
@@ -379,7 +379,7 @@ const DoctorDashboard = () => {
 
                     {/* Patients Tab */}
                     {activeTab === 'patients' && (
-                        <div className={`transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="mb-6">
                                 <h2 className="text-2xl font-bold text-slate-900">Patient Management</h2>
                                 <p className="text-slate-500 mt-1">View and manage patient records</p>

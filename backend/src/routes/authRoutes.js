@@ -169,4 +169,35 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.post("/logout", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const ipAddress = req.ip;
+    const userAgent = req.get("User-Agent");
+
+    await auditService.logAuditEvent({
+      userId: userId || "UNKNOWN",
+      action: "LOGOUT",
+      resource: "/api/auth/logout",
+      method: "POST",
+      outcome: "SUCCESS",
+      ipAddress,
+      userAgent
+    });
+
+
+
+    if (userId) {
+      await User.findOneAndUpdate({ userId }, { isOnline: false });
+    } else {
+      // Silent fail or just ignore if no userId
+    }
+
+    res.json({ message: "Logout successful" });
+  } catch (e) {
+    console.error("Logout error:", e);
+    res.status(500).json({ message: "Logout failed" });
+  }
+});
+
 module.exports = router;

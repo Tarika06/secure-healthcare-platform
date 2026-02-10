@@ -6,6 +6,7 @@ import MedicalCard from '../../components/MedicalCard';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
+import gdprApi from '../../api/gdprApi';
 
 const PatientDashboard = () => {
     const { user, logout } = useAuth();
@@ -18,6 +19,8 @@ const PatientDashboard = () => {
     const [activeConsents, setActiveConsents] = useState([]);
     const [accessHistory, setAccessHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [downloading, setDownloading] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -70,7 +73,67 @@ const PatientDashboard = () => {
         catch (error) { alert('Failed to revoke consent'); }
     };
 
-    const handleLogout = () => { logout(); navigate('/login'); };
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
+
+    const handleDownloadData = async (format) => {
+        try {
+            setDownloading(true);
+            if (format === 'json') {
+                const data = await gdprApi.getPersonalData();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `my_data_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else if (format === 'pdf') {
+                const blob = await gdprApi.exportDataPDF();
+                const url = window.URL.createObjectURL(new Blob([blob]));
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `my_health_record_${new Date().toISOString().split('T')[0]}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+            alert('Data export started successfully.');
+        } catch (error) {
+            console.error('Download error:', error);
+            alert('Failed to download data. Please try again.');
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        const confirmed = window.confirm(
+            "⚠️ DANGER ZONE: Are you sure you want to delete your account?\n\n" +
+            "This action cannot be undone. All your personal data will be anonymized or permanently deleted in accordance with GDPR/HIPAA regulations."
+        );
+
+        if (confirmed) {
+            const doubleCheck = window.prompt("Type 'DELETE' to confirm account deletion:");
+            if (doubleCheck === 'DELETE') {
+                try {
+                    setDeleting(true);
+                    await gdprApi.requestErasure();
+                    alert('Your account deletion request has been processed. You will now be logged out.');
+                    await logout();
+                    navigate('/login');
+                } catch (error) {
+                    console.error('Deletion error:', error);
+                    alert('Failed to process deletion request: ' + (error.response?.data?.error || error.message));
+                } finally {
+                    setDeleting(false);
+                }
+            }
+        }
+    };
 
     const StatCard = ({ icon: Icon, label, value, colorClass, delay }) => (
         <div
@@ -93,7 +156,8 @@ const PatientDashboard = () => {
         { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'records', label: 'My Records', icon: FileText },
         { id: 'consent', label: 'Consent Manager', icon: Shield, badge: pendingConsents.length },
-        { id: 'history', label: 'Access History', icon: Eye }
+        { id: 'history', label: 'Access History', icon: Eye },
+        { id: 'privacy', label: 'Privacy & GDPR', icon: Shield }
     ];
 
     if (loading) return (
@@ -115,9 +179,9 @@ const PatientDashboard = () => {
             <div className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto px-6 py-8">
                     {/* Header */}
-                    <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                    <div className={`mb-8 transition-all duration-700 border-none shadow-none bg-transparent outline-none ring-0 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                         <div className="flex items-center gap-4 mb-2">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center shadow-lg shadow-primary-500/25">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center">
                                 <Heart className="h-7 w-7 text-white" />
                             </div>
                             <div>
@@ -152,7 +216,7 @@ const PatientDashboard = () => {
 
                     {/* Overview Tab */}
                     {activeTab === 'overview' && (
-                        <div className="space-y-8">
+                        <div className="space-y-8 animate-fade-in">
                             {/* Stats */}
                             <div className="grid md:grid-cols-3 gap-6">
                                 <StatCard icon={FileText} label="Total Records" value={records.length} colorClass="icon-container-blue" delay={100} />
@@ -212,7 +276,7 @@ const PatientDashboard = () => {
 
                     {/* Records Tab */}
                     {activeTab === 'records' && (
-                        <div className={`transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h2 className="text-2xl font-bold text-slate-900">My Medical Records</h2>
@@ -242,7 +306,7 @@ const PatientDashboard = () => {
 
                     {/* Consent Tab */}
                     {activeTab === 'consent' && (
-                        <div className={`space-y-8 transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`space-y-8 animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             {/* Pending Requests */}
                             <div>
                                 <div className="flex items-center gap-3 mb-6">
@@ -333,7 +397,7 @@ const PatientDashboard = () => {
 
                     {/* Access History Tab */}
                     {activeTab === 'history' && (
-                        <div className={`transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="mb-6">
                                 <h2 className="text-2xl font-bold text-slate-900">Access History</h2>
                                 <p className="text-slate-500 mt-1">Track who has accessed your medical records (GDPR compliance)</p>
@@ -370,6 +434,74 @@ const PatientDashboard = () => {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Privacy & GDPR Tab */}
+                    {activeTab === 'privacy' && (
+                        <div className={`space-y-8 animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                            <div className="mb-6">
+                                <h2 className="text-2xl font-bold text-slate-900">Data Privacy & Rights</h2>
+                                <p className="text-slate-500 mt-1">Manage your data portability and check compliance (GDPR & HIPAA)</p>
+                            </div>
+
+                            {/* Data Portability */}
+                            <div className="card">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                        <FileText className="w-6 h-6 text-blue-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-bold text-slate-900">Data Portability (Right to Access)</h3>
+                                        <p className="text-slate-500 text-sm mt-1 mb-4">
+                                            Download a copy of all your personal data and medical records stored in our system.
+                                            You can choose between a machine-readable JSON format or a readable PDF report.
+                                        </p>
+                                        <div className="flex flex-wrap gap-3">
+                                            <button
+                                                onClick={() => handleDownloadData('json')}
+                                                disabled={downloading}
+                                                className="btn-secondary flex items-center gap-2"
+                                            >
+                                                {downloading ? <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" /> : <FileText className="w-4 h-4" />}
+                                                Export as JSON
+                                            </button>
+                                            <button
+                                                onClick={() => handleDownloadData('pdf')}
+                                                disabled={downloading}
+                                                className="btn-primary flex items-center gap-2"
+                                            >
+                                                {downloading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FileText className="w-4 h-4" />}
+                                                Export as PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right to Erasure */}
+                            <div className="card border-l-4 border-red-500 bg-red-50/30">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                                        <Shield className="w-6 h-6 text-red-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-bold text-slate-900">Right to Erasure (Delete Account)</h3>
+                                        <p className="text-slate-500 text-sm mt-1 mb-4">
+                                            Permanently delete your account and anonymize your medical records.
+                                            <span className="font-bold text-red-600 block mt-1">Warning: This action is irreversible.</span>
+                                        </p>
+                                        <button
+                                            onClick={handleDeleteAccount}
+                                            disabled={deleting}
+                                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 shadow-lg shadow-red-500/20"
+                                        >
+                                            {deleting ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <XCircle className="w-4 h-4" />}
+                                            Delete My Account
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>

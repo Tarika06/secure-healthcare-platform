@@ -36,6 +36,7 @@ export default {
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', 'sans-serif'],
+                heading: ['Outfit', 'sans-serif'],
             },
             animation: {
                 'fade-in': 'fadeIn 0.3s ease-in-out',

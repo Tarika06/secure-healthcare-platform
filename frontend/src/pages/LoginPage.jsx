@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Lock, Heart, ArrowLeft, Eye, EyeOff, CheckCircle, Sparkles } from 'lucide-react';
+import { Shield, Lock, Heart, ArrowLeft, Eye, EyeOff, CheckCircle, Sparkles, Info } from 'lucide-react';
 import logo from '../assets/logo.png';
+import PolicyModal from '../components/PolicyModal';
 
 const LoginPage = () => {
     const [userId, setUserId] = useState('');
     const [password, setPassword] = useState('');
+    const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -22,6 +24,7 @@ const LoginPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
         setIsLoading(true);
 
         try {
@@ -90,8 +93,8 @@ const LoginPage = () => {
 
                     {/* Title */}
                     <div className={`text-center transition-all duration-1000 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                        <h1 className="text-5xl font-bold text-white mb-4">
-                            Secure<span className="text-gradient-light">Care</span><span className="text-primary-300">+</span>
+                        <h1 className="text-6xl font-heading font-extrabold text-white mb-4 tracking-tight">
+                            Secure<span className="text-primary-200">Care</span><span className="text-primary-400">+</span>
                         </h1>
                         <p className="text-xl text-slate-300 mb-2">Enterprise Healthcare Platform</p>
                         <p className="text-slate-400 max-w-md">
@@ -132,8 +135,8 @@ const LoginPage = () => {
             </div>
 
             {/* Right Side - Login Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 via-white to-primary-50/30">
-                <div className={`w-full max-w-md transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gradient-to-br from-slate-100 via-white to-primary-50">
+                <div className={`w-full max-w-md bg-white p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                     {/* Back to Home Link */}
                     <Link
                         to="/"
@@ -146,8 +149,10 @@ const LoginPage = () => {
                     {/* Mobile Logo */}
                     <div className="lg:hidden text-center mb-8">
                         <img src={logo} alt="SecureCare" className="w-20 h-20 mx-auto mb-4" />
-                        <h1 className="text-2xl font-bold text-slate-900">
-                            SecureCare<span className="text-primary-600">+</span>
+                        <h1 className="text-3xl font-heading font-bold text-slate-900">
+                            <span className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Secure</span>
+                            <span className="text-primary-600">Care</span>
+                            <span className="text-primary-400">+</span>
                         </h1>
                     </div>
 
@@ -155,9 +160,9 @@ const LoginPage = () => {
                     <div className="mb-8">
                         <div className="flex items-center gap-2 mb-2">
                             <Sparkles className="w-5 h-5 text-primary-500" />
-                            <span className="text-sm font-medium text-primary-600">Welcome back</span>
+                            <span className="text-sm font-medium text-primary-600 uppercase tracking-wider">Welcome back</span>
                         </div>
-                        <h2 className="text-3xl font-bold text-slate-900 mb-2">Sign in to your account</h2>
+                        <h2 className="text-3xl font-heading font-bold text-slate-900 mb-2">Sign in to your account</h2>
                         <p className="text-slate-500">Access your secure healthcare portal</p>
                     </div>
 
@@ -165,7 +170,7 @@ const LoginPage = () => {
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {/* User ID Field */}
                         <div className="group">
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            <label className="block text-sm font-heading font-semibold text-slate-700 mb-2">
                                 User ID
                             </label>
                             <div className="relative">
@@ -173,7 +178,7 @@ const LoginPage = () => {
                                     type="text"
                                     value={userId}
                                     onChange={(e) => setUserId(e.target.value)}
-                                    className="input-field pr-12"
+                                    className="input-field pr-12 font-sans"
                                     placeholder="e.g., P001, D001, N001, L001, A001"
                                     required
                                 />
@@ -185,7 +190,7 @@ const LoginPage = () => {
 
                         {/* Password Field */}
                         <div className="group">
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            <label className="block text-sm font-heading font-semibold text-slate-700 mb-2">
                                 Password
                             </label>
                             <div className="relative">
@@ -193,7 +198,7 @@ const LoginPage = () => {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="input-field pr-12"
+                                    className="input-field pr-12 font-sans"
                                     placeholder="Enter your password"
                                     required
                                 />
@@ -205,6 +210,24 @@ const LoginPage = () => {
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
+                        </div>
+
+                        {/* Implied Consent Notice */}
+                        <div className="mt-6 text-center">
+                            <p className="text-xs text-slate-500">
+                                By signing in, you agree to our{' '}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPolicyModalOpen(true)}
+                                    className="text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors"
+                                >
+                                    Privacy Policy & Data Processing Terms
+                                </button>
+                            </p>
+                            <p className="text-[10px] text-slate-400 mt-1 flex items-center justify-center gap-1">
+                                <Shield className="h-3 w-3" />
+                                Protected by GDPR & HIPAA Standards
+                            </p>
                         </div>
 
                         {/* Error Message */}
@@ -225,7 +248,7 @@ const LoginPage = () => {
                         >
                             <span className={`flex items-center justify-center gap-2 transition-all duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
                                 <Lock className="w-5 h-5" />
-                                Sign In Securely
+                                <span className="font-semibold">Sign In Securely</span>
                             </span>
                             {isLoading && (
                                 <div className="absolute inset-0 flex items-center justify-center">
@@ -259,10 +282,16 @@ const LoginPage = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+
+            <PolicyModal
+                isOpen={isPolicyModalOpen}
+                onClose={() => setIsPolicyModalOpen(false)}
+            />
+        </div >
     );
 };
 
 export default LoginPage;
+

@@ -12,6 +12,7 @@ const authenticate = require("../middleware/authenticate");
 const authorizeByUserId = require("../middleware/authorizeByUserId");
 const AuditLog = require("../models/AuditLog");
 const User = require("../models/User");
+const auditService = require("../services/auditService");
 
 /**
  * GET /api/patient/dashboard
@@ -22,6 +23,7 @@ router.get(
   authenticate,
   authorizeByUserId(["P"]),
   (req, res) => {
+    auditService.logDataAccess(req.user.userId, req.user.userId, "VIEW_DASHBOARD");
     res.json({
       message: "Patient access granted",
       user: req.user

@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 
-const Modal = ({ isOpen, onClose, title, icon: Icon = AlertTriangle, children, size = 'md' }) => {
+const Modal = ({ isOpen, onClose, title, icon: Icon = AlertTriangle, children, size = 'md', maxWidth }) => {
     if (!isOpen) return null;
 
     const sizeClasses = {
@@ -10,6 +11,8 @@ const Modal = ({ isOpen, onClose, title, icon: Icon = AlertTriangle, children, s
         lg: 'max-w-lg',
         xl: 'max-w-xl'
     };
+
+    const widthClass = maxWidth || sizeClasses[size];
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -20,7 +23,7 @@ const Modal = ({ isOpen, onClose, title, icon: Icon = AlertTriangle, children, s
             />
 
             {/* Modal */}
-            <div className={`relative w-full ${sizeClasses[size]} bg-white rounded-2xl shadow-2xl animate-slide-up overflow-hidden`}>
+            <div className={`relative w-full ${widthClass} bg-white rounded-2xl shadow-2xl animate-slide-up overflow-hidden`}>
                 {/* Header */}
                 <div className="flex items-center gap-4 p-6 border-b border-slate-100">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center flex-shrink-0">
@@ -43,5 +46,6 @@ const Modal = ({ isOpen, onClose, title, icon: Icon = AlertTriangle, children, s
         </div>
     );
 };
+
 
 export default Modal;

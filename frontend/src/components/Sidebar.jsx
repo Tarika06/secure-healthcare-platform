@@ -169,7 +169,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
     }
 
     return (
-        <div className="sidebar-glass w-72">
+        <div className="sidebar-glass w-72 h-screen flex flex-col sticky top-0">
             {/* Header with Logo */}
             <div className="p-6 border-b border-slate-100">
                 <div className="flex items-center gap-3">

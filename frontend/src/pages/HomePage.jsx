@@ -3,9 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Shield, Lock, FileCheck, Users, Activity, ArrowRight,
-    Heart, CheckCircle, Server, Key, Moon, Menu, X, Zap,
-    ChevronLeft, ChevronRight, Phone, Mail
+    Heart, Stethoscope, Pill, Clock, CheckCircle,
+    Server, Database, Key, UserCheck, Zap, Globe, FileText,
+    Moon, Menu, X, ChevronLeft, ChevronRight, Phone, Mail
 } from 'lucide-react';
+import PolicyModal from '../components/PolicyModal';
+import TeamModal from '../components/TeamModal';
 import HeroSlideshow from '../components/HeroSlideshow';
 
 // -------------------------------------------------------------------
@@ -33,6 +36,7 @@ const RevealGroup = ({ children, className = "", staggerDelay = 100 }) => {
         <div ref={ref} className={className}>
             {React.Children.map(children, (child, index) => (
                 <div
+                    key={index}
                     style={{ transitionDelay: `${index * staggerDelay}ms` }}
                     className={`transition-all duration-1000 ease-out transform ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                         }`}
@@ -44,9 +48,6 @@ const RevealGroup = ({ children, className = "", staggerDelay = 100 }) => {
     );
 };
 
-// -------------------------------------------------------------------
-// COMPONENT: Feature Card
-// -------------------------------------------------------------------
 // -------------------------------------------------------------------
 // COMPONENT: Feature Card
 // -------------------------------------------------------------------
@@ -67,6 +68,8 @@ const FeatureCard = ({ icon: Icon, title, description, color }) => (
 const HomePage = () => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+    const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
 
     // Explicit Dark Mode State
     const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -76,8 +79,6 @@ const HomePage = () => {
         }
         return false;
     });
-
-    // Explicit Dark Mode State
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -326,7 +327,7 @@ const HomePage = () => {
 
             <footer id="contact" className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-20">
                 <div className="max-w-7xl mx-auto px-6">
-                    <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8 items-start mb-16">
                         <div className="text-left">
                             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Contact Us</h2>
                             <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md">
@@ -362,7 +363,54 @@ const HomePage = () => {
                                 Empowering healthcare providers with military-grade security and seamless data management solutions.
                             </p>
                         </div>
-                    </div>
+
+                        {/* Product */}
+                        <div>
+                            <h4 className="text-white font-semibold mb-4">Product</h4>
+                            <ul className="space-y-2 text-sm">
+                                <li><a href="#" className="hover:text-primary-400 transition-colors">Features</a></li>
+                                <li><a href="#" className="hover:text-primary-400 transition-colors">Security</a></li>
+                                <li><a href="#" className="hover:text-primary-400 transition-colors">Pricing</a></li>
+                                <li><a href="#" className="hover:text-primary-400 transition-colors">Documentation</a></li>
+                            </ul>
+                        </div>
+
+                        {/* Company */}
+                        <div>
+                            <h4 className="text-white font-semibold mb-4">Company</h4>
+                            <ul className="space-y-2 text-sm">
+                                <li>
+                                    <button
+                                        onClick={() => setIsTeamModalOpen(true)}
+                                        className="hover:text-primary-400 transition-colors text-left"
+                                    >
+                                        About Us
+                                    </button>
+                                </li>
+                                <li><a href="#" className="hover:text-primary-400 transition-colors">Careers</a></li>
+                                <li><a href="#" className="hover:text-primary-400 transition-colors">Blog</a></li>
+                                <li><a href="#" className="hover:text-primary-400 transition-colors">Contact</a></li>
+                            </ul>
+                        </div>
+
+                        {/* Legal */}
+                        <div>
+                            <h4 className="text-white font-semibold mb-4">Legal</h4>
+                            <ul className="space-y-2 text-sm">
+                                <li>
+                                    <button
+                                        onClick={() => setIsPolicyModalOpen(true)}
+                                        className="hover:text-primary-400 transition-colors text-left"
+                                    >
+                                        Privacy Policy
+                                    </button>
+                                </li>
+                                <li><a href="#" className="hover:text-primary-400 transition-colors">Terms of Service</a></li>
+                                <li><a href="#" className="hover:text-primary-400 transition-colors">HIPAA Compliance</a></li>
+                                <li><a href="#" className="hover:text-primary-400 transition-colors">GDPR</a></li>
+                            </ul>
+                        </div>
+                    </div >
 
                     <div className="pt-12 border-t border-slate-200 dark:border-slate-800 text-center">
                         <p className="text-slate-500 dark:text-slate-400 text-sm">
@@ -370,9 +418,18 @@ const HomePage = () => {
                             GDPR & HIPAA Compliant Healthcare Platform
                         </p>
                     </div>
-                </div>
-            </footer>
-        </div>
+                </div >
+            </footer >
+
+            <PolicyModal
+                isOpen={isPolicyModalOpen}
+                onClose={() => setIsPolicyModalOpen(false)}
+            />
+            <TeamModal
+                isOpen={isTeamModalOpen}
+                onClose={() => setIsTeamModalOpen(false)}
+            />
+        </div >
     );
 };
 
