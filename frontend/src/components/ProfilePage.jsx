@@ -164,7 +164,7 @@ const ProfilePage = ({ role, dashboardPath }) => {
                 {/* Back Button */}
                 <button
                     onClick={() => navigate(dashboardPath)}
-                    className={`flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-8 transition-all duration-300 group ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                    className={`flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-8 transition-all duration-300 group ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 >
                     <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     <span className="font-medium">Back to Dashboard</span>
@@ -180,7 +180,7 @@ const ProfilePage = ({ role, dashboardPath }) => {
                     </div>
 
                     {/* Name & Role */}
-                    <h1 className="text-3xl font-bold text-slate-900 mb-2">
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
                         {user?.firstName} {user?.lastName}
                     </h1>
                     <div className="flex items-center justify-center gap-2 mb-4">
@@ -188,12 +188,12 @@ const ProfilePage = ({ role, dashboardPath }) => {
                             {getRoleLabel()}
                         </span>
                     </div>
-                    <p className="text-slate-500">
+                    <p className="text-slate-500 dark:text-slate-400">
                         {user?.email}
                     </p>
 
                     {/* Status Badge */}
-                    <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full">
+                    <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full">
                         <CheckCircle className="w-4 h-4" />
                         <span className="text-sm font-medium">Account Verified</span>
                     </div>
@@ -202,7 +202,7 @@ const ProfilePage = ({ role, dashboardPath }) => {
                 {/* Profile Details Card */}
                 <div className={`profile-card transition-all duration-700 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold text-slate-900">Profile Information</h2>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Profile Information</h2>
                         <button
                             onClick={() => setShowEditModal(true)}
                             className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors"
@@ -220,8 +220,8 @@ const ProfilePage = ({ role, dashboardPath }) => {
                                 style={{ animationDelay: `${300 + idx * 100}ms` }}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center`}>
-                                        <field.icon className="w-5 h-5 text-slate-500" />
+                                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center`}>
+                                        <field.icon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                                     </div>
                                     <span className="profile-label">{field.label}</span>
                                 </div>
@@ -238,16 +238,16 @@ const ProfilePage = ({ role, dashboardPath }) => {
                             <Shield className="w-6 h-6 text-primary-600" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900">Security</h2>
-                            <p className="text-sm text-slate-500">Manage your account security</p>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Security</h2>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">Manage your account security</p>
                         </div>
                     </div>
 
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
                             <div>
-                                <p className="font-medium text-slate-900">Password</p>
-                                <p className="text-sm text-slate-500">Change your account password</p>
+                                <p className="font-medium text-slate-900 dark:text-white">Password</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Change your account password</p>
                             </div>
                             <button
                                 onClick={() => setShowPasswordModal(true)}
@@ -257,10 +257,10 @@ const ProfilePage = ({ role, dashboardPath }) => {
                             </button>
                         </div>
 
-                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
                             <div>
-                                <p className="font-medium text-slate-900">Two-Factor Authentication</p>
-                                <p className="text-sm text-slate-500">Add an extra layer of security</p>
+                                <p className="font-medium text-slate-900 dark:text-white">Two-Factor Authentication</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Add an extra layer of security</p>
                             </div>
                             <button className="btn-primary text-sm" disabled>Coming Soon</button>
                         </div>
@@ -271,7 +271,7 @@ const ProfilePage = ({ role, dashboardPath }) => {
                 <div className={`mt-8 text-center transition-all duration-700 delay-600 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                     <button
                         onClick={() => { logout(); navigate('/login'); }}
-                        className="text-red-600 hover:text-red-700 font-medium transition-colors"
+                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors"
                     >
                         Sign Out of Account
                     </button>
@@ -281,9 +281,9 @@ const ProfilePage = ({ role, dashboardPath }) => {
             {/* Edit Profile Modal */}
             {showEditModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slideUp">
-                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <h3 className="text-xl font-bold text-slate-900">Edit Profile</h3>
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slideUp border dark:border-slate-800">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Edit Profile</h3>
                             <button onClick={() => { setShowEditModal(false); setError(''); setSuccess(''); }} className="text-slate-400 hover:text-slate-600">
                                 <X className="w-6 h-6" />
                             </button>
@@ -305,46 +305,46 @@ const ProfilePage = ({ role, dashboardPath }) => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">First Name</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">First Name</label>
                                     <input
                                         type="text"
                                         value={editForm.firstName}
                                         onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                                        className="input-field"
+                                        className="input-field dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Last Name</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Last Name</label>
                                     <input
                                         type="text"
                                         value={editForm.lastName}
                                         onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                                        className="input-field"
+                                        className="input-field dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                                         required
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
                                 <input
                                     type="tel"
                                     value={editForm.phone}
                                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                                    className="input-field"
+                                    className="input-field dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                                     placeholder="+1 (555) 000-0000"
                                 />
                             </div>
 
                             {role === 'DOCTOR' && (
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Specialty</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Specialty</label>
                                     <input
                                         type="text"
                                         value={editForm.specialty}
                                         onChange={(e) => setEditForm({ ...editForm, specialty: e.target.value })}
-                                        className="input-field"
+                                        className="input-field dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                                         placeholder="e.g., Cardiology, Pediatrics"
                                     />
                                 </div>
@@ -374,13 +374,13 @@ const ProfilePage = ({ role, dashboardPath }) => {
             {/* Change Password Modal */}
             {showPasswordModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slideUp">
-                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slideUp border dark:border-slate-800">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-                                    <Lock className="w-5 h-5 text-amber-600" />
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center">
+                                    <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900">Change Password</h3>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Change Password</h3>
                             </div>
                             <button onClick={() => { setShowPasswordModal(false); setError(''); setSuccess(''); setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' }); }} className="text-slate-400 hover:text-slate-600">
                                 <X className="w-6 h-6" />
@@ -402,13 +402,13 @@ const ProfilePage = ({ role, dashboardPath }) => {
                             )}
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Current Password</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Current Password</label>
                                 <div className="relative">
                                     <input
                                         type={showCurrentPassword ? 'text' : 'password'}
                                         value={passwordForm.currentPassword}
                                         onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                                        className="input-field pr-12"
+                                        className="input-field dark:bg-slate-800 dark:border-slate-700 dark:text-white pr-12"
                                         required
                                         placeholder="Enter your current password"
                                     />
@@ -423,13 +423,13 @@ const ProfilePage = ({ role, dashboardPath }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">New Password</label>
                                 <div className="relative">
                                     <input
                                         type={showNewPassword ? 'text' : 'password'}
                                         value={passwordForm.newPassword}
                                         onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                                        className="input-field pr-12"
+                                        className="input-field dark:bg-slate-800 dark:border-slate-700 dark:text-white pr-12"
                                         required
                                         placeholder="Enter new password (min 6 characters)"
                                     />
@@ -444,12 +444,12 @@ const ProfilePage = ({ role, dashboardPath }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Confirm New Password</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Confirm New Password</label>
                                 <input
                                     type="password"
                                     value={passwordForm.confirmPassword}
                                     onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                                    className="input-field"
+                                    className="input-field dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                                     required
                                     placeholder="Confirm new password"
                                 />
