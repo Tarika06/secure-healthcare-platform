@@ -65,39 +65,21 @@ const FeatureCard = ({ icon: Icon, title, description, color }) => (
 // -------------------------------------------------------------------
 // PAGE: Unified Homepage (Fixed Dark Mode & Opacity)
 // -------------------------------------------------------------------
+import { useTheme } from '../context/ThemeContext';
+
 const HomePage = () => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
     const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
 
-    // Explicit Dark Mode State
-    const [isDarkMode, setIsDarkMode] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('theme') === 'dark' ||
-                (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        }
-        return false;
-    });
+    const { isDarkMode, toggleTheme } = useTheme();
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
         window.addEventListener('scroll', handleScroll);
-
-        // Apply Dark Mode Class to HTML Element
-        const root = window.document.documentElement;
-        if (isDarkMode) {
-            root.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            root.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
-        }
-
         return () => window.removeEventListener('scroll', handleScroll);
-    }, [isDarkMode]);
-
-    const toggleTheme = () => setIsDarkMode(!isDarkMode);
+    }, []);
 
     const stats = [
         { value: '99.9%', label: 'Uptime', icon: Server },
@@ -366,8 +348,8 @@ const HomePage = () => {
 
                         {/* Product */}
                         <div>
-                            <h4 className="text-white font-semibold mb-4">Product</h4>
-                            <ul className="space-y-2 text-sm">
+                            <h4 className="text-slate-900 dark:text-white font-semibold mb-4">Product</h4>
+                            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Features</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Security</a></li>
                                 <li><a href="#" className="hover:text-primary-400 transition-colors">Pricing</a></li>
@@ -377,8 +359,8 @@ const HomePage = () => {
 
                         {/* Company */}
                         <div>
-                            <h4 className="text-white font-semibold mb-4">Company</h4>
-                            <ul className="space-y-2 text-sm">
+                            <h4 className="text-slate-900 dark:text-white font-semibold mb-4">Company</h4>
+                            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                                 <li>
                                     <button
                                         onClick={() => setIsTeamModalOpen(true)}
@@ -395,8 +377,8 @@ const HomePage = () => {
 
                         {/* Legal */}
                         <div>
-                            <h4 className="text-white font-semibold mb-4">Legal</h4>
-                            <ul className="space-y-2 text-sm">
+                            <h4 className="text-slate-900 dark:text-white font-semibold mb-4">Legal</h4>
+                            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                                 <li>
                                     <button
                                         onClick={() => setIsPolicyModalOpen(true)}

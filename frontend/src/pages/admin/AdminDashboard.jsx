@@ -177,7 +177,7 @@ const AdminDashboard = () => {
         >
             <div className="flex items-center justify-between">
                 <div>
-                    <p className="text-sm font-medium text-slate-500">{label}</p>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
                     <p className={`text-4xl font-bold mt-2 bg-gradient-to-r ${color} bg-clip-text text-transparent`}>
                         {value ?? '—'}
                     </p>
@@ -206,92 +206,120 @@ const AdminDashboard = () => {
 
                 <main className="flex-1 p-8 overflow-y-auto">
                     <div className="max-w-[1600px] mx-auto w-full">
-                        {/* Header */}
-                        <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                            <div className="flex items-center gap-4 mb-2">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
-                                    <Shield className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
-                                    <p className="text-slate-500">Welcome back, <span className="text-purple-600 font-medium">{user?.firstName} {user?.lastName}</span></p>
-                                </div>
-                            </div>
-                        </div>
 
                         {/* Overview Tab */}
                         {activeTab === 'overview' && (
-                            <div className="space-y-8 animate-fade-in">
-                                {/* Stats Grid */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <StatCard
-                                        icon={Users}
-                                        label="Total Patients"
-                                        value={stats?.totalPatients}
-                                        color="from-primary-600 to-teal-500"
-                                        delay={100}
-                                    />
-                                    <StatCard
-                                        icon={Activity}
-                                        label="Total Doctors"
-                                        value={stats?.totalDoctors}
-                                        color="from-blue-600 to-indigo-500"
-                                        delay={200}
-                                    />
-                                    <StatCard
-                                        icon={FileText}
-                                        label="Medical Records"
-                                        value={stats?.totalRecords}
-                                        color="from-green-600 to-emerald-500"
-                                        delay={300}
-                                    />
-                                    <StatCard
-                                        icon={TrendingUp}
-                                        label="Records (7 days)"
-                                        value={stats?.recentRecordsLast7Days}
-                                        color="from-amber-500 to-orange-500"
-                                        delay={400}
-                                    />
-                                </div>
-
-                                {/* Records by Type */}
-                                <div className={`card transition-all duration-700 delay-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center">
-                                            <Database className="w-5 h-5 text-primary-600" />
+                            <div className="animate-fade-in">
+                                {/* Asymmetric Stats Layout - Hero + Supporting */}
+                                <div className="grid grid-cols-12 gap-4 mb-5">
+                                    {/* Hero Stat - Spans more space */}
+                                    <div className={`col-span-12 lg:col-span-7 stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                        style={{ transitionDelay: '100ms' }}>
+                                        <div className="flex items-start justify-between h-full">
+                                            <div className="space-y-3">
+                                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Patients</p>
+                                                <p className="text-6xl font-bold bg-gradient-to-r from-primary-600 to-teal-500 bg-clip-text text-transparent">
+                                                    {stats?.totalPatients ?? '—'}
+                                                </p>
+                                                <p className="text-sm text-slate-600 dark:text-slate-400">Active in system</p>
+                                            </div>
+                                            <div className="w-20 h-20 rounded-2xl icon-container-primary flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3">
+                                                <Users className="w-10 h-10" />
+                                            </div>
                                         </div>
-                                        <h3 className="text-lg font-bold text-slate-900">Records by Type</h3>
                                     </div>
-                                    {stats?.recordsByType ? (
-                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                            {stats.recordsByType.map((item, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white border border-slate-100 hover:shadow-md transition-all duration-300 hover:-translate-y-1"
-                                                    style={{ animationDelay: `${600 + idx * 100}ms` }}
-                                                >
-                                                    <p className="text-2xl font-bold text-gradient">{item.count}</p>
-                                                    <p className="text-sm text-slate-500 mt-1">{item._id || 'Unknown'}</p>
+
+                                    {/* Vertical Stats Cluster */}
+                                    <div className="col-span-12 lg:col-span-5 grid grid-cols-1 gap-4">
+                                        <div className={`stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                            style={{ transitionDelay: '200ms' }}>
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Doctors</p>
+                                                    <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent mt-2">
+                                                        {stats?.totalDoctors ?? '—'}
+                                                    </p>
                                                 </div>
-                                            ))}
+                                                <div className="w-14 h-14 rounded-xl icon-container-blue flex items-center justify-center transition-transform group-hover:scale-110 group-hover:-rotate-3">
+                                                    <Activity className="w-7 h-7" />
+                                                </div>
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <p className="text-slate-400">No data available</p>
-                                    )}
+                                        <div className={`stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                            style={{ transitionDelay: '250ms' }}>
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Medical Records</p>
+                                                    <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent mt-2">
+                                                        {stats?.totalRecords ?? '—'}
+                                                    </p>
+                                                </div>
+                                                <div className="w-14 h-14 rounded-xl icon-container-green flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3">
+                                                    <FileText className="w-7 h-7" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* Admin Notice */}
-                                <div className={`p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl transition-all duration-700 delay-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                            <Shield className="w-6 h-6 text-blue-600" />
+                                {/* Secondary Metric - Offset */}
+                                <div className="grid grid-cols-12 gap-4 mb-8">
+                                    <div className="col-span-12 lg:col-span-5 lg:col-start-8">
+                                        <div className={`stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                            style={{ transitionDelay: '300ms' }}>
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Records (7 days)</p>
+                                                    <p className="text-3xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent mt-2">
+                                                        {stats?.recentRecordsLast7Days ?? '—'}
+                                                    </p>
+                                                </div>
+                                                <div className="w-14 h-14 rounded-xl icon-container-amber flex items-center justify-center transition-transform group-hover:scale-110 group-hover:-rotate-3">
+                                                    <TrendingUp className="w-7 h-7" />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-semibold text-blue-900">Admin Access Level</p>
-                                            <p className="text-blue-700 text-sm mt-1">
-                                                You can view system statistics and audit logs. Medical record content is encrypted and not directly viewable by administrators to ensure patient privacy.
-                                            </p>
+                                    </div>
+                                </div>
+
+                                {/* Records by Type - Asymmetric Grid */}
+                                <div className="grid grid-cols-12 gap-6 mb-7">
+                                    <div className={`col-span-12 lg:col-span-8 card transition-all duration-700 ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}
+                                        style={{ transitionDelay: '400ms' }}>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-100 to-teal-100 dark:from-primary-900/40 dark:to-teal-900/40 flex items-center justify-center">
+                                                <Database className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                                            </div>
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Records by Type</h3>
                                         </div>
+                                        {stats?.recordsByType ? (
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                {stats.recordsByType.map((item, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className="group p-5 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-100 dark:border-slate-700 hover:shadow-lg hover:border-primary-200 dark:hover:border-primary-800 transition-all duration-300 hover:-translate-y-0.5"
+                                                        style={{ animationDelay: `${500 + idx * 80}ms` }}
+                                                    >
+                                                        <p className="text-3xl font-bold text-gradient group-hover:scale-105 transition-transform">{item.count}</p>
+                                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{item._id || 'Unknown'}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-slate-400">No data available</p>
+                                        )}
+                                    </div>
+
+                                    {/* Admin Notice - Offset on the right */}
+                                    <div className={`col-span-12 lg:col-span-4 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl transition-all duration-700 ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}
+                                        style={{ transitionDelay: '450ms' }}>
+                                        <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center mb-4">
+                                            <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                        <p className="font-bold text-blue-900 dark:text-blue-200 mb-2">Admin Access Level</p>
+                                        <p className="text-blue-700 dark:text-blue-300 text-sm leading-relaxed">
+                                            You can view system statistics and audit logs. Medical record content is encrypted and not directly viewable by administrators to ensure patient privacy.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -302,10 +330,10 @@ const AdminDashboard = () => {
                             <div className={`card animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center">
-                                            <Users className="w-5 h-5 text-primary-600" />
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-100 to-teal-100 dark:from-primary-900/40 dark:to-teal-900/40 flex items-center justify-center">
+                                            <Users className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                                         </div>
-                                        <h2 className="text-xl font-bold text-slate-900">User Management</h2>
+                                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">User Management</h2>
                                     </div>
                                     <div className="relative w-full md:w-72">
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -314,7 +342,7 @@ const AdminDashboard = () => {
                                             placeholder="Search users..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="input-field pl-11"
+                                            className="input-field pl-11 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                                         />
                                     </div>
                                 </div>
@@ -324,18 +352,18 @@ const AdminDashboard = () => {
                                         <div className="w-10 h-10 border-3 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto rounded-xl border border-slate-200 custom-scrollbar">
+                                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 custom-scrollbar">
                                         <table className="w-full">
-                                            <thead className="sticky top-0 bg-slate-50 z-10">
-                                                <tr className="bg-slate-50">
-                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600">User ID</th>
-                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600">Name</th>
-                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600">Email</th>
-                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600">Role</th>
-                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600">Status</th>
+                                            <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 z-10">
+                                                <tr className="bg-slate-50 dark:bg-slate-800">
+                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 dark:text-slate-400">User ID</th>
+                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Name</th>
+                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Email</th>
+                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Role</th>
+                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Status</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100">
+                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                 {filteredUsers.map((u, idx) => (
                                                     <tr
                                                         key={u.userId}
@@ -345,11 +373,11 @@ const AdminDashboard = () => {
                                                         <td className="py-4 px-4 font-mono text-sm text-primary-600">{u.userId}</td>
                                                         <td className="py-4 px-4">
                                                             <div className="flex items-center gap-2">
-                                                                <div className={`h-2.5 w-2.5 rounded-full ${u.isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-slate-300'}`} title={u.isOnline ? "Online" : "Offline"} />
-                                                                <span className="font-medium text-slate-800">{u.firstName} {u.lastName}</span>
+                                                                <div className={`h-2.5 w-2.5 rounded-full ${u.isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-slate-300 dark:bg-slate-600'}`} title={u.isOnline ? "Online" : "Offline"} />
+                                                                <span className="font-medium text-slate-800 dark:text-slate-200">{u.firstName} {u.lastName}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="py-4 px-4 text-slate-500">{u.email}</td>
+                                                        <td className="py-4 px-4 text-slate-500 dark:text-slate-400">{u.email}</td>
                                                         <td className="py-4 px-4">
                                                             <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getRoleBadgeColor(u.role)}`}>
                                                                 {u.role}
@@ -378,10 +406,10 @@ const AdminDashboard = () => {
                             <div className={`card animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                                 <div className="flex justify-between items-center mb-6">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-100 to-orange-100 flex items-center justify-center">
-                                            <AlertTriangle className="w-5 h-5 text-red-600" />
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/40 dark:to-orange-900/40 flex items-center justify-center">
+                                            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
                                         </div>
-                                        <h2 className="text-xl font-bold text-slate-900">Security Alerts</h2>
+                                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Security Alerts</h2>
                                     </div>
                                     <button
                                         onClick={handleAIAnalyze}
@@ -398,38 +426,38 @@ const AdminDashboard = () => {
 
                                 {alerts.length === 0 ? (
                                     <div className="text-center py-12">
-                                        <Shield className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-                                        <p className="text-slate-500 font-medium">No security alerts found</p>
+                                        <Shield className="h-12 w-12 text-slate-200 dark:text-slate-600 mx-auto mb-4" />
+                                        <p className="text-slate-500 dark:text-slate-400 font-medium">No security alerts found</p>
                                         <p className="text-sm text-slate-400">System is secure. Run AI analysis to check for hidden threats.</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
                                         {alerts.map(alert => (
-                                            <div key={alert._id} className={`p-5 rounded-xl border-l-4 bg-white shadow-sm hover:shadow-md transition-all duration-300 ${alert.severity === 'CRITICAL' ? 'border-red-500' :
+                                            <div key={alert._id} className={`p-5 rounded-xl border-l-4 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all duration-300 ${alert.severity === 'CRITICAL' ? 'border-red-500' :
                                                 alert.severity === 'HIGH' ? 'border-orange-500' :
                                                     alert.severity === 'MEDIUM' ? 'border-amber-400' : 'border-blue-400'
                                                 }`}>
                                                 <div className="flex justify-between items-start">
                                                     <div className="flex gap-4">
-                                                        <div className={`p-2.5 rounded-lg h-12 w-12 flex items-center justify-center ${alert.severity === 'CRITICAL' ? 'bg-red-50 text-red-600' :
-                                                            alert.severity === 'HIGH' ? 'bg-orange-50 text-orange-600' :
-                                                                alert.severity === 'MEDIUM' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
+                                                        <div className={`p-2.5 rounded-lg h-12 w-12 flex items-center justify-center ${alert.severity === 'CRITICAL' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
+                                                            alert.severity === 'HIGH' ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' :
+                                                                alert.severity === 'MEDIUM' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                                                             }`}>
                                                             <AlertCircle className="h-6 w-6" />
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-3 mb-1">
-                                                                <h4 className="font-bold text-slate-900 text-lg">{alert.type.replace(/_/g, ' ')}</h4>
-                                                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide ${alert.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                                                                    alert.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                                                                        alert.severity === 'MEDIUM' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                                                                <h4 className="font-bold text-slate-900 dark:text-white text-lg">{alert.type.replace(/_/g, ' ')}</h4>
+                                                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide ${alert.severity === 'CRITICAL' ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300' :
+                                                                    alert.severity === 'HIGH' ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300' :
+                                                                        alert.severity === 'MEDIUM' ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' : 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
                                                                     }`}>
                                                                     {alert.severity}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-slate-600 text-sm leading-relaxed mb-3">{alert.description}</p>
+                                                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-3">{alert.description}</p>
 
-                                                            <div className="flex items-center gap-4 text-xs text-slate-400 mb-3">
+                                                            <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500 mb-3">
                                                                 <span className="flex items-center gap-1">
                                                                     <Clock className="w-3.5 h-3.5" />
                                                                     {new Date(alert.timestamp).toLocaleString()}
@@ -437,13 +465,13 @@ const AdminDashboard = () => {
                                                             </div>
 
                                                             {alert.recommendation && (
-                                                                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex gap-3">
+                                                                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 flex gap-3">
                                                                     <div className="mt-0.5">
-                                                                        <Cpu className="w-4 h-4 text-primary-600" />
+                                                                        <Cpu className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                                                                     </div>
                                                                     <div>
-                                                                        <strong className="block text-slate-700 text-xs font-semibold mb-0.5">AI Recommendation</strong>
-                                                                        <p className="text-slate-600 text-sm italic">{alert.recommendation}</p>
+                                                                        <strong className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-0.5">AI Recommendation</strong>
+                                                                        <p className="text-slate-600 dark:text-slate-400 text-sm italic">{alert.recommendation}</p>
                                                                     </div>
                                                                 </div>
                                                             )}
@@ -471,7 +499,7 @@ const AdminDashboard = () => {
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleUpdateAlertStatus(alert._id, 'DISMISSED')}
-                                                                    className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
+                                                                    className="p-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                                                                     title="Dismiss"
                                                                 >
                                                                     <XCircle className="h-5 w-5" />
@@ -479,7 +507,7 @@ const AdminDashboard = () => {
                                                             </>
                                                         )}
                                                         {alert.status !== 'OPEN' && (
-                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 py-1 bg-slate-100 rounded">
+                                                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded">
                                                                 {alert.status}
                                                             </span>
                                                         )}
@@ -497,14 +525,14 @@ const AdminDashboard = () => {
                             <div className={`card animate-fade-in min-h-[500px] transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                                 <div className="flex justify-between items-center mb-6">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-                                            <Clock className="w-5 h-5 text-amber-600" />
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center">
+                                            <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                                         </div>
-                                        <h2 className="text-xl font-bold text-slate-900">Audit Logs</h2>
+                                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Audit Logs</h2>
                                     </div>
                                     <button
                                         onClick={handleExportCSV}
-                                        className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 text-sm font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+                                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm"
                                     >
                                         <FileText className="w-4 h-4" />
                                         Export CSV
@@ -516,29 +544,29 @@ const AdminDashboard = () => {
                                         <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto rounded-xl border border-slate-200 custom-scrollbar">
+                                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 custom-scrollbar">
                                         <table className="w-full">
-                                            <thead className="sticky top-0 bg-slate-50 z-10">
+                                            <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 z-10">
                                                 <tr>
-                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 shadow-sm">Timestamp</th>
-                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 shadow-sm">User</th>
-                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 shadow-sm">Action</th>
-                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 shadow-sm">Resource</th>
-                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 shadow-sm">Outcome</th>
+                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 dark:text-slate-400 shadow-sm">Timestamp</th>
+                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 dark:text-slate-400 shadow-sm">User</th>
+                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 dark:text-slate-400 shadow-sm">Action</th>
+                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 dark:text-slate-400 shadow-sm">Resource</th>
+                                                    <th className="text-left py-4 px-4 text-sm font-semibold text-slate-600 dark:text-slate-400 shadow-sm">Outcome</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100">
+                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                 {auditLogs.map((log, idx) => (
                                                     <tr key={idx} className="table-row-hover">
-                                                        <td className="py-4 px-4 text-sm text-slate-500">
+                                                        <td className="py-4 px-4 text-sm text-slate-500 dark:text-slate-400">
                                                             <div className="flex items-center gap-2">
-                                                                <Clock className="w-4 h-4 text-slate-400" />
+                                                                <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                                                                 {new Date(log.timestamp).toLocaleString()}
                                                             </div>
                                                         </td>
-                                                        <td className="py-4 px-4 font-mono text-sm text-primary-600">{log.userId}</td>
-                                                        <td className="py-4 px-4 font-medium text-slate-800">{log.action}</td>
-                                                        <td className="py-4 px-4 text-sm text-slate-500 max-w-xs truncate">{log.resource}</td>
+                                                        <td className="py-4 px-4 font-mono text-sm text-primary-600 dark:text-primary-400">{log.userId}</td>
+                                                        <td className="py-4 px-4 font-medium text-slate-800 dark:text-slate-200">{log.action}</td>
+                                                        <td className="py-4 px-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">{log.resource}</td>
                                                         <td className="py-4 px-4">
                                                             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${log.outcome === 'SUCCESS'
                                                                 ? 'bg-green-100 text-green-700 ring-1 ring-green-200'
@@ -560,8 +588,8 @@ const AdminDashboard = () => {
                         )}
                     </div>
                 </main>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

@@ -135,12 +135,12 @@ const LoginPage = () => {
             </div>
 
             {/* Right Side - Login Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gradient-to-br from-slate-100 via-white to-primary-50">
-                <div className={`w-full max-w-md bg-white p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gradient-to-br from-slate-100 via-white to-primary-50 dark:from-slate-950 dark:via-slate-900 dark:to-primary-950/20">
+                <div className={`w-full max-w-md bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)] border border-slate-200 dark:border-slate-800 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                     {/* Back to Home Link */}
                     <Link
                         to="/"
-                        className="inline-flex items-center gap-2 text-slate-500 hover:text-primary-600 mb-8 transition-all duration-300 group"
+                        className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 mb-8 transition-all duration-300 group"
                     >
                         <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                         <span className="font-medium">Back to Home</span>
@@ -149,9 +149,9 @@ const LoginPage = () => {
                     {/* Mobile Logo */}
                     <div className="lg:hidden text-center mb-8">
                         <img src={logo} alt="SecureCare" className="w-20 h-20 mx-auto mb-4" />
-                        <h1 className="text-3xl font-heading font-bold text-slate-900">
-                            <span className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Secure</span>
-                            <span className="text-primary-600">Care</span>
+                        <h1 className="text-3xl font-heading font-bold text-slate-900 dark:text-white">
+                            <span className="bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">Secure</span>
+                            <span className="text-primary-600 dark:text-primary-400">Care</span>
                             <span className="text-primary-400">+</span>
                         </h1>
                     </div>
@@ -160,17 +160,17 @@ const LoginPage = () => {
                     <div className="mb-8">
                         <div className="flex items-center gap-2 mb-2">
                             <Sparkles className="w-5 h-5 text-primary-500" />
-                            <span className="text-sm font-medium text-primary-600 uppercase tracking-wider">Welcome back</span>
+                            <span className="text-sm font-medium text-primary-600 dark:text-primary-400 uppercase tracking-wider">Welcome back</span>
                         </div>
-                        <h2 className="text-3xl font-heading font-bold text-slate-900 mb-2">Sign in to your account</h2>
-                        <p className="text-slate-500">Access your secure healthcare portal</p>
+                        <h2 className="text-3xl font-heading font-bold text-slate-900 dark:text-white mb-2">Sign in to your account</h2>
+                        <p className="text-slate-500 dark:text-slate-400">Access your secure healthcare portal</p>
                     </div>
 
                     {/* Login Form */}
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {/* User ID Field */}
                         <div className="group">
-                            <label className="block text-sm font-heading font-semibold text-slate-700 mb-2">
+                            <label className="block text-sm font-heading font-semibold text-slate-700 dark:text-slate-300 mb-2">
                                 User ID
                             </label>
                             <div className="relative">
@@ -178,7 +178,7 @@ const LoginPage = () => {
                                     type="text"
                                     value={userId}
                                     onChange={(e) => setUserId(e.target.value)}
-                                    className="input-field pr-12 font-sans"
+                                    className="input-field pr-12 font-sans dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                                     placeholder="e.g., P001, D001, N001, L001, A001"
                                     required
                                 />
@@ -190,7 +190,7 @@ const LoginPage = () => {
 
                         {/* Password Field */}
                         <div className="group">
-                            <label className="block text-sm font-heading font-semibold text-slate-700 mb-2">
+                            <label className="block text-sm font-heading font-semibold text-slate-700 dark:text-slate-300 mb-2">
                                 Password
                             </label>
                             <div className="relative">
@@ -198,7 +198,7 @@ const LoginPage = () => {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="input-field pr-12 font-sans"
+                                    className="input-field pr-12 font-sans dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                                     placeholder="Enter your password"
                                     required
                                 />
@@ -214,17 +214,17 @@ const LoginPage = () => {
 
                         {/* Implied Consent Notice */}
                         <div className="mt-6 text-center">
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
                                 By signing in, you agree to our{' '}
                                 <button
                                     type="button"
                                     onClick={() => setIsPolicyModalOpen(true)}
-                                    className="text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors"
+                                    className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium hover:underline transition-colors"
                                 >
                                     Privacy Policy & Data Processing Terms
                                 </button>
                             </p>
-                            <p className="text-[10px] text-slate-400 mt-1 flex items-center justify-center gap-1">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 flex items-center justify-center gap-1">
                                 <Shield className="h-3 w-3" />
                                 Protected by GDPR & HIPAA Standards
                             </p>
@@ -232,9 +232,9 @@ const LoginPage = () => {
 
                         {/* Error Message */}
                         {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-3 animate-slide-up">
-                                <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                                    <span className="text-red-500 text-lg">!</span>
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl flex items-center gap-3 animate-slide-up">
+                                <div className="flex-shrink-0 w-8 h-8 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center">
+                                    <span className="text-red-500 dark:text-red-400 text-lg">!</span>
                                 </div>
                                 <p className="text-sm">{error}</p>
                             </div>
@@ -260,23 +260,23 @@ const LoginPage = () => {
 
                     {/* Register Link */}
                     <div className="mt-8 text-center">
-                        <p className="text-slate-500">
+                        <p className="text-slate-500 dark:text-slate-400">
                             Don't have an account?{' '}
-                            <Link to="/register" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                            <Link to="/register" className="font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
                                 Create Account
                             </Link>
                         </p>
                     </div>
 
                     {/* Security Notice */}
-                    <div className="mt-8 p-4 bg-gradient-to-r from-primary-50 to-teal-50 rounded-xl border border-primary-100">
+                    <div className="mt-8 p-4 bg-gradient-to-r from-primary-50 to-teal-50 dark:from-primary-900/20 dark:to-teal-900/20 rounded-xl border border-primary-100 dark:border-primary-800">
                         <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                                <Shield className="w-5 h-5 text-primary-600" />
+                            <div className="flex-shrink-0 w-10 h-10 bg-primary-100 dark:bg-primary-900/40 rounded-lg flex items-center justify-center">
+                                <Shield className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                             </div>
                             <div>
-                                <p className="text-sm font-semibold text-slate-800">Bank-Level Security</p>
-                                <p className="text-xs text-slate-500 mt-0.5">
+                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Bank-Level Security</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                     Your data is protected with 256-bit encryption and multi-factor authentication
                                 </p>
                             </div>
