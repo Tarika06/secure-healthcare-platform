@@ -145,8 +145,8 @@ const PatientDashboard = () => {
                     <Icon className="w-7 h-7" />
                 </div>
                 <div>
-                    <p className="text-sm font-medium text-slate-500">{label}</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-1">{value}</p>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{value}</p>
                 </div>
             </div>
         </div>
@@ -166,7 +166,7 @@ const PatientDashboard = () => {
             <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-primary-50/30">
                 <div className="text-center">
                     <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto" />
-                    <p className="text-slate-500 mt-4">Loading your health data...</p>
+                    <p className="text-slate-500 dark:text-slate-400 mt-4">Loading your health data...</p>
                 </div>
             </div>
         </div>
@@ -178,99 +178,158 @@ const PatientDashboard = () => {
 
             <div className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto px-6 py-8">
-                    {/* Header */}
-                    <div className={`mb-8 transition-all duration-700 border-none shadow-none bg-transparent outline-none ring-0 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                        <div className="flex items-center gap-4 mb-2">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center">
-                                <Heart className="h-7 w-7 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-3xl font-bold text-slate-900">Patient Dashboard</h1>
-                                <p className="text-slate-500">Welcome back, <span className="text-primary-600 font-medium">{user?.firstName} {user?.lastName}</span></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Tab Navigation */}
-                    <div className={`flex gap-2 mb-8 overflow-x-auto pb-2 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => navigate(`/patient/dashboard?tab=${tab.id}`)}
-                                className={`relative flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${activeTab === tab.id
-                                    ? 'bg-gradient-to-r from-primary-600 to-teal-600 text-white shadow-lg shadow-primary-500/25'
-                                    : 'text-slate-600 hover:bg-slate-100'
-                                    }`}
-                            >
-                                <tab.icon className="w-5 h-5" />
-                                {tab.label}
-                                {tab.badge > 0 && (
-                                    <span className={`ml-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center ${activeTab === tab.id ? 'bg-white/30 text-white' : 'bg-red-500 text-white'
-                                        }`}>
-                                        {tab.badge}
-                                    </span>
-                                )}
-                            </button>
-                        ))}
-                    </div>
 
                     {/* Overview Tab */}
                     {activeTab === 'overview' && (
-                        <div className="space-y-8 animate-fade-in">
-                            {/* Stats */}
-                            <div className="grid md:grid-cols-3 gap-6">
-                                <StatCard icon={FileText} label="Total Records" value={records.length} colorClass="icon-container-blue" delay={100} />
-                                <StatCard icon={Shield} label="Active Consents" value={activeConsents.length} colorClass="icon-container-green" delay={200} />
-                                <StatCard icon={Bell} label="Pending Requests" value={pendingConsents.length} colorClass="icon-container-amber" delay={300} />
-                            </div>
+                        <div className="animate-fade-in">
+                            {/* Asymmetric Stats - Feature + Supports */}
+                            <div className="grid grid-cols-12 gap-5 mb-6">
+                                {/* Primary Stat - Wider with Hover Background */}
+                                <div className={`col-span-12 lg:col-span-5 stat-card-glass group transition-all duration-700 relative overflow-hidden ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                    style={{ transitionDelay: '100ms' }}>
+                                    {/* Hover Background Image - Slide + Fade (No dark mode inversion) */}
+                                    <img
+                                        src="https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?auto=compress&cs=tinysrgb&w=800"
+                                        alt=""
+                                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-0 translate-x-12 group-hover:opacity-90 group-hover:translate-x-0 !z-0"
+                                    />
+                                    {/* Overlay to ensure text contrast */}
+                                    <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none !z-[5]" />
 
-                            {/* Recent Records */}
-                            <div className={`transition-all duration-700 delay-400 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-xl font-bold text-slate-900">Recent Records</h3>
-                                    {records.length > 0 && (
-                                        <button onClick={() => navigate('/patient/dashboard?tab=records')} className="text-primary-600 hover:text-primary-700 font-semibold text-sm flex items-center gap-1">
-                                            View All <span>→</span>
-                                        </button>
-                                    )}
+                                    {/* Content - Always visible and readable */}
+                                    <div className="space-y-4 relative z-10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-16 h-16 rounded-2xl icon-container-blue flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-6">
+                                                <FileText className="w-8 h-8" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Records</p>
+                                                <p className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
+                                                    {records.length}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-slate-600 dark:text-slate-400">Your medical history</p>
+                                    </div>
                                 </div>
 
-                                {records.length === 0 ? (
-                                    <div className="card text-center py-16">
-                                        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 flex items-center justify-center">
-                                            <FileText className="w-10 h-10 text-slate-400" />
-                                        </div>
-                                        <h3 className="text-xl font-semibold text-slate-900 mb-2">No Records Yet</h3>
-                                        <p className="text-slate-500">Your medical records will appear here once created by your healthcare provider.</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid gap-4">
-                                        {records.slice(0, 3).map((record, idx) => (
-                                            <div key={record._id} style={{ animationDelay: `${500 + idx * 100}ms` }}>
-                                                <MedicalCard record={record} />
+                                {/* Stats Pair - Staggered */}
+                                <div className="col-span-12 lg:col-span-7 grid grid-cols-2 gap-4">
+                                    <div key={`stat-consent-${activeConsents.length}`} className={`stat-card-glass group transition-all duration-700 relative overflow-hidden group-hover:bg-transparent ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                        style={{ transitionDelay: '200ms' }}>
+                                        {/* Hover Background Image - Active Consents (Verified/Shield Concept) */}
+                                        <>
+                                            <img
+                                                src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                                                alt=""
+                                                className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.08] group-hover:opacity-[0.45] group-hover:scale-110 !z-0"
+                                                style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
+                                            />
+                                            <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/10 dark:group-hover:bg-slate-900/10 transition-colors duration-500 !z-[1]" />
+                                        </>
+
+                                        <div className="space-y-2 relative z-10">
+                                            <div className="w-12 h-12 rounded-xl icon-container-green flex items-center justify-center transition-transform group-hover:scale-110 group-hover:-rotate-3">
+                                                <Shield className="w-6 h-6" />
                                             </div>
-                                        ))}
+                                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Consents</p>
+                                            <p className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
+                                                {activeConsents.length}
+                                            </p>
+                                        </div>
                                     </div>
-                                )}
+                                    <div key={`stat-pending-${pendingConsents.length}`} className={`stat-card-glass group transition-all duration-700 relative overflow-hidden group-hover:bg-transparent ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                        style={{ transitionDelay: '250ms' }}>
+                                        {/* Hover Background Image - Pending Requests (Original Restored) */}
+                                        <>
+                                            <img
+                                                src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&v=2"
+                                                alt=""
+                                                className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.10] group-hover:opacity-[0.40] group-hover:scale-110 !z-0"
+                                                style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
+                                            />
+                                            <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/20 dark:group-hover:bg-slate-900/20 transition-colors duration-500 !z-[1]" />
+                                        </>
+
+                                        <div className="space-y-2 relative z-10">
+                                            <div className="w-12 h-12 rounded-xl icon-container-amber flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3">
+                                                <Bell className="w-6 h-6" />
+                                            </div>
+                                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pending Requests</p>
+                                            <p className="text-4xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+                                                {pendingConsents.length}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Pending Consent Alert */}
+                            {/* Conditional Alert - Full Width when present */}
                             {pendingConsents.length > 0 && (
-                                <div className={`p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 rounded-2xl transition-all duration-700 delay-600 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                                            <Bell className="w-6 h-6 text-amber-600" />
+                                <div className="grid grid-cols-12 gap-5 mb-7">
+                                    <div className={`col-span-12 lg:col-span-10 lg:col-start-2 p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-l-4 border-amber-400 rounded-2xl transition-all duration-700 ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+                                        style={{ transitionDelay: '350ms' }}>
+                                        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                                            <div className="w-14 h-14 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+                                                <Bell className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-bold text-amber-900 dark:text-amber-200 text-lg">
+                                                    {pendingConsents.length} pending consent request{pendingConsents.length > 1 ? 's' : ''}
+                                                </p>
+                                                <p className="text-amber-700 dark:text-amber-300 text-sm mt-1">
+                                                    Healthcare providers are waiting for your approval to access your records
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => navigate('/patient/dashboard?tab=consent')}
+                                                className="btn-primary whitespace-nowrap hover:scale-105 transition-transform">
+                                                Review Now
+                                            </button>
                                         </div>
-                                        <div className="flex-1">
-                                            <p className="font-bold text-amber-900">{pendingConsents.length} pending consent request{pendingConsents.length > 1 ? 's' : ''}</p>
-                                            <p className="text-amber-700 text-sm">Healthcare providers are waiting for your approval to access your records</p>
-                                        </div>
-                                        <button onClick={() => navigate('/patient/dashboard?tab=consent')} className="btn-primary">
-                                            Review Now
-                                        </button>
                                     </div>
                                 </div>
                             )}
+
+                            {/* Recent Records - Offset Layout */}
+                            <div className="grid grid-cols-12 gap-5">
+                                <div className={`col-span-12 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                    style={{ transitionDelay: '400ms' }}>
+                                    <div className="flex items-center justify-between mb-5">
+                                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Recent Records</h3>
+                                        {records.length > 0 && (
+                                            <button
+                                                onClick={() => navigate('/patient/dashboard?tab=records')}
+                                                className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-semibold text-sm flex items-center gap-1 transition-all hover:gap-2">
+                                                View All <span>→</span>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {records.length === 0 ? (
+                                        <div className="card text-center py-20">
+                                            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                                <FileText className="w-12 h-12 text-slate-400 dark:text-slate-500" />
+                                            </div>
+                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No Records Yet</h3>
+                                            <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                                                Your medical records will appear here once created by your healthcare provider.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid gap-5">
+                                            {records.slice(0, 3).map((record, idx) => (
+                                                <div
+                                                    key={record._id}
+                                                    className="transition-all duration-300"
+                                                    style={{ animationDelay: `${500 + idx * 100}ms` }}>
+                                                    <MedicalCard record={record} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -279,8 +338,8 @@ const PatientDashboard = () => {
                         <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-slate-900">My Medical Records</h2>
-                                    <p className="text-slate-500 mt-1">{records.length} total records</p>
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">My Medical Records</h2>
+                                    <p className="text-slate-500 dark:text-slate-400 mt-1">{records.length} total records</p>
                                 </div>
                             </div>
 
@@ -289,8 +348,8 @@ const PatientDashboard = () => {
                                     <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 flex items-center justify-center">
                                         <FileText className="w-10 h-10 text-slate-400" />
                                     </div>
-                                    <h3 className="text-xl font-semibold text-slate-900 mb-2">No Records Yet</h3>
-                                    <p className="text-slate-500">Your records will appear here once created.</p>
+                                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No Records Yet</h3>
+                                    <p className="text-slate-500 dark:text-slate-400">Your records will appear here once created.</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-4">
@@ -310,10 +369,10 @@ const PatientDashboard = () => {
                             {/* Pending Requests */}
                             <div>
                                 <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                                        <Bell className="w-5 h-5 text-amber-600" />
+                                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                                        <Bell className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                                     </div>
-                                    <h2 className="text-2xl font-bold text-slate-900">Pending Requests</h2>
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Pending Requests</h2>
                                     {pendingConsents.length > 0 && (
                                         <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">{pendingConsents.length}</span>
                                     )}
@@ -321,21 +380,32 @@ const PatientDashboard = () => {
 
                                 {pendingConsents.length === 0 ? (
                                     <div className="card text-center py-12">
-                                        <p className="text-slate-500">No pending consent requests</p>
+                                        <p className="text-slate-500 dark:text-slate-400">No pending consent requests</p>
                                     </div>
                                 ) : (
                                     <div className="grid gap-4">
                                         {pendingConsents.map((consent, idx) => (
-                                            <div key={consent._id} className="card hover:shadow-xl transition-all duration-300 border-l-4 border-amber-400" style={{ animationDelay: `${idx * 100}ms` }}>
-                                                <div className="flex items-start justify-between">
+                                            <div key={consent._id} className="card hover:shadow-xl transition-all duration-300 border-l-4 border-amber-400 relative overflow-hidden group hover:bg-transparent" style={{ animationDelay: `${idx * 100}ms` }}>
+                                                {/* Hover Background Image - Pending Request (Original Restored) */}
+                                                <>
+                                                    <img
+                                                        src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&v=2"
+                                                        alt=""
+                                                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.10] group-hover:opacity-[0.40] group-hover:scale-110 !z-0"
+                                                        style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
+                                                    />
+                                                    <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/20 dark:group-hover:bg-slate-900/20 transition-colors duration-500 !z-[1]" />
+                                                </>
+
+                                                <div className="flex items-start justify-between relative z-10">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold">
+                                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
                                                             {consent.doctor?.firstName?.charAt(0)}{consent.doctor?.lastName?.charAt(0)}
                                                         </div>
                                                         <div>
-                                                            <h3 className="text-lg font-bold text-slate-900">Dr. {consent.doctor?.firstName} {consent.doctor?.lastName}</h3>
-                                                            <p className="text-sm text-slate-500">{consent.doctor?.specialty}</p>
-                                                            <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Dr. {consent.doctor?.firstName} {consent.doctor?.lastName}</h3>
+                                                            <p className="text-sm text-slate-500 dark:text-slate-400">{consent.doctor?.specialty}</p>
+                                                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
                                                                 <Clock className="w-3 h-3" />
                                                                 Requested {new Date(consent.requestedAt).toLocaleDateString()}
                                                             </p>
@@ -359,31 +429,42 @@ const PatientDashboard = () => {
                             {/* Active Consents */}
                             <div>
                                 <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                                        <CheckCircle className="w-5 h-5 text-green-600" />
+                                    <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                                        <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                                     </div>
-                                    <h2 className="text-2xl font-bold text-slate-900">Active Consents</h2>
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Active Consents</h2>
                                 </div>
 
                                 {activeConsents.length === 0 ? (
                                     <div className="card text-center py-12">
-                                        <p className="text-slate-500">No active consents</p>
+                                        <p className="text-slate-500 dark:text-slate-400">No active consents</p>
                                     </div>
                                 ) : (
                                     <div className="grid gap-4">
                                         {activeConsents.map((consent, idx) => (
-                                            <div key={consent._id} className="card hover:shadow-xl transition-all duration-300 border-l-4 border-green-400" style={{ animationDelay: `${idx * 100}ms` }}>
-                                                <div className="flex items-center justify-between">
+                                            <div key={`consent-list-${consent._id}-${idx}`} className="card hover:shadow-xl transition-all duration-300 border-l-4 border-green-400 relative overflow-hidden group hover:bg-transparent" style={{ animationDelay: `${idx * 100}ms` }}>
+                                                {/* Hover Background Image - Active Consent (Verified/Shield Concept) */}
+                                                <>
+                                                    <img
+                                                        src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                                                        alt=""
+                                                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.08] group-hover:opacity-[0.45] group-hover:scale-110 !z-0"
+                                                        style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
+                                                    />
+                                                    <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/10 dark:group-hover:bg-slate-900/10 transition-colors duration-500 !z-[1]" />
+                                                </>
+
+                                                <div className="flex items-center justify-between relative z-10">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white font-semibold">
+                                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
                                                             {consent.doctor?.firstName?.charAt(0)}{consent.doctor?.lastName?.charAt(0)}
                                                         </div>
                                                         <div>
-                                                            <h3 className="text-lg font-bold text-slate-900">Dr. {consent.doctor?.firstName} {consent.doctor?.lastName}</h3>
-                                                            <p className="text-sm text-slate-500">{consent.doctor?.specialty && `${consent.doctor.specialty} • `}Granted {new Date(consent.respondedAt).toLocaleDateString()}</p>
+                                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Dr. {consent.doctor?.firstName} {consent.doctor?.lastName}</h3>
+                                                            <p className="text-sm text-slate-500 dark:text-slate-400">{consent.doctor?.specialty && `${consent.doctor.specialty} • `}Granted {new Date(consent.respondedAt).toLocaleDateString()}</p>
                                                         </div>
                                                     </div>
-                                                    <button onClick={() => handleRevokeConsent(consent._id)} className="btn-danger">
+                                                    <button onClick={() => handleRevokeConsent(consent._id)} className="btn-danger z-20 relative">
                                                         Revoke Access
                                                     </button>
                                                 </div>
@@ -399,17 +480,17 @@ const PatientDashboard = () => {
                     {activeTab === 'history' && (
                         <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="mb-6">
-                                <h2 className="text-2xl font-bold text-slate-900">Access History</h2>
-                                <p className="text-slate-500 mt-1">Track who has accessed your medical records (GDPR compliance)</p>
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Access History</h2>
+                                <p className="text-slate-500 dark:text-slate-400 mt-1">Track who has accessed your medical records (GDPR compliance)</p>
                             </div>
 
                             {accessHistory.length === 0 ? (
                                 <div className="card text-center py-16">
-                                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 flex items-center justify-center">
-                                        <Eye className="w-10 h-10 text-slate-400" />
+                                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                        <Eye className="w-10 h-10 text-slate-400 dark:text-slate-500" />
                                     </div>
-                                    <h3 className="text-xl font-semibold text-slate-900 mb-2">No Access History</h3>
-                                    <p className="text-slate-500">When healthcare providers view your records, it will be logged here.</p>
+                                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No Access History</h3>
+                                    <p className="text-slate-500 dark:text-slate-400">When healthcare providers view your records, it will be logged here.</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-4">
@@ -417,17 +498,17 @@ const PatientDashboard = () => {
                                         <div key={idx} className="card hover:shadow-xl transition-all duration-300" style={{ animationDelay: `${idx * 100}ms` }}>
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center">
-                                                        <Eye className="w-6 h-6 text-primary-600" />
+                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-100 to-teal-100 dark:from-primary-900/40 dark:to-teal-900/40 flex items-center justify-center">
+                                                        <Eye className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-slate-900">{log.accessedBy?.name || log.accessedBy?.userId}</p>
-                                                        <p className="text-sm text-slate-500">{log.accessedBy?.role}{log.accessedBy?.specialty && ` • ${log.accessedBy.specialty}`}</p>
+                                                        <p className="font-bold text-slate-900 dark:text-white">{log.accessedBy?.name || log.accessedBy?.userId}</p>
+                                                        <p className="text-sm text-slate-500 dark:text-slate-400">{log.accessedBy?.role}{log.accessedBy?.specialty && ` • ${log.accessedBy.specialty}`}</p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="font-medium text-slate-900">{new Date(log.accessedAt).toLocaleDateString()}</p>
-                                                    <p className="text-xs text-slate-500">{new Date(log.accessedAt).toLocaleTimeString()}</p>
+                                                    <p className="font-medium text-slate-900 dark:text-white">{new Date(log.accessedAt).toLocaleDateString()}</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{new Date(log.accessedAt).toLocaleTimeString()}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -441,19 +522,19 @@ const PatientDashboard = () => {
                     {activeTab === 'privacy' && (
                         <div className={`space-y-8 animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="mb-6">
-                                <h2 className="text-2xl font-bold text-slate-900">Data Privacy & Rights</h2>
-                                <p className="text-slate-500 mt-1">Manage your data portability and check compliance (GDPR & HIPAA)</p>
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Data Privacy & Rights</h2>
+                                <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your data portability and check compliance (GDPR & HIPAA)</p>
                             </div>
 
                             {/* Data Portability */}
                             <div className="card">
                                 <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                        <FileText className="w-6 h-6 text-blue-600" />
+                                    <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
+                                        <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-lg font-bold text-slate-900">Data Portability (Right to Access)</h3>
-                                        <p className="text-slate-500 text-sm mt-1 mb-4">
+                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Data Portability (Right to Access)</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 mb-4">
                                             Download a copy of all your personal data and medical records stored in our system.
                                             You can choose between a machine-readable JSON format or a readable PDF report.
                                         </p>
@@ -482,14 +563,14 @@ const PatientDashboard = () => {
                             {/* Right to Erasure */}
                             <div className="card border-l-4 border-red-500 bg-red-50/30">
                                 <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-                                        <Shield className="w-6 h-6 text-red-600" />
+                                    <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0">
+                                        <Shield className="w-6 h-6 text-red-600 dark:text-red-400" />
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-lg font-bold text-slate-900">Right to Erasure (Delete Account)</h3>
-                                        <p className="text-slate-500 text-sm mt-1 mb-4">
+                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Right to Erasure (Delete Account)</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 mb-4">
                                             Permanently delete your account and anonymize your medical records.
-                                            <span className="font-bold text-red-600 block mt-1">Warning: This action is irreversible.</span>
+                                            <span className="font-bold text-red-600 dark:text-red-400 block mt-1">Warning: This action is irreversible.</span>
                                         </p>
                                         <button
                                             onClick={handleDeleteAccount}

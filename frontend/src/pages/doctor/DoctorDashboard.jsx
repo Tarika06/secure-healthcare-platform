@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, Heart, TrendingUp, MailCheck } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Modal from '../../components/Modal';
+import MedicalCard from '../../components/MedicalCard';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
@@ -166,22 +167,53 @@ const DoctorDashboard = () => {
 
     const handleLogout = () => { logout(); navigate('/login'); };
 
-    const StatCard = ({ icon: Icon, label, value, colorClass, delay }) => (
-        <div
-            className={`card-stat group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-            style={{ transitionDelay: `${delay}ms` }}
-        >
-            <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colorClass}`}>
-                    <Icon className="w-7 h-7" />
-                </div>
-                <div>
-                    <p className="text-sm font-medium text-slate-500">{label}</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-1">{value ?? 0}</p>
+    const StatCard = ({ icon: Icon, label, value, colorClass, delay }) => {
+        const isConsent = label?.toLowerCase().includes('consent');
+        const isPending = label?.toLowerCase().includes('pending') || label?.toLowerCase().includes('request');
+
+        return (
+            <div
+                className={`card-stat group transition-all duration-700 relative overflow-hidden group-hover:bg-transparent ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                style={{ transitionDelay: `${delay}ms` }}
+            >
+                {/* Active Consent Hover Image (Multiple People) */}
+                {isConsent && (
+                    <>
+                        <img
+                            src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.08] group-hover:opacity-[0.45] group-hover:scale-110 !z-0"
+                            style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
+                        />
+                        <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/10 dark:group-hover:bg-slate-900/10 transition-colors duration-500 !z-[1]" />
+                    </>
+                )}
+
+                {/* Pending Request Hover Image */}
+                {isPending && (
+                    <>
+                        <img
+                            src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&v=2"
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.10] group-hover:opacity-[0.40] group-hover:scale-105 !z-0"
+                            style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
+                        />
+                        <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/20 dark:group-hover:bg-slate-900/20 transition-colors duration-500 !z-[1]" />
+                    </>
+                )}
+
+                <div className="relative z-10 flex items-center gap-4">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colorClass}`}>
+                        <Icon className="w-7 h-7" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
+                        <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{value ?? 0}</p>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const getRecordTypeBadge = (type) => {
         const styles = {
@@ -208,35 +240,6 @@ const DoctorDashboard = () => {
 
             <div className="flex-1 overflow-y-auto">
                 <div className="max-w-full mx-auto px-6 py-8">
-                    {/* Header */}
-                    <div className={`mb-8 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                        <div className="flex items-center gap-4 mb-2">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-                                <Stethoscope className="h-7 w-7 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-3xl font-bold text-slate-900">Doctor Dashboard</h1>
-                                <p className="text-slate-500">Welcome back, <span className="text-blue-600 font-medium">Dr. {user?.firstName} {user?.lastName}</span>{user?.specialty && <span className="text-primary-600"> • {user.specialty}</span>}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Tab Navigation */}
-                    <div className={`flex gap-2 mb-8 overflow-x-auto pb-2 transition-all duration-700 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => navigate(`/doctor/dashboard?tab=${tab.id}`)}
-                                className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${activeTab === tab.id
-                                    ? 'bg-gradient-to-r from-primary-600 to-teal-600 text-white shadow-lg shadow-primary-500/25'
-                                    : 'text-slate-600 hover:bg-slate-100'
-                                    }`}
-                            >
-                                <tab.icon className="w-5 h-5" />
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
 
                     {/* Overview Tab */}
                     {activeTab === 'overview' && (
@@ -253,8 +256,8 @@ const DoctorDashboard = () => {
                         <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-slate-900">My Created Records</h2>
-                                    <p className="text-slate-500 mt-1">Records you have created for patients</p>
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">My Created Records</h2>
+                                    <p className="text-slate-500 dark:text-slate-400 mt-1">Records you have created for patients</p>
                                 </div>
                             </div>
 
@@ -264,46 +267,19 @@ const DoctorDashboard = () => {
                                 </div>
                             ) : myCreatedRecords.length === 0 ? (
                                 <div className="card text-center py-16">
-                                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 flex items-center justify-center">
+                                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                                         <ClipboardList className="w-10 h-10 text-slate-400" />
                                     </div>
-                                    <h3 className="text-xl font-semibold text-slate-900 mb-2">No Records Created Yet</h3>
-                                    <p className="text-slate-500 mb-6">Start by creating a medical report for a patient</p>
+                                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No Records Created Yet</h3>
+                                    <p className="text-slate-500 dark:text-slate-400 mb-6">Start by creating a medical report for a patient</p>
                                     <button onClick={() => navigate('/doctor/dashboard?tab=create')} className="btn-primary">
                                         <Plus className="w-5 h-5 mr-2" />Create Report
                                     </button>
                                 </div>
                             ) : (
                                 <div className="grid gap-4">
-                                    {myCreatedRecords.map((record, idx) => (
-                                        <div
-                                            key={record._id}
-                                            className="card hover:shadow-xl transition-all duration-300"
-                                            style={{ animationDelay: `${idx * 100}ms` }}
-                                        >
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getRecordTypeBadge(record.recordType)}`}>
-                                                        {record.recordType}
-                                                    </span>
-                                                    <span className="text-sm text-slate-400 flex items-center gap-1">
-                                                        <Calendar className="w-4 h-4" />
-                                                        {new Date(record.createdAt).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <h3 className="text-lg font-bold text-slate-900 mb-1">{record.title}</h3>
-                                            <p className="text-sm text-slate-500 mb-3">Patient: {record.patientName}</p>
-                                            <div className="space-y-2">
-                                                <p className="text-slate-700"><strong className="text-slate-900">Diagnosis:</strong> {record.diagnosis}</p>
-                                                <p className="text-slate-600 text-sm">{record.details}</p>
-                                                {record.prescription && (
-                                                    <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
-                                                        <p className="text-green-800 text-sm"><strong>Rx:</strong> {record.prescription}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                                    {myCreatedRecords.map((record) => (
+                                        <MedicalCard key={record._id} record={record} />
                                     ))}
                                 </div>
                             )}
@@ -314,8 +290,8 @@ const DoctorDashboard = () => {
                     {activeTab === 'create' && (
                         <div className={`max-w-3xl animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="mb-6">
-                                <h2 className="text-2xl font-bold text-slate-900">Create Medical Report</h2>
-                                <p className="text-slate-500 mt-1">Generate a new medical record for a patient</p>
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Create Medical Report</h2>
+                                <p className="text-slate-500 dark:text-slate-400 mt-1">Generate a new medical record for a patient</p>
                             </div>
 
                             <form onSubmit={handleCreateReport} className="card space-y-6">
@@ -356,8 +332,8 @@ const DoctorDashboard = () => {
                                 </div>
 
                                 <div>
-                                    <label className="label">Prescription (Optional)</label>
-                                    <textarea value={reportForm.prescription} onChange={(e) => setReportForm({ ...reportForm, prescription: e.target.value })} rows="3" className="input-field" placeholder="Medications, dosage, and instructions..." />
+                                    <label className="label dark:text-slate-300">Prescription (Optional)</label>
+                                    <textarea value={reportForm.prescription} onChange={(e) => setReportForm({ ...reportForm, prescription: e.target.value })} rows="3" className="input-field dark:bg-slate-800 dark:border-slate-700 dark:text-white" placeholder="Medications, dosage, and instructions..." />
                                 </div>
 
                                 <button type="submit" disabled={loading} className="btn-glow w-full">
@@ -381,8 +357,8 @@ const DoctorDashboard = () => {
                     {activeTab === 'patients' && (
                         <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="mb-6">
-                                <h2 className="text-2xl font-bold text-slate-900">Patient Management</h2>
-                                <p className="text-slate-500 mt-1">View and manage patient records</p>
+                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Patient Management</h2>
+                                <p className="text-slate-500 dark:text-slate-400 mt-1">View and manage patient records</p>
                             </div>
 
                             {loading ? (
@@ -391,10 +367,10 @@ const DoctorDashboard = () => {
                                 </div>
                             ) : patients.length === 0 ? (
                                 <div className="card text-center py-16">
-                                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 flex items-center justify-center">
+                                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                                         <Users className="w-10 h-10 text-slate-400" />
                                     </div>
-                                    <h3 className="text-xl font-semibold text-slate-900">No Patients Found</h3>
+                                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white">No Patients Found</h3>
                                 </div>
                             ) : (
                                 <div className="grid gap-4">
@@ -410,8 +386,8 @@ const DoctorDashboard = () => {
                                                         {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-lg font-bold text-slate-900">{patient.firstName} {patient.lastName}</h3>
-                                                        <p className="text-sm text-slate-500">ID: {patient.userId} • {patient.email}</p>
+                                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{patient.firstName} {patient.lastName}</h3>
+                                                        <p className="text-sm text-slate-500 dark:text-slate-400">ID: {patient.userId} • {patient.email}</p>
                                                     </div>
                                                 </div>
                                                 {patient.hasConsent ? (
@@ -420,7 +396,7 @@ const DoctorDashboard = () => {
                                                     </button>
                                                 ) : (pendingConsentIds.includes(patient.userId) || patient.consentPending) ? (
                                                     <button
-                                                        className="rounded-xl px-6 py-2 font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300 shadow-sm cursor-not-allowed transition-all duration-200"
+                                                        className="rounded-xl px-6 py-2 font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700 shadow-sm cursor-not-allowed transition-all duration-200"
                                                         style={{ minWidth: 140 }}
                                                         disabled
                                                     >
@@ -440,16 +416,16 @@ const DoctorDashboard = () => {
                                             </div>
 
                                             {selectedPatient?.userId === patient.userId && (
-                                                <div className="mt-6 pt-6 border-t border-slate-200">
+                                                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
                                                     {accessInfo && !accessInfo.fullAccess && (
-                                                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-                                                            <p className="text-amber-800 text-sm font-medium">{accessInfo.message}</p>
+                                                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-4">
+                                                            <p className="text-amber-800 dark:text-amber-200 text-sm font-medium">{accessInfo.message}</p>
                                                             {accessInfo.hiddenRecordCount > 0 && (
-                                                                <p className="text-amber-600 text-xs mt-1">{accessInfo.hiddenRecordCount} additional records require consent</p>
+                                                                <p className="text-amber-600 dark:text-amber-400 text-xs mt-1">{accessInfo.hiddenRecordCount} additional records require consent</p>
                                                             )}
                                                         </div>
                                                     )}
-                                                    <h4 className="font-bold text-slate-900 mb-4">Medical Timeline</h4>
+                                                    <h4 className="font-bold text-slate-900 dark:text-white mb-4">Medical Timeline</h4>
                                                     {loadingPatientId === patient.userId ? (
                                                         <div className="text-center text-slate-400 py-8">
                                                             <div className="w-8 h-8 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-2" />
@@ -460,14 +436,7 @@ const DoctorDashboard = () => {
                                                     ) : (
                                                         <div className="space-y-3">
                                                             {patientRecords.map(record => (
-                                                                <div key={record._id} className="flex gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                                                                    <div className="flex-shrink-0 w-1 bg-gradient-to-b from-primary-500 to-teal-500 rounded-full" />
-                                                                    <div className="flex-1">
-                                                                        <p className="font-semibold text-slate-900">{record.title}</p>
-                                                                        <p className="text-sm text-slate-600">{record.diagnosis}</p>
-                                                                        <p className="text-xs text-slate-400 mt-1">{new Date(record.createdAt).toLocaleDateString()}</p>
-                                                                    </div>
-                                                                </div>
+                                                                <MedicalCard key={record._id} record={record} />
                                                             ))}
                                                         </div>
                                                     )}
@@ -487,18 +456,18 @@ const DoctorDashboard = () => {
                 confirmConsentModal && consentSentPatient && (
                     <Modal isOpen={confirmConsentModal} onClose={() => setConfirmConsentModal(false)} title="Request Access" icon={ShieldAlert} size="sm">
                         <div className="space-y-4">
-                            <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex gap-3 text-left">
+                            <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800 flex gap-3 text-left">
                                 <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                                 <div>
-                                    <h4 className="font-semibold text-amber-900 text-sm">Consent Required</h4>
-                                    <p className="text-amber-700 text-xs mt-1">
+                                    <h4 className="font-semibold text-amber-900 dark:text-amber-200 text-sm">Consent Required</h4>
+                                    <p className="text-amber-700 dark:text-amber-300 text-xs mt-1">
                                         You are about to request access to medical records for <strong>{consentSentPatient.firstName} {consentSentPatient.lastName}</strong>.
                                         The patient determines what you can see.
                                     </p>
                                 </div>
                             </div>
                             <div className="flex gap-3 justify-end mt-4">
-                                <button onClick={() => setConfirmConsentModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition-colors">Cancel</button>
+                                <button onClick={() => setConfirmConsentModal(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm font-medium transition-colors">Cancel</button>
                                 <button onClick={handleConfirmRequest} className="btn-primary py-2 px-4 text-sm">Request Access</button>
                             </div>
                         </div>
@@ -512,11 +481,11 @@ const DoctorDashboard = () => {
                     <Modal isOpen={showConsentSentModal} onClose={() => setShowConsentSentModal(false)} title="Consent Request Sent" icon={MailCheck} size="sm">
                         <div className="space-y-3 text-center">
                             <div className="flex flex-col items-center gap-2">
-                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center mb-2">
+                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 flex items-center justify-center mb-2">
                                     <MailCheck className="w-8 h-8 text-green-600" />
                                 </div>
-                                <h4 className="text-lg font-semibold text-slate-900">Request Sent!</h4>
-                                <p className="text-slate-600 text-sm">A consent request has been sent to <span className="font-bold">{consentSentPatient.firstName} {consentSentPatient.lastName}</span> (ID: {consentSentPatient.userId}).<br />They will need to approve it before you can view their records.</p>
+                                <h4 className="text-lg font-semibold text-slate-900 dark:text-white">Request Sent!</h4>
+                                <p className="text-slate-600 dark:text-slate-400 text-sm">A consent request has been sent to <span className="font-bold">{consentSentPatient.firstName} {consentSentPatient.lastName}</span> (ID: {consentSentPatient.userId}).<br />They will need to approve it before you can view their records.</p>
                             </div>
                             <button onClick={() => setShowConsentSentModal(false)} className="btn-primary w-full mt-4">OK</button>
                         </div>
