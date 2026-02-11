@@ -11,6 +11,11 @@
   "license": "ISC",
   "keywords": [],
   "dependencies": {
+<<<<<<< Updated upstream
+=======
+    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.13.5",
+>>>>>>> Stashed changes
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",

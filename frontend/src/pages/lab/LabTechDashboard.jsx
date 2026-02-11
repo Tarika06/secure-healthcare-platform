@@ -29,9 +29,18 @@ const LabTechDashboard = () => {
     const fetchPatients = async () => {
         try {
             const response = await apiClient.get('/records/patients/list');
-            setPatients(response.data.patients || []);
+            if (response.data.patients && response.data.patients.length > 0) {
+                setPatients(response.data.patients);
+            } else {
+                console.warn('Lab: Patient list is empty or undefined.');
+                setPatients([]);
+            }
         } catch (error) {
-            console.error('Error fetching patients:', error);
+            console.error('Lab: Error fetching patients:', error);
+            if (error.response) {
+                console.error('Lab: Error Status:', error.response.status);
+                console.error('Lab: Error Data:', error.response.data);
+            }
         }
     };
 
