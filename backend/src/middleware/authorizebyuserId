@@ -17,6 +17,8 @@ module.exports = (allowedPrefixes) => {
     const roleToPrefix = {
       "PATIENT": "P",
       "DOCTOR": "D",
+      "NURSE": "N",
+      "LAB_TECHNICIAN": "L",
       "ADMIN": "A"
     };
 

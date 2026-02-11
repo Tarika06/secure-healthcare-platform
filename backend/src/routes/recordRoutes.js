@@ -27,7 +27,7 @@ const { decryptRecord, encryptRecordFields } = require("../services/encryptionSe
 router.post(
     "/create",
     authenticate,
-    authorizeByUserId(["D"]),
+    authorizeByUserId(["D", "L"]),
     async (req, res) => {
         try {
             const { patientId, title, diagnosis, details, prescription, recordType } = req.body;
@@ -118,7 +118,7 @@ router.get(
 router.get(
     "/my-created-records",
     authenticate,
-    authorizeByUserId(["D"]),
+    authorizeByUserId(["D", "L"]),
     async (req, res) => {
         try {
             const doctorId = req.user.userId;

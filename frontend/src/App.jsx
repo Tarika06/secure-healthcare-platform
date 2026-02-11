@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProfilePage from './components/ProfilePage';
 import HomePage from './pages/HomePage';
@@ -14,115 +15,117 @@ import PageWrapper from './components/PageWrapper';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
-          <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
-          <Route path="/register" element={<PageWrapper><RegisterPage /></PageWrapper>} />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
+            <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
+            <Route path="/register" element={<PageWrapper><RegisterPage /></PageWrapper>} />
 
-          <Route
-            path="/doctor/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['DOCTOR']}>
-                <PageWrapper><DoctorDashboard /></PageWrapper>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/doctor/profile"
-            element={
-              <ProtectedRoute allowedRoles={['DOCTOR']}>
-                <PageWrapper><ProfilePage role="DOCTOR" dashboardPath="/doctor/dashboard" /></PageWrapper>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/doctor/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['DOCTOR']}>
+                  <PageWrapper><DoctorDashboard /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/doctor/profile"
+              element={
+                <ProtectedRoute allowedRoles={['DOCTOR']}>
+                  <PageWrapper><ProfilePage role="DOCTOR" dashboardPath="/doctor/dashboard" /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/patient/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['PATIENT']}>
-                <PageWrapper><PatientDashboard /></PageWrapper>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/patient/profile"
-            element={
-              <ProtectedRoute allowedRoles={['PATIENT']}>
-                <PageWrapper><ProfilePage role="PATIENT" dashboardPath="/patient/dashboard" /></PageWrapper>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/patient/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['PATIENT']}>
+                  <PageWrapper><PatientDashboard /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/patient/profile"
+              element={
+                <ProtectedRoute allowedRoles={['PATIENT']}>
+                  <PageWrapper><ProfilePage role="PATIENT" dashboardPath="/patient/dashboard" /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/nurse/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['NURSE']}>
-                <PageWrapper><NurseDashboard /></PageWrapper>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/nurse/profile"
-            element={
-              <ProtectedRoute allowedRoles={['NURSE']}>
-                <PageWrapper><ProfilePage role="NURSE" dashboardPath="/nurse/dashboard" /></PageWrapper>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/nurse/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['NURSE']}>
+                  <PageWrapper><NurseDashboard /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/nurse/profile"
+              element={
+                <ProtectedRoute allowedRoles={['NURSE']}>
+                  <PageWrapper><ProfilePage role="NURSE" dashboardPath="/nurse/dashboard" /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/lab/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['LAB_TECHNICIAN']}>
-                <PageWrapper><LabTechDashboard /></PageWrapper>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/lab/profile"
-            element={
-              <ProtectedRoute allowedRoles={['LAB_TECHNICIAN']}>
-                <PageWrapper><ProfilePage role="LAB_TECHNICIAN" dashboardPath="/lab/dashboard" /></PageWrapper>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/lab/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['LAB_TECHNICIAN']}>
+                  <PageWrapper><LabTechDashboard /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lab/profile"
+              element={
+                <ProtectedRoute allowedRoles={['LAB_TECHNICIAN']}>
+                  <PageWrapper><ProfilePage role="LAB_TECHNICIAN" dashboardPath="/lab/dashboard" /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <PageWrapper><AdminDashboard /></PageWrapper>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/profile"
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <PageWrapper><ProfilePage role="ADMIN" dashboardPath="/admin/dashboard" /></PageWrapper>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <PageWrapper><AdminDashboard /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/profile"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <PageWrapper><ProfilePage role="ADMIN" dashboardPath="/admin/dashboard" /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/unauthorized"
-            element={
-              <div className="min-h-screen flex items-center justify-center dashboard-bg">
-                <div className="card max-w-md text-center">
-                  <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
-                  <p className="text-slate-600">You don't have permission to access this page.</p>
-                  <a href="/login" className="btn-primary mt-4 inline-block">
-                    Back to Login
-                  </a>
+            <Route
+              path="/unauthorized"
+              element={
+                <div className="min-h-screen flex items-center justify-center dashboard-bg">
+                  <div className="card max-w-md text-center">
+                    <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
+                    <p className="text-slate-600">You don't have permission to access this page.</p>
+                    <a href="/login" className="btn-primary mt-4 inline-block">
+                      Back to Login
+                    </a>
+                  </div>
                 </div>
-              </div>
-            }
-          />
-        </Routes>
-      </Router>
-    </AuthProvider>
+              }
+            />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

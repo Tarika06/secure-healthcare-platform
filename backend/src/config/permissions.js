@@ -39,14 +39,16 @@ const PERMISSIONS = {
         canDelete: []
     },
     [ROLES.NURSE]: {
-        canView: ['PATIENT_VITALS', 'CARE_NOTES'],
+        // Nurses can view patient list for dropdowns, vitals, and care notes
+        canView: ['PATIENT_LIST', 'PATIENT_VITALS', 'CARE_NOTES'],
         canCreate: ['CARE_NOTE'],
         canModify: [],
         canDelete: [],
         cannotView: ['DIAGNOSIS', 'PRESCRIPTION', 'DETAILED_MEDICAL_HISTORY']
     },
     [ROLES.LAB_TECHNICIAN]: {
-        canView: ['OWN_UPLOADS'],
+        // Lab techs can view patient list for dropdowns and their own uploads
+        canView: ['PATIENT_LIST', 'OWN_UPLOADS'],
         canCreate: ['LAB_RESULT'],
         canModify: [],
         canDelete: [],
