@@ -76,7 +76,7 @@ const NurseDashboard = () => {
     ];
 
     return (
-        <div className="flex h-screen overflow-hidden aurora-bg-nurse">
+        <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white transition-colors duration-500">
             <Sidebar
                 role="NURSE"
                 items={sidebarItems}
@@ -95,7 +95,7 @@ const NurseDashboard = () => {
             {/* ═══ Two-Panel Split Workstation ═══ */}
             <div className="flex-1 flex overflow-hidden relative z-10">
                 {/* Left Panel: Patient Roster */}
-                <div className="w-[340px] flex-shrink-0 h-full flex flex-col border-r border-slate-200/40" style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(12px)' }}>
+                <div className="w-[340px] flex-shrink-0 h-full flex flex-col border-r border-slate-200/40 bg-white/50 backdrop-blur-md dark:bg-slate-900/50 dark:border-white/10">
                     {/* Roster Header */}
                     <div className="p-5 border-b border-slate-100/60">
                         <div className="flex items-center gap-3 mb-4">

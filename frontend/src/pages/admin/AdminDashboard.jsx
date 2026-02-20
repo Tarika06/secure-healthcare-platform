@@ -148,7 +148,7 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="flex h-screen overflow-hidden aurora-bg-admin">
+        <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white transition-colors duration-500">
             <Sidebar
                 role="ADMIN"
                 items={sidebarItems}
@@ -160,7 +160,7 @@ const AdminDashboard = () => {
 
             <div className="flex-1 overflow-y-auto relative z-10">
                 {/* Sticky Header */}
-                <div className="sticky top-0 z-20 px-6 py-3" style={{ background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="sticky top-0 z-20 px-6 py-3 bg-slate-900/85 backdrop-blur-md border-b border-white/10">
                     <div className="flex items-center gap-3 max-w-[1600px] mx-auto">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/30">
                             <Shield className="h-5 w-5 text-white" />
@@ -252,7 +252,7 @@ const AdminDashboard = () => {
                                 ) : (
                                     <div className="overflow-x-auto max-h-[600px] overflow-y-auto rounded-xl border border-slate-200">
                                         <table className="w-full">
-                                            <thead className="sticky top-0 z-10" style={{ background: 'rgba(248,250,252,0.95)', backdropFilter: 'blur(8px)' }}>
+                                            <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-sm dark:bg-slate-900/95">
                                                 <tr>
                                                     <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">User ID</th>
                                                     <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
@@ -408,7 +408,7 @@ const AdminDashboard = () => {
                                 ) : (
                                     <div className="overflow-x-auto max-h-[600px] overflow-y-auto rounded-xl border border-slate-200">
                                         <table className="w-full">
-                                            <thead className="sticky top-0 z-10" style={{ background: 'rgba(248,250,252,0.95)', backdropFilter: 'blur(8px)' }}>
+                                            <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-sm dark:bg-slate-900/95">
                                                 <tr>
                                                     <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Timestamp</th>
                                                     <th className="text-left py-3.5 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">User</th>

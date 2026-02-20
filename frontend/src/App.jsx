@@ -11,6 +11,8 @@ import PatientDashboard from './pages/patient/PatientDashboard';
 import NurseDashboard from './pages/nurse/NurseDashboard';
 import LabTechDashboard from './pages/lab/LabTechDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import MfaVerifyPage from './pages/MfaVerifyPage';
+import MfaSetupPage from './pages/MfaSetupPage';
 import PageWrapper from './components/PageWrapper';
 
 function App() {
@@ -22,6 +24,15 @@ function App() {
             <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
             <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
             <Route path="/register" element={<PageWrapper><RegisterPage /></PageWrapper>} />
+            <Route path="/mfa-verify" element={<PageWrapper><MfaVerifyPage /></PageWrapper>} />
+            <Route
+              path="/mfa-setup"
+              element={
+                <ProtectedRoute allowedRoles={['PATIENT', 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN', 'ADMIN']}>
+                  <PageWrapper><MfaSetupPage /></PageWrapper>
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/doctor/dashboard"

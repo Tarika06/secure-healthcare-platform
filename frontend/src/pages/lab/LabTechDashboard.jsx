@@ -72,7 +72,7 @@ const LabTechDashboard = () => {
     };
 
     return (
-        <div className="flex h-screen overflow-hidden aurora-bg-lab">
+        <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white transition-colors duration-500">
             <Sidebar
                 role="LAB_TECHNICIAN"
                 items={sidebarItems}
@@ -84,7 +84,7 @@ const LabTechDashboard = () => {
 
             <div className="flex-1 overflow-y-auto relative z-10">
                 {/* Sticky Header */}
-                <div className="sticky top-0 z-20 px-6 py-3" style={{ background: 'rgba(245,247,250,0.8)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.4)' }}>
+                <div className="sticky top-0 z-20 px-6 py-3 bg-slate-50/80 backdrop-blur-md border-b border-white/40 dark:bg-slate-900/80 dark:border-white/10">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md">
                             <FlaskConical className="h-5 w-5 text-white" />

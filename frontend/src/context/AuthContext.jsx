@@ -37,6 +37,35 @@ export const AuthProvider = ({ children }) => {
     const login = async (userId, password) => {
         try {
             const response = await apiClient.post('/auth/login', { userId, password });
+
+            // Check if MFA is required
+            if (response.data.mfaRequired) {
+                // Return MFA info — caller (LoginPage) will redirect to MFA verify
+                return {
+                    mfaRequired: true,
+                    mfaToken: response.data.mfaToken,
+                    userId
+                };
+            }
+
+            // Normal login (no MFA)
+            const { token } = response.data;
+            localStorage.setItem('token', token);
+            setToken(token);
+
+            // Fetch user profile
+            const profileResponse = await apiClient.get('/user/profile');
+            setUser(profileResponse.data);
+
+            return profileResponse.data;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    const verifyMfa = async (mfaToken, code) => {
+        try {
+            const response = await apiClient.post('/auth/verify-mfa', { mfaToken, code });
             const { token } = response.data;
 
             localStorage.setItem('token', token);
@@ -83,6 +112,7 @@ export const AuthProvider = ({ children }) => {
                 isAuthenticated: !!token && !!user,
                 isLoading,
                 login,
+                verifyMfa,
                 logout,
                 refreshUser,
             }}

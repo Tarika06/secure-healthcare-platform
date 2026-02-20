@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3, ClipboardList, Activity, Upload, Plus, Eye, Bell, Stethoscope, FlaskConical, Settings, ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3, ClipboardList, Activity, Upload, Plus, Eye, Bell, Stethoscope, FlaskConical, Settings, ChevronLeft, ChevronRight, Sun, Moon, KeyRound } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import logo from '../assets/logo.png';
 
@@ -208,6 +208,16 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                         {!isCollapsed && <span className="font-medium">Profile</span>}
                     </button>
                     <button
+                        onClick={() => navigate('/mfa-setup')}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group ${isDark
+                            ? 'text-emerald-400 hover:bg-emerald-500/10'
+                            : 'text-emerald-600 hover:bg-emerald-50'
+                            }`}
+                    >
+                        <KeyRound className="h-5 w-5 group-hover:scale-110 transition-transform flex-shrink-0" />
+                        {!isCollapsed && <span className="font-medium">MFA Security</span>}
+                    </button>
+                    <button
                         onClick={onLogout}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group ${isDark
                             ? 'text-red-400 hover:bg-red-500/10'
@@ -327,6 +337,16 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                 >
                     <Settings className="h-5 w-5 group-hover:scale-110 transition-transform flex-shrink-0" />
                     {!isCollapsed && <span className="font-medium">Profile</span>}
+                </button>
+                <button
+                    onClick={() => navigate('/mfa-setup')}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group ${isDark
+                        ? 'text-emerald-400 hover:bg-emerald-500/10'
+                        : 'text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                >
+                    <KeyRound className="h-5 w-5 group-hover:scale-110 transition-transform flex-shrink-0" />
+                    {!isCollapsed && <span className="font-medium">MFA Security</span>}
                 </button>
                 <button
                     onClick={onLogout}

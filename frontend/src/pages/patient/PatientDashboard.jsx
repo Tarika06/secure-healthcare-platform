@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Shield, Bell, CheckCircle, XCircle, LayoutDashboard, Eye, Heart, Clock, Activity, User, Download, Trash2, ArrowRight, Sun, Moon, Sparkles } from 'lucide-react';
+import { FileText, Shield, Bell, CheckCircle, XCircle, LayoutDashboard, Eye, Heart, Clock, Activity, User, Download, Trash2, ArrowRight, Sun, Moon, Sparkles, KeyRound } from 'lucide-react';
 import MedicalCard from '../../components/MedicalCard';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -171,16 +171,16 @@ const PatientDashboard = () => {
     );
 
     if (loading) return (
-        <div className="aurora-bg-patient flex items-center justify-center min-h-screen">
-            <div className="text-center relative z-10">
-                <div className="w-16 h-16 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin mx-auto" />
-                <p className="text-slate-500 mt-6 font-medium">Loading your health data...</p>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center font-sans transition-colors duration-500">
+            <div className="text-center relative z-10 glass-card p-12">
+                <div className="w-16 h-16 border-4 border-teal-200 dark:border-teal-700/50 border-t-teal-600 dark:border-t-teal-400 rounded-full animate-spin mx-auto" />
+                <p className="text-slate-500 dark:text-slate-400 mt-6 font-medium">Loading your health data...</p>
             </div>
         </div>
     );
 
     return (
-        <div className="aurora-bg-patient min-h-screen">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-500 text-slate-900 dark:text-white">
             {/* ═══ Top Navigation Bar ═══ */}
             <div className="topnav-glass">
                 <div className="h-full max-w-7xl mx-auto flex items-center justify-between">
@@ -223,6 +223,13 @@ const PatientDashboard = () => {
                             <span>Encrypted</span>
                         </div>
                         <button
+                            onClick={() => navigate('/mfa-setup')}
+                            className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-all duration-300 hover:scale-110"
+                            title="MFA Security"
+                        >
+                            <KeyRound className="w-4.5 h-4.5" />
+                        </button>
+                        <button
                             onClick={() => navigate('/patient/profile')}
                             className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                         >
@@ -248,13 +255,13 @@ const PatientDashboard = () => {
                             <div className={`glass-card p-8 relative overflow-hidden transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                                 <div className="relative z-10">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <Sparkles className="w-5 h-5 text-teal-500" />
-                                        <span className="text-sm font-medium text-teal-600">{getGreeting()}</span>
+                                        <Sparkles className="w-5 h-5 text-teal-500 dark:text-teal-400" />
+                                        <span className="text-sm font-medium text-teal-600 dark:text-teal-400">{getGreeting()}</span>
                                     </div>
-                                    <h1 className="text-3xl font-heading font-bold text-slate-900 mb-2">
+                                    <h1 className="text-3xl font-heading font-bold text-slate-900 dark:text-white mb-2">
                                         Welcome back, <span className="text-gradient">{user?.firstName}</span>
                                     </h1>
-                                    <p className="text-slate-500 max-w-lg">
+                                    <p className="text-slate-500 dark:text-slate-400 max-w-lg">
                                         Your health data is securely managed. Review your records, manage consent, and control your privacy — all in one place.
                                     </p>
                                 </div>

@@ -43,6 +43,7 @@ app.use("/api/mgmt", require("./routes/patientManagement"));
 app.use("/api/pm", require("./routes/patientManagement"));  // Alias
 app.use("/api/gdpr", require("./routes/gdprRoutes"));       // Direct GDPR access
 app.use("/api/alerts", require("./routes/alertRoutes"));
+app.use("/api/mfa", require("./middleware/authenticate"), require("./routes/mfaRoutes"));
 
 
 const startServer = async () => {
