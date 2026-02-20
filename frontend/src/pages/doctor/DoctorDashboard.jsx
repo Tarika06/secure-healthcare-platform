@@ -178,7 +178,7 @@ const DoctorDashboard = () => {
             >
 
                 <div className="relative z-10 flex items-center gap-4">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colorClass}`}>
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colorClass}`}>
                         <Icon className="w-7 h-7" />
                     </div>
                     <div>

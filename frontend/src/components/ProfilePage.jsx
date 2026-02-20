@@ -166,7 +166,7 @@ const ProfilePage = ({ role, dashboardPath }) => {
                     onClick={() => navigate(dashboardPath)}
                     className={`flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-8 transition-all duration-300 group ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 >
-                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                    <ArrowLeft className="w-5 h-5" />
                     <span className="font-medium">Back to Dashboard</span>
                 </button>
 

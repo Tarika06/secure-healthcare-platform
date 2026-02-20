@@ -182,7 +182,7 @@ const AdminDashboard = () => {
                         {value ?? '—'}
                     </p>
                 </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${color.includes('primary') ? 'icon-container-primary' :
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color.includes('primary') ? 'icon-container-primary' :
                     color.includes('blue') ? 'icon-container-blue' :
                         color.includes('green') ? 'icon-container-green' :
                             'icon-container-amber'
@@ -223,7 +223,7 @@ const AdminDashboard = () => {
                                                 </p>
                                                 <p className="text-sm text-slate-600 dark:text-slate-400">Active in system</p>
                                             </div>
-                                            <div className="w-20 h-20 rounded-2xl icon-container-primary flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3">
+                                            <div className="w-20 h-20 rounded-2xl icon-container-primary flex items-center justify-center">
                                                 <Users className="w-10 h-10" />
                                             </div>
                                         </div>
@@ -240,7 +240,7 @@ const AdminDashboard = () => {
                                                         {stats?.totalDoctors ?? '—'}
                                                     </p>
                                                 </div>
-                                                <div className="w-14 h-14 rounded-xl icon-container-blue flex items-center justify-center transition-transform group-hover:scale-110 group-hover:-rotate-3">
+                                                <div className="w-14 h-14 rounded-xl icon-container-blue flex items-center justify-center">
                                                     <Activity className="w-7 h-7" />
                                                 </div>
                                             </div>
@@ -254,7 +254,7 @@ const AdminDashboard = () => {
                                                         {stats?.totalRecords ?? '—'}
                                                     </p>
                                                 </div>
-                                                <div className="w-14 h-14 rounded-xl icon-container-green flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3">
+                                                <div className="w-14 h-14 rounded-xl icon-container-green flex items-center justify-center">
                                                     <FileText className="w-7 h-7" />
                                                 </div>
                                             </div>
@@ -274,7 +274,7 @@ const AdminDashboard = () => {
                                                         {stats?.recentRecordsLast7Days ?? '—'}
                                                     </p>
                                                 </div>
-                                                <div className="w-14 h-14 rounded-xl icon-container-amber flex items-center justify-center transition-transform group-hover:scale-110 group-hover:-rotate-3">
+                                                <div className="w-14 h-14 rounded-xl icon-container-amber flex items-center justify-center">
                                                     <TrendingUp className="w-7 h-7" />
                                                 </div>
                                             </div>

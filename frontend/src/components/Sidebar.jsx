@@ -65,7 +65,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
         return (
             <div className="relative">
                 <div className={isActive ? 'nav-item-glass-active' : 'nav-item-glass group'}>
-                    <div className={`transition-transform duration-300 flex-shrink-0 ${isActive ? '' : 'group-hover:scale-110'}`}>
+                    <div className="flex-shrink-0">
                         <Icon className="h-5 w-5" />
                     </div>
                     {!isCollapsed && <span className={isActive ? 'font-medium' : 'font-normal'}>{item.label}</span>}
@@ -121,7 +121,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                         }}
                     >
                         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                                 {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
                             </div>
                             {!isCollapsed && (
@@ -162,12 +162,12 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                     >
                         {isDarkMode ? (
                             <>
-                                <Sun className="h-5 w-5 text-yellow-500 group-hover:scale-110 transition-transform flex-shrink-0" />
+                                <Sun className="h-5 w-5 text-yellow-500 flex-shrink-0" />
                                 {!isCollapsed && <span className="font-medium text-slate-700 dark:text-slate-200 animate-fade-in">Light Mode</span>}
                             </>
                         ) : (
                             <>
-                                <Moon className="h-5 w-5 text-primary-600 group-hover:scale-110 transition-transform flex-shrink-0" />
+                                <Moon className="h-5 w-5 text-primary-600 flex-shrink-0" />
                                 {!isCollapsed && <span className="font-medium text-slate-700 dark:text-slate-200 animate-fade-in">Dark Mode</span>}
                             </>
                         )}
@@ -184,7 +184,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                         title={isCollapsed ? "View Profile" : ""}
                         className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-700 dark:hover:text-primary-400 transition-all duration-300 group`}
                     >
-                        <Settings className="h-5 w-5 group-hover:scale-110 transition-transform flex-shrink-0" />
+                        <Settings className="h-5 w-5 flex-shrink-0" />
                         {!isCollapsed && <span className="font-medium text-slate-700 dark:text-slate-200 animate-fade-in">View Profile</span>}
                     </button>
                     <button
@@ -192,7 +192,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                         title={isCollapsed ? "Logout" : ""}
                         className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300 group`}
                     >
-                        <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform flex-shrink-0" />
+                        <LogOut className="h-5 w-5 flex-shrink-0" />
                         {!isCollapsed && <span className="font-medium animate-fade-in">Logout</span>}
                     </button>
                 </div>
@@ -276,12 +276,12 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                 >
                     {isDarkMode ? (
                         <>
-                            <Sun className="h-5 w-5 text-yellow-500 group-hover:scale-110 transition-transform flex-shrink-0" />
+                            <Sun className="h-5 w-5 text-yellow-500 flex-shrink-0" />
                             {!isCollapsed && <span className="font-medium text-slate-700 dark:text-slate-200 animate-fade-in">Light Mode</span>}
                         </>
                     ) : (
                         <>
-                            <Moon className="h-5 w-5 text-primary-600 group-hover:scale-110 transition-transform flex-shrink-0" />
+                            <Moon className="h-5 w-5 text-primary-600 flex-shrink-0" />
                             {!isCollapsed && <span className="font-medium text-slate-700 dark:text-slate-200 animate-fade-in">Dark Mode</span>}
                         </>
                     )}
@@ -298,7 +298,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                     title={isCollapsed ? "View Profile" : ""}
                     className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-700 dark:hover:text-primary-400 transition-all duration-300 group`}
                 >
-                    <Settings className="h-5 w-5 group-hover:scale-110 transition-transform flex-shrink-0" />
+                    <Settings className="h-5 w-5 flex-shrink-0" />
                     {!isCollapsed && <span className="font-medium animate-fade-in text-left">View Profile</span>}
                 </button>
                 <button
@@ -306,7 +306,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                     title={isCollapsed ? "Logout" : ""}
                     className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300 group`}
                 >
-                    <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform flex-shrink-0" />
+                    <LogOut className="h-5 w-5 flex-shrink-0" />
                     {!isCollapsed && <span className="font-medium animate-fade-in text-left">Logout</span>}
                 </button>
             </div>

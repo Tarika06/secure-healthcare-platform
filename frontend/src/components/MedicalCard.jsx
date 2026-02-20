@@ -61,59 +61,9 @@ const MedicalCard = ({ record, onClick }) => {
 
     return (
         <div
-            className="card-glass-white p-5 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-1 relative overflow-hidden !bg-white/40 dark:!bg-slate-900/40 hover:!bg-transparent"
+            className="card-glass-white p-5 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-1 relative overflow-hidden !bg-white/40 dark:!bg-slate-900/40"
             onClick={() => onClick && onClick(record)}
         >
-            {/* Conditional Hover Background Image - Doctor & Patient Checkup */}
-            {isCheckup && !isLab && (
-                <>
-                    <img
-                        src="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                        alt=""
-                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-500 ease-out opacity-0 translate-x-8 group-hover:opacity-[0.55] group-hover:translate-x-0 !z-0"
-                        style={{
-                            mixBlendMode: 'normal',
-                            isolation: 'isolate'
-                        }}
-                    />
-                    {/* Background Overlay - Checkup */}
-                    <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/40 dark:group-hover:bg-slate-900/40 transition-colors duration-500 !z-[1]" />
-                </>
-            )}
-
-            {/* Conditional Hover Background Image - Lab Results */}
-            {isLab && (
-                <>
-                    <img
-                        src="https://images.unsplash.com/photo-1579154204601-01588f351e67?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                        alt=""
-                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-500 ease-out opacity-0 translate-x-8 group-hover:opacity-50 group-hover:translate-x-0 !z-0"
-                        style={{
-                            mixBlendMode: 'normal',
-                            isolation: 'isolate'
-                        }}
-                    />
-                    {/* Background Overlay - Lab (Stronger overlay due to image complexity) */}
-                    <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/50 dark:group-hover:bg-slate-900/50 transition-colors duration-500 !z-[1]" />
-                </>
-            )}
-
-            {/* Default Background for General Medical Records (Form + Stethoscope) */}
-            {!isCheckup && !isLab && (
-                <>
-                    <img
-                        src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                        alt=""
-                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-500 ease-out opacity-0 translate-x-8 group-hover:opacity-60 group-hover:translate-x-0 !z-0"
-                        style={{
-                            mixBlendMode: 'normal',
-                            isolation: 'isolate'
-                        }}
-                    />
-                    {/* Background Overlay - General */}
-                    <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/40 dark:group-hover:bg-slate-900/40 transition-colors duration-500 !z-[1]" />
-                </>
-            )}
 
             <div className="flex items-start gap-4 relative z-10">
                 {/* Icon */}

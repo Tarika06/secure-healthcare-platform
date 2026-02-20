@@ -191,7 +191,7 @@ const PatientDashboard = () => {
                                     {/* Content - Always visible and readable */}
                                     <div className="space-y-4 relative z-10">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-16 h-16 rounded-2xl icon-container-blue flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-6">
+                                            <div className="w-16 h-16 rounded-2xl icon-container-blue flex items-center justify-center">
                                                 <FileText className="w-8 h-8" />
                                             </div>
                                             <div>
@@ -211,7 +211,7 @@ const PatientDashboard = () => {
                                         style={{ transitionDelay: '200ms' }}>
 
                                         <div className="space-y-2 relative z-10">
-                                            <div className="w-12 h-12 rounded-xl icon-container-green flex items-center justify-center transition-transform group-hover:scale-110 group-hover:-rotate-3">
+                                            <div className="w-12 h-12 rounded-xl icon-container-green flex items-center justify-center">
                                                 <Shield className="w-6 h-6" />
                                             </div>
                                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Consents</p>
@@ -224,7 +224,7 @@ const PatientDashboard = () => {
                                         style={{ transitionDelay: '250ms' }}>
 
                                         <div className="space-y-2 relative z-10">
-                                            <div className="w-12 h-12 rounded-xl icon-container-amber flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3">
+                                            <div className="w-12 h-12 rounded-xl icon-container-amber flex items-center justify-center">
                                                 <Bell className="w-6 h-6" />
                                             </div>
                                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pending Requests</p>
