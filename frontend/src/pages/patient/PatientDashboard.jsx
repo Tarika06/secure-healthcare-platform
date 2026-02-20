@@ -187,14 +187,6 @@ const PatientDashboard = () => {
                                 {/* Primary Stat - Wider with Hover Background */}
                                 <div className={`col-span-12 lg:col-span-5 stat-card-glass group transition-all duration-700 relative overflow-hidden ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                                     style={{ transitionDelay: '100ms' }}>
-                                    {/* Hover Background Image - Slide + Fade (No dark mode inversion) */}
-                                    <img
-                                        src="https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?auto=compress&cs=tinysrgb&w=800"
-                                        alt=""
-                                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-0 translate-x-12 group-hover:opacity-90 group-hover:translate-x-0 !z-0"
-                                    />
-                                    {/* Overlay to ensure text contrast */}
-                                    <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none !z-[5]" />
 
                                     {/* Content - Always visible and readable */}
                                     <div className="space-y-4 relative z-10">
@@ -215,18 +207,8 @@ const PatientDashboard = () => {
 
                                 {/* Stats Pair - Staggered */}
                                 <div className="col-span-12 lg:col-span-7 grid grid-cols-2 gap-4">
-                                    <div key={`stat-consent-${activeConsents.length}`} className={`stat-card-glass group transition-all duration-700 relative overflow-hidden group-hover:bg-transparent ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                    <div key={`stat-consent-${activeConsents.length}`} className={`stat-card-glass group transition-all duration-700 relative overflow-hidden ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                                         style={{ transitionDelay: '200ms' }}>
-                                        {/* Hover Background Image - Active Consents (Verified/Shield Concept) */}
-                                        <>
-                                            <img
-                                                src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                                                alt=""
-                                                className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.08] group-hover:opacity-[0.45] group-hover:scale-110 !z-0"
-                                                style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
-                                            />
-                                            <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/10 dark:group-hover:bg-slate-900/10 transition-colors duration-500 !z-[1]" />
-                                        </>
 
                                         <div className="space-y-2 relative z-10">
                                             <div className="w-12 h-12 rounded-xl icon-container-green flex items-center justify-center transition-transform group-hover:scale-110 group-hover:-rotate-3">
@@ -238,18 +220,8 @@ const PatientDashboard = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    <div key={`stat-pending-${pendingConsents.length}`} className={`stat-card-glass group transition-all duration-700 relative overflow-hidden group-hover:bg-transparent ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                                    <div key={`stat-pending-${pendingConsents.length}`} className={`stat-card-glass group transition-all duration-700 relative overflow-hidden ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                                         style={{ transitionDelay: '250ms' }}>
-                                        {/* Hover Background Image - Pending Requests (Original Restored) */}
-                                        <>
-                                            <img
-                                                src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&v=2"
-                                                alt=""
-                                                className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.10] group-hover:opacity-[0.40] group-hover:scale-110 !z-0"
-                                                style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
-                                            />
-                                            <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/20 dark:group-hover:bg-slate-900/20 transition-colors duration-500 !z-[1]" />
-                                        </>
 
                                         <div className="space-y-2 relative z-10">
                                             <div className="w-12 h-12 rounded-xl icon-container-amber flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3">
@@ -385,17 +357,7 @@ const PatientDashboard = () => {
                                 ) : (
                                     <div className="grid gap-4">
                                         {pendingConsents.map((consent, idx) => (
-                                            <div key={consent._id} className="card hover:shadow-xl transition-all duration-300 border-l-4 border-amber-400 relative overflow-hidden group hover:bg-transparent" style={{ animationDelay: `${idx * 100}ms` }}>
-                                                {/* Hover Background Image - Pending Request (Original Restored) */}
-                                                <>
-                                                    <img
-                                                        src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&v=2"
-                                                        alt=""
-                                                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.10] group-hover:opacity-[0.40] group-hover:scale-110 !z-0"
-                                                        style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
-                                                    />
-                                                    <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/20 dark:group-hover:bg-slate-900/20 transition-colors duration-500 !z-[1]" />
-                                                </>
+                                            <div key={consent._id} className="card hover:shadow-xl transition-all duration-300 border-l-4 border-amber-400 relative overflow-hidden group" style={{ animationDelay: `${idx * 100}ms` }}>
 
                                                 <div className="flex items-start justify-between relative z-10">
                                                     <div className="flex items-center gap-4">
@@ -442,17 +404,7 @@ const PatientDashboard = () => {
                                 ) : (
                                     <div className="grid gap-4">
                                         {activeConsents.map((consent, idx) => (
-                                            <div key={`consent-list-${consent._id}-${idx}`} className="card hover:shadow-xl transition-all duration-300 border-l-4 border-green-400 relative overflow-hidden group hover:bg-transparent" style={{ animationDelay: `${idx * 100}ms` }}>
-                                                {/* Hover Background Image - Active Consent (Verified/Shield Concept) */}
-                                                <>
-                                                    <img
-                                                        src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                                                        alt=""
-                                                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.08] group-hover:opacity-[0.45] group-hover:scale-110 !z-0"
-                                                        style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
-                                                    />
-                                                    <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/10 dark:group-hover:bg-slate-900/10 transition-colors duration-500 !z-[1]" />
-                                                </>
+                                            <div key={`consent-list-${consent._id}-${idx}`} className="card hover:shadow-xl transition-all duration-300 border-l-4 border-green-400 relative overflow-hidden group" style={{ animationDelay: `${idx * 100}ms` }}>
 
                                                 <div className="flex items-center justify-between relative z-10">
                                                     <div className="flex items-center gap-4">

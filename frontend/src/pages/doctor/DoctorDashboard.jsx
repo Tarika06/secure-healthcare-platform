@@ -173,34 +173,9 @@ const DoctorDashboard = () => {
 
         return (
             <div
-                className={`card-stat group transition-all duration-700 relative overflow-hidden group-hover:bg-transparent ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                className={`card-stat group transition-all duration-700 relative overflow-hidden ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                 style={{ transitionDelay: `${delay}ms` }}
             >
-                {/* Active Consent Hover Image (Multiple People) */}
-                {isConsent && (
-                    <>
-                        <img
-                            src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                            alt=""
-                            className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.08] group-hover:opacity-[0.45] group-hover:scale-110 !z-0"
-                            style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
-                        />
-                        <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/10 dark:group-hover:bg-slate-900/10 transition-colors duration-500 !z-[1]" />
-                    </>
-                )}
-
-                {/* Pending Request Hover Image */}
-                {isPending && (
-                    <>
-                        <img
-                            src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&v=2"
-                            alt=""
-                            className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-700 ease-out opacity-[0.10] group-hover:opacity-[0.40] group-hover:scale-105 !z-0"
-                            style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
-                        />
-                        <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/20 dark:group-hover:bg-slate-900/20 transition-colors duration-500 !z-[1]" />
-                    </>
-                )}
 
                 <div className="relative z-10 flex items-center gap-4">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colorClass}`}>

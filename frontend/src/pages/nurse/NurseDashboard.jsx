@@ -250,46 +250,7 @@ const NurseDashboard = () => {
                                                         record.recordType?.toLowerCase().includes('lab');
 
                                                     return (
-                                                        <div key={record.recordId} className="p-5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 rounded-xl border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all duration-300 relative overflow-hidden group hover:!bg-transparent">
-
-                                                            {/* Hover Background Image - Checkup */}
-                                                            {isCheckup && !isLab && (
-                                                                <>
-                                                                    <img
-                                                                        src="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                                                                        alt=""
-                                                                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-500 ease-out opacity-0 translate-x-8 group-hover:opacity-[0.55] group-hover:translate-x-0 !z-0"
-                                                                        style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
-                                                                    />
-                                                                    <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/40 dark:group-hover:bg-slate-900/40 transition-colors duration-500 !z-[1]" />
-                                                                </>
-                                                            )}
-
-                                                            {/* Hover Background Image - Lab */}
-                                                            {isLab && (
-                                                                <>
-                                                                    <img
-                                                                        src="https://images.unsplash.com/photo-1579154204601-01588f351e67?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                                                                        alt=""
-                                                                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-500 ease-out opacity-0 translate-x-8 group-hover:opacity-50 group-hover:translate-x-0 !z-0"
-                                                                        style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
-                                                                    />
-                                                                    <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/50 dark:group-hover:bg-slate-900/50 transition-colors duration-500 !z-[1]" />
-                                                                </>
-                                                            )}
-
-                                                            {/* Hover Background Image - General Medical Record */}
-                                                            {!isCheckup && !isLab && (
-                                                                <>
-                                                                    <img
-                                                                        src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                                                                        alt=""
-                                                                        className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-all duration-500 ease-out opacity-0 translate-x-8 group-hover:opacity-60 group-hover:translate-x-0 !z-0"
-                                                                        style={{ mixBlendMode: 'normal', isolation: 'isolate' }}
-                                                                    />
-                                                                    <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 group-hover:bg-white/40 dark:group-hover:bg-slate-900/40 transition-colors duration-500 !z-[1]" />
-                                                                </>
-                                                            )}
+                                                        <div key={record.recordId} className="p-5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 rounded-xl border border-slate-100 dark:border-slate-700 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
 
                                                             {/* Content Wrapper */}
                                                             <div className="relative z-10">
