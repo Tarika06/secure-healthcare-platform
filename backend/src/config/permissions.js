@@ -27,22 +27,22 @@ const ROLE_PREFIXES = {
  */
 const PERMISSIONS = {
     [ROLES.PATIENT]: {
-        canView: ['OWN_RECORDS', 'OWN_CONSENTS', 'ACCESS_HISTORY'],
-        canCreate: ['CONSENT_RESPONSE'],
-        canModify: ['OWN_CONSENT'],
+        canView: ['OWN_RECORDS', 'OWN_CONSENTS', 'ACCESS_HISTORY', 'OWN_APPOINTMENTS', 'DOCTOR_SLOTS'],
+        canCreate: ['CONSENT_RESPONSE', 'APPOINTMENT'],
+        canModify: ['OWN_CONSENT', 'OWN_APPOINTMENT'],
         canDelete: []
     },
     [ROLES.DOCTOR]: {
-        canView: ['PATIENT_RECORDS_WITH_CONSENT', 'OWN_CREATED_RECORDS', 'LAB_RESULTS', 'ANALYTICS'],
+        canView: ['PATIENT_RECORDS_WITH_CONSENT', 'OWN_CREATED_RECORDS', 'LAB_RESULTS', 'ANALYTICS', 'OWN_SCHEDULE'],
         canCreate: ['MEDICAL_RECORD', 'PRESCRIPTION', 'DIAGNOSIS', 'CONSENT_REQUEST'],
         canModify: ['OWN_CREATED_RECORDS'],
         canDelete: []
     },
     [ROLES.NURSE]: {
-        // Nurses can view patient list for dropdowns, vitals, and care notes
+        // Nurses can view patient list for dropdowns, vitals, care notes, and verify entry
         canView: ['PATIENT_LIST', 'PATIENT_VITALS', 'CARE_NOTES'],
-        canCreate: ['CARE_NOTE'],
-        canModify: [],
+        canCreate: ['CARE_NOTE', 'ENTRY_VERIFICATION'],
+        canModify: ['APPOINTMENT_ENTRY_STATUS'],
         canDelete: [],
         cannotView: ['DIAGNOSIS', 'PRESCRIPTION', 'DETAILED_MEDICAL_HISTORY']
     },
@@ -55,9 +55,9 @@ const PERMISSIONS = {
         cannotView: ['PATIENT_RECORDS', 'DIAGNOSIS', 'PRESCRIPTION']
     },
     [ROLES.ADMIN]: {
-        canView: ['ALL_USERS', 'AUDIT_LOGS', 'SYSTEM_STATS', 'ANONYMIZED_ANALYTICS'],
-        canCreate: [],
-        canModify: ['USER_STATUS', 'USER_ROLE'],
+        canView: ['ALL_USERS', 'AUDIT_LOGS', 'SYSTEM_STATS', 'ANONYMIZED_ANALYTICS', 'ALL_APPOINTMENTS'],
+        canCreate: ['ENTRY_VERIFICATION'],
+        canModify: ['USER_STATUS', 'USER_ROLE', 'APPOINTMENT_STATUS'],
         canDelete: [],
         cannotView: ['RAW_MEDICAL_RECORDS'],
         cannotModify: ['MEDICAL_RECORDS']
