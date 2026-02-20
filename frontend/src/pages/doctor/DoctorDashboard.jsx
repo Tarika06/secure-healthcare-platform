@@ -405,7 +405,7 @@ const DoctorDashboard = () => {
                                             {filteredPatients.map((patient) => (
                                                 <div
                                                     key={patient.userId}
-                                                    onClick={() => patient.hasConsent && handleViewPatientRecords(patient)}
+                                                    onClick={() => handleViewPatientRecords(patient)}
                                                     className={`p-3.5 rounded-xl transition-all duration-200 cursor-pointer group ${selectedPatient?.userId === patient.userId
                                                         ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm'
                                                         : 'hover:bg-slate-50 border border-transparent'
@@ -466,7 +466,17 @@ const DoctorDashboard = () => {
                                                                 <p className="text-sm text-slate-500 font-mono">{selectedPatient.userId} · {selectedPatient.email}</p>
                                                             </div>
                                                         </div>
-                                                        {!selectedPatient.hasConsent && (
+                                                        {selectedPatient.hasConsent ? (
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="badge badge-active mb-1">Consent Active</span>
+                                                                {selectedPatient.consent?.expiresAt && (
+                                                                    <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                                                                        <Clock className="w-2.5 h-2.5" />
+                                                                        Expires: {new Date(selectedPatient.consent.expiresAt).toLocaleDateString()}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        ) : (
                                                             (pendingConsentIds.includes(selectedPatient.userId) || selectedPatient.consentPending) ? (
                                                                 <span className="badge badge-pending">Consent Pending</span>
                                                             ) : (

@@ -432,6 +432,13 @@ const PatientDashboard = () => {
                                                         <div>
                                                             <h3 className="text-lg font-bold text-slate-900">Dr. {consent.doctor?.firstName} {consent.doctor?.lastName}</h3>
                                                             <p className="text-sm text-slate-500">{consent.doctor?.specialty && `${consent.doctor.specialty} • `}Granted {new Date(consent.respondedAt).toLocaleDateString()}</p>
+                                                            {consent.expiresAt && (
+                                                                <p className={`text-xs mt-1 flex items-center gap-1 font-medium ${new Date(consent.expiresAt) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ? 'text-amber-600' : 'text-slate-400'}`}>
+                                                                    <Clock className="w-3 h-3" />
+                                                                    Access Expires: {new Date(consent.expiresAt).toLocaleDateString()}
+                                                                    {new Date(consent.expiresAt) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) && ' (Soon)'}
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <button onClick={() => handleRevokeConsent(consent._id)} className="btn-danger flex items-center gap-2">
