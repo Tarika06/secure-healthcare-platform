@@ -99,7 +99,8 @@ router.post("/register", async (req, res) => {
       lastName,
       role,
       specialty: role === "DOCTOR" ? (specialty || "") : "",
-      status: "ACTIVE"
+      status: "ACTIVE",
+      acceptPrivacyPolicy: true
     });
 
     await user.save();

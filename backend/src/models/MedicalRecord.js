@@ -43,7 +43,18 @@ const MedicalRecordSchema = new mongoose.Schema({
         note: { type: String, required: true },
         addedBy: { type: String, required: true },
         addedAt: { type: Date, default: Date.now }
-    }]
+    }],
+    rectification: {
+        status: {
+            type: String,
+            enum: ["NONE", "REQUESTED", "FIXED", "DECLINED"],
+            default: "NONE"
+        },
+        patientNote: String,
+        doctorResponse: String,
+        requestedAt: Date,
+        resolvedAt: Date
+    }
 });
 
 module.exports = mongoose.model("MedicalRecord", MedicalRecordSchema);

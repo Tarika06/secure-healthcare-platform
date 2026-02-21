@@ -118,4 +118,62 @@ router.get(
   }
 );
 
+/**
+ * GET /api/patient/health-report
+ * User Story 8: Patient Personal Health Report
+ * Aggregates all medical history for the patient to track their status.
+ */
+router.get(
+  "/health-report",
+  authenticate,
+  authorizeByUserId(["P"]),
+  async (req, res) => {
+    try {
+      const patientId = req.user.userId;
+      const MedicalRecord = require("../models/MedicalRecord");
+
+      // 1. Fetch all records for this patient
+      const records = await MedicalRecord.find({ patientId })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      // 2. Aggregate data types
+      const summary = {
+        totalRecords: records.length,
+        prescriptions: records.filter(r => r.recordType === 'PRESCRIPTION'),
+        diagnoses: records.filter(r => r.recordType === 'DIAGNOSIS'),
+        labResults: records.filter(r => r.recordType === 'LAB_RESULT'),
+        vitals: records.filter(r => r.recordType === 'VITALS'),
+        lastConsultation: records[0]?.createdAt || null
+      };
+
+      // 3. Audit Logging
+      await auditService.logAuditEvent({
+        userId: patientId,
+        action: "PERSONAL_REPORT_VIEWED",
+        resource: "/api/patient/health-report",
+        method: "GET",
+        outcome: "SUCCESS",
+        complianceCategory: "GDPR",
+        details: { reportScope: "Full History" }
+      });
+
+      res.json({
+        message: "Health report aggregated successfully",
+        profile: {
+          firstName: req.user.firstName,
+          lastName: req.user.lastName,
+          userId: req.user.userId,
+          email: req.user.email
+        },
+        summary,
+        fullHistory: records
+      });
+    } catch (error) {
+      console.error("Health Report Error:", error);
+      res.status(500).json({ message: "Failed to generate health report" });
+    }
+  }
+);
+
 module.exports = router;

@@ -1,11 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, TrendingUp, MailCheck, Search, ArrowRight, ChevronRight, Clock } from 'lucide-react';
+import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, TrendingUp, MailCheck, Search, ArrowRight, ChevronRight, Clock, Edit3, RotateCcw, AlertTriangle, Flame } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Modal from '../../components/Modal';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
+
+// Custom Stat Card Component (User Story 8 Visualization)
+const StatCard = ({ icon: Icon, label, value, gradient, delay, mounted }) => (
+    <div
+        className={`glass-card group relative overflow-hidden transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+        style={{ transitionDelay: `${delay}ms` }}
+    >
+        <div className="flex items-center justify-between">
+            <div>
+                <p className="text-sm font-medium text-slate-500">{label}</p>
+                <p className={`stat-number mt-2 bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
+                    {value ?? '—'}
+                </p>
+            </div>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg bg-gradient-to-br ${gradient}`}>
+                <Icon className="w-7 h-7 text-white" />
+            </div>
+        </div>
+        <div className={`absolute top-0 right-0 w-28 h-28 rounded-bl-[80px] opacity-[0.04] bg-gradient-to-br ${gradient}`} />
+    </div>
+);
 
 const DoctorDashboard = () => {
     const { user, logout } = useAuth();
@@ -19,7 +40,6 @@ const DoctorDashboard = () => {
     const [myCreatedRecords, setMyCreatedRecords] = useState([]);
     const [dashboardStats, setDashboardStats] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [showAccessModal, setShowAccessModal] = useState(false);
     const [accessError, setAccessError] = useState(null);
     const [accessInfo, setAccessInfo] = useState(null);
     const [mounted, setMounted] = useState(false);
@@ -29,12 +49,24 @@ const DoctorDashboard = () => {
     const [pendingConsentIds, setPendingConsentIds] = useState([]);
     const [loadingPatientId, setLoadingPatientId] = useState(null);
     const [patientSearch, setPatientSearch] = useState('');
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+    const [selectedPurpose, setSelectedPurpose] = useState('GENERAL');
+    const [selectedRectifyRecord, setSelectedRectifyRecord] = useState(null);
+    const [resolutionForm, setResolutionForm] = useState({
+        status: 'FIXED',
+        doctorResponse: '',
+        updatedData: { diagnosis: '', details: '', prescription: '' }
+    });
+
+    const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+    const [emergencyJustification, setEmergencyJustification] = useState('');
+    const [isEmergencyLoading, setIsEmergencyLoading] = useState(false);
 
     const handleConfirmRequest = async () => {
         if (!consentSentPatient) return;
         setConfirmConsentModal(false);
         try {
-            await consentApi.requestConsent(consentSentPatient.userId);
+            await consentApi.requestConsent(consentSentPatient.userId, selectedPurpose);
             setPendingConsentIds(ids => [...ids, consentSentPatient.userId]);
             setPatients(prev => prev.map(p =>
                 p.userId === consentSentPatient.userId ? { ...p, consentPending: true } : p
@@ -129,20 +161,84 @@ const DoctorDashboard = () => {
         } catch (error) {
             if (error.response?.status === 403) {
                 setAccessError({ type: 'CONSENT_REQUIRED', message: error.response.data.message, patientId: patient.userId });
-                setShowAccessModal(true);
+                // Automatically open the request modal if blocked
+                setConsentSentPatient(patient);
+                setConfirmConsentModal(true);
             } else { alert('Failed to fetch patient records'); }
         } finally { setLoadingPatientId(null); }
     };
 
-    const handleRequestConsent = async () => {
+    const handleGenerateSummary = async (patientId) => {
+        setIsGeneratingSummary(true);
         try {
-            await consentApi.requestConsent(accessError.patientId);
-            setShowAccessModal(false);
-            alert('Consent request sent successfully!');
-        } catch (error) { alert(error.response?.data?.message || 'Failed to send consent request'); }
+            const response = await apiClient.get(`/doctor/patient/${patientId}/clinical-summary`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `clinical_summary_${patientId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Summary generation failed:', error);
+            alert('Failed to generate clinical summary. Ensure you have active consent.');
+        } finally {
+            setIsGeneratingSummary(false);
+        }
     };
 
     const handleLogout = () => { logout(); navigate('/login'); };
+
+    const handleEmergencyAccess = async () => {
+        if (!emergencyJustification || emergencyJustification.length < 10) {
+            alert('Please provide a mandatory clinical justification (min 10 characters).');
+            return;
+        }
+
+        setIsEmergencyLoading(true);
+        try {
+            const response = await apiClient.post(`/records/emergency/${selectedPatient.userId}`, {
+                justification: emergencyJustification
+            });
+            setPatientRecords(response.data.records || []);
+            setAccessInfo(response.data.accessInfo);
+            setShowEmergencyModal(false);
+            setEmergencyJustification('');
+            setAccessError(null);
+            alert('EMERGENCY ACCESS GRANTED. High-priority audit alert triggered.');
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to grant emergency access');
+        } finally {
+            setIsEmergencyLoading(false);
+        }
+    };
+
+    const handleResolveRectification = async () => {
+        try {
+            await apiClient.put(`/records/${selectedRectifyRecord._id}/rectify/resolve`, resolutionForm);
+            alert('Rectification resolved.');
+            setSelectedRectifyRecord(null);
+            if (activeTab === 'myrecords') fetchMyCreatedRecords();
+            else if (selectedPatient) handleViewPatientRecords(selectedPatient);
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to resolve rectification');
+        }
+    };
+
+    const openResolveModal = (record) => {
+        setSelectedRectifyRecord(record);
+        setResolutionForm({
+            status: 'FIXED',
+            doctorResponse: '',
+            updatedData: {
+                diagnosis: record.diagnosis,
+                details: record.details,
+                prescription: record.prescription
+            }
+        });
+    };
 
     const getRecordTypeBadge = (type) => {
         const styles = {
@@ -164,25 +260,6 @@ const DoctorDashboard = () => {
         `${p.firstName} ${p.lastName} ${p.userId} ${p.email}`.toLowerCase().includes(patientSearch.toLowerCase())
     );
 
-    const StatCard = ({ icon: Icon, label, value, gradient, delay }) => (
-        <div
-            className={`glass-card group relative overflow-hidden transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-            style={{ transitionDelay: `${delay}ms` }}
-        >
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm font-medium text-slate-500">{label}</p>
-                    <p className={`stat-number mt-2 bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
-                        {value ?? '—'}
-                    </p>
-                </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg bg-gradient-to-br ${gradient}`}>
-                    <Icon className="w-7 h-7 text-white" />
-                </div>
-            </div>
-            <div className={`absolute top-0 right-0 w-28 h-28 rounded-bl-[80px] opacity-[0.04] bg-gradient-to-br ${gradient}`} />
-        </div>
-    );
 
     const tabs = [
         { id: 'overview', label: 'Dashboard', icon: TrendingUp },
@@ -237,10 +314,10 @@ const DoctorDashboard = () => {
                     {activeTab === 'overview' && (
                         <div className="space-y-8 tab-content">
                             <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
-                                <StatCard icon={FileText} label="Records Created" value={dashboardStats?.recordsCreated} gradient="from-blue-500 to-indigo-600" delay={100} />
-                                <StatCard icon={CheckCircle} label="Active Consents" value={dashboardStats?.activeConsents} gradient="from-emerald-500 to-green-600" delay={200} />
-                                <StatCard icon={AlertCircle} label="Pending Requests" value={dashboardStats?.pendingRequests} gradient="from-amber-500 to-orange-500" delay={300} />
-                                <StatCard icon={Users} label="Patients Served" value={dashboardStats?.patientsServed} gradient="from-violet-500 to-purple-600" delay={400} />
+                                <StatCard icon={FileText} label="Records Created" value={dashboardStats?.recordsCreated} gradient="from-blue-500 to-indigo-600" delay={100} mounted={mounted} />
+                                <StatCard icon={CheckCircle} label="Active Consents" value={dashboardStats?.activeConsents} gradient="from-emerald-500 to-green-600" delay={200} mounted={mounted} />
+                                <StatCard icon={AlertCircle} label="Pending Requests" value={dashboardStats?.pendingRequests} gradient="from-amber-500 to-orange-500" delay={300} mounted={mounted} />
+                                <StatCard icon={Users} label="Patients Served" value={dashboardStats?.patientsServed} gradient="from-violet-500 to-purple-600" delay={400} mounted={mounted} />
                             </div>
                         </div>
                     )}
@@ -284,6 +361,24 @@ const DoctorDashboard = () => {
                                                         {new Date(record.createdAt).toLocaleDateString()}
                                                     </span>
                                                 </div>
+                                                {record.rectification?.status === 'REQUESTED' && (
+                                                    <button
+                                                        onClick={() => openResolveModal(record)}
+                                                        className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-amber-200 transition-colors"
+                                                    >
+                                                        <AlertTriangle className="w-3 h-3" /> Rectification Required
+                                                    </button>
+                                                )}
+                                                {record.rectification?.status === 'FIXED' && (
+                                                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold flex items-center gap-1">
+                                                        <CheckCircle className="w-3 h-3" /> Rectified
+                                                    </span>
+                                                )}
+                                                {record.rectification?.status === 'DECLINED' && (
+                                                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold flex items-center gap-1">
+                                                        <XCircle className="w-3 h-3" /> Request Declined
+                                                    </span>
+                                                )}
                                             </div>
                                             <h3 className="text-lg font-bold text-slate-900 mb-1">{record.title}</h3>
                                             <p className="text-sm text-slate-500 mb-3">Patient: {record.patientName}</p>
@@ -467,8 +562,16 @@ const DoctorDashboard = () => {
                                                             </div>
                                                         </div>
                                                         {selectedPatient.hasConsent ? (
-                                                            <div className="flex flex-col items-end">
-                                                                <span className="badge badge-active mb-1">Consent Active</span>
+                                                            <div className="flex flex-col items-end gap-2">
+                                                                <span className="badge badge-active">Consent Active</span>
+                                                                <button
+                                                                    onClick={() => handleGenerateSummary(selectedPatient.userId)}
+                                                                    disabled={isGeneratingSummary}
+                                                                    className="btn-glow py-1.5 px-3 text-[10px] flex items-center gap-1.5"
+                                                                >
+                                                                    <FileText className={`w-3 h-3 ${isGeneratingSummary ? 'animate-pulse' : ''}`} />
+                                                                    {isGeneratingSummary ? 'Generating...' : 'Clinical Report'}
+                                                                </button>
                                                                 {selectedPatient.consent?.expiresAt && (
                                                                     <p className="text-[10px] text-slate-500 flex items-center gap-1">
                                                                         <Clock className="w-2.5 h-2.5" />
@@ -491,11 +594,19 @@ const DoctorDashboard = () => {
                                                 {/* Records */}
                                                 <div className="flex-1 overflow-y-auto p-6">
                                                     {accessInfo && !accessInfo.fullAccess && (
-                                                        <div className="glass-card-l2 border-l-4 border-amber-400 bg-amber-50/50 mb-6 p-4">
-                                                            <p className="text-amber-800 text-sm font-medium">{accessInfo.message}</p>
-                                                            {accessInfo.hiddenRecordCount > 0 && (
-                                                                <p className="text-amber-600 text-xs mt-1">{accessInfo.hiddenRecordCount} additional records require consent</p>
-                                                            )}
+                                                        <div className="glass-card-l2 border-l-4 border-amber-400 bg-amber-50/50 mb-6 p-4 flex items-center justify-between">
+                                                            <div>
+                                                                <p className="text-amber-800 text-sm font-medium">{accessInfo.message}</p>
+                                                                {accessInfo.hiddenRecordCount > 0 && (
+                                                                    <p className="text-amber-600 text-xs mt-1">{accessInfo.hiddenRecordCount} additional records require consent</p>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setShowEmergencyModal(true)}
+                                                                className="px-4 py-2 bg-rose-600 text-white rounded-lg text-xs font-bold shadow-lg shadow-rose-600/20 hover:bg-rose-700 transition-all flex items-center gap-2"
+                                                            >
+                                                                <Flame className="w-3.5 h-3.5" /> Emergency Override
+                                                            </button>
                                                         </div>
                                                     )}
 
@@ -526,6 +637,21 @@ const DoctorDashboard = () => {
                                                                         </div>
                                                                         <p className="font-semibold text-slate-900">{record.title}</p>
                                                                         <p className="text-sm text-slate-600 mt-0.5">{record.diagnosis}</p>
+                                                                        {record.rectification?.status === 'REQUESTED' && (
+                                                                            <div className="mt-2 flex items-center gap-2">
+                                                                                <button
+                                                                                    onClick={() => openResolveModal(record)}
+                                                                                    className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold flex items-center gap-1 hover:bg-amber-200"
+                                                                                >
+                                                                                    <AlertTriangle className="w-2.5 h-2.5" /> Rectification Required
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                        {record.rectification?.status === 'FIXED' && (
+                                                                            <div className="mt-2 text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                                                                                <CheckCircle className="w-2.5 h-2.5" /> Rectified
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             ))}
@@ -549,12 +675,27 @@ const DoctorDashboard = () => {
                         <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex gap-3 text-left">
                             <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                             <div>
-                                <h4 className="font-semibold text-amber-900 text-sm">Consent Required</h4>
+                                <h4 className="font-semibold text-amber-900 text-sm">Consent Requested</h4>
                                 <p className="text-amber-700 text-xs mt-1">
-                                    You are about to request access to medical records for <strong>{consentSentPatient.firstName} {consentSentPatient.lastName}</strong>.
-                                    The patient determines what you can see.
+                                    Specify the purpose of this request for <strong>{consentSentPatient.firstName} {consentSentPatient.lastName}</strong>.
                                 </p>
                             </div>
+                        </div>
+
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block px-1">Purpose of Access</label>
+                            <select
+                                value={selectedPurpose}
+                                onChange={(e) => setSelectedPurpose(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all font-medium text-slate-700"
+                            >
+                                <option value="GENERAL">General Access (All)</option>
+                                <option value="TREATMENT">Full Treatment Plan</option>
+                                <option value="DIAGNOSIS">Diagnostic Review (Labs/Imaging)</option>
+                                <option value="PRESCRIPTION">Prescription & Vitals Only</option>
+                                <option value="RESEARCH">Anonymized Research Study</option>
+                            </select>
+                            <p className="text-[10px] text-slate-400 mt-2 px-1">HIPAA Rule: Follow the <strong>Minimum Necessary</strong> standard.</p>
                         </div>
                         <div className="flex gap-3 justify-end mt-4">
                             <button onClick={() => setConfirmConsentModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors">Cancel</button>
@@ -579,6 +720,137 @@ const DoctorDashboard = () => {
                     </div>
                 </Modal>
             )}
+
+            {/* Rectification Resolution Modal */}
+            <Modal
+                isOpen={!!selectedRectifyRecord}
+                onClose={() => setSelectedRectifyRecord(null)}
+                title="Resolve Rectification Request"
+                icon={RotateCcw}
+                size="lg"
+            >
+                {selectedRectifyRecord && (
+                    <div className="space-y-6">
+                        <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                            <h4 className="text-xs font-bold text-amber-800 uppercase tracking-widest mb-2">Patient's Correction Request</h4>
+                            <p className="text-sm text-slate-700 italic">"{selectedRectifyRecord.rectification.patientNote}"</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                onClick={() => setResolutionForm({ ...resolutionForm, status: 'FIXED' })}
+                                className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${resolutionForm.status === 'FIXED' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
+                            >
+                                <Edit3 className="w-6 h-6" />
+                                <span className="font-bold text-sm">Correct Data</span>
+                            </button>
+                            <button
+                                onClick={() => setResolutionForm({ ...resolutionForm, status: 'DECLINED' })}
+                                className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${resolutionForm.status === 'DECLINED' ? 'border-slate-400 bg-slate-50 text-slate-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
+                            >
+                                <XCircle className="w-6 h-6" />
+                                <span className="font-bold text-sm">Decline Correction</span>
+                            </button>
+                        </div>
+
+                        {resolutionForm.status === 'FIXED' && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block px-1">Corrected Diagnosis</label>
+                                    <input
+                                        type="text"
+                                        value={resolutionForm.updatedData.diagnosis}
+                                        onChange={(e) => setResolutionForm({ ...resolutionForm, updatedData: { ...resolutionForm.updatedData, diagnosis: e.target.value } })}
+                                        className="input-field py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block px-1">Corrected Details</label>
+                                    <textarea
+                                        value={resolutionForm.updatedData.details}
+                                        onChange={(e) => setResolutionForm({ ...resolutionForm, updatedData: { ...resolutionForm.updatedData, details: e.target.value } })}
+                                        rows="3"
+                                        className="input-field py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block px-1">Corrected Prescription</label>
+                                    <textarea
+                                        value={resolutionForm.updatedData.prescription}
+                                        onChange={(e) => setResolutionForm({ ...resolutionForm, updatedData: { ...resolutionForm.updatedData, prescription: e.target.value } })}
+                                        rows="2"
+                                        className="input-field py-2"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block px-1">Response to Patient</label>
+                            <textarea
+                                value={resolutionForm.doctorResponse}
+                                onChange={(e) => setResolutionForm({ ...resolutionForm, doctorResponse: e.target.value })}
+                                placeholder={resolutionForm.status === 'FIXED' ? "Confirm the changes made..." : "Explain why the data is accurate as is..."}
+                                className="input-field py-2"
+                            />
+                        </div>
+
+                        <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+                            <button onClick={() => setSelectedRectifyRecord(null)} className="px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors">Cancel</button>
+                            <button
+                                onClick={handleResolveRectification}
+                                className={`px-6 py-2.5 rounded-xl text-white text-sm font-bold shadow-lg transition-all ${resolutionForm.status === 'FIXED' ? 'bg-emerald-600 shadow-emerald-600/20' : 'bg-slate-900 shadow-slate-900/20'}`}
+                            >
+                                Submit Resolution
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+            {/* Break-Glass Emergency Modal */}
+            <Modal
+                isOpen={showEmergencyModal}
+                onClose={() => setShowEmergencyModal(false)}
+                title="Break-Glass Emergency Access"
+                icon={Flame}
+                size="md"
+            >
+                <div className="space-y-4">
+                    <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 flex gap-3 text-left">
+                        <ShieldAlert className="w-6 h-6 text-rose-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <h4 className="font-bold text-rose-900 text-sm uppercase tracking-tight">HIPAA Emergency Override</h4>
+                            <p className="text-rose-700 text-xs mt-1 leading-relaxed">
+                                You are about to bypass standard consent protocols. This action is permitted ONLY in life-threatening emergencies where the patient is unable to provide consent.
+                                <br /><br />
+                                <strong>WARNING:</strong> This will trigger a high-priority audit alert to the Compliance Officer.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block px-1">Clinical Justification</label>
+                        <textarea
+                            value={emergencyJustification}
+                            onChange={(e) => setEmergencyJustification(e.target.value)}
+                            placeholder="e.g. Patient is unconscious, life-threatening trauma, immediate access to history required for stabilization..."
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all font-medium text-slate-700 min-h-[120px]"
+                        />
+                    </div>
+
+                    <div className="flex gap-3 justify-end mt-4 pt-4 border-t border-slate-100">
+                        <button onClick={() => setShowEmergencyModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors">Cancel</button>
+                        <button
+                            onClick={handleEmergencyAccess}
+                            disabled={isEmergencyLoading || emergencyJustification.length < 10}
+                            className="px-6 py-2.5 bg-rose-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-rose-600/20 hover:bg-rose-700 transition-all flex items-center gap-2"
+                        >
+                            {isEmergencyLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Flame className="w-4 h-4" />}
+                            Bypass & View Records
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

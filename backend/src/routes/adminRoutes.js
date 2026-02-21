@@ -416,4 +416,141 @@ router.get("/roles", (req, res) => {
   res.json({ roles: getValidRoles() });
 });
 
+/**
+ * GET /api/admin/analytics/research
+ * Secondary Use: Anonymized analytics for research purposes.
+ * Strictly excludes all PII (Personally Identifiable Information).
+ */
+router.get("/analytics/research", async (req, res) => {
+  try {
+    const MedicalRecord = require("../models/MedicalRecord");
+
+    // 1. Distribution by Record Type
+    const typeDistribution = await MedicalRecord.aggregate([
+      { $group: { _id: "$recordType", count: { $sum: 1 } } },
+      { $project: { type: "$_id", count: 1, _id: 0 } }
+    ]);
+
+    // 2. Volume Trends (Last 6 Months)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const volumeTrends = await MedicalRecord.aggregate([
+      { $match: { createdAt: { $gte: sixMonthsAgo } } },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
+      {
+        $project: {
+          period: { $concat: [{ $toString: "$_id.month" }, "/", { $toString: "$_id.year" }] },
+          count: 1,
+          _id: 0
+        }
+      }
+    ]);
+
+    // 3. System Demographics (Anonymized by Role)
+    const roleDemographics = await User.aggregate([
+      { $group: { _id: "$role", count: { $sum: 1 } } },
+      { $project: { role: "$_id", count: 1, _id: 0 } }
+    ]);
+
+    await auditService.logAuditEvent({
+      userId: req.user.userId,
+      action: "SECONDARY_USE_RESEARCH_ACCESS",
+      resource: "/api/admin/analytics/research",
+      method: "GET",
+      outcome: "SUCCESS",
+      complianceCategory: "GDPR",
+      details: { purpose: "Anonymized Population Health Analysis" }
+    });
+
+    res.json({
+      typeDistribution,
+      volumeTrends,
+      roleDemographics,
+      retrievedAt: new Date()
+    });
+  } catch (error) {
+    console.error("Research Analytics Error:", error);
+    res.status(500).json({ message: "Failed to generate research analytics" });
+  }
+});
+
+/**
+ * GET /api/admin/analytics/compliance-consents
+ * User Story 3: Patient Consent Status Report
+ * Returns status of consents across the system for oversight.
+ */
+router.get("/analytics/compliance-consents", async (req, res) => {
+  try {
+    const Consent = require("../models/Consent");
+    const User = require("../models/User");
+
+    // 1. Get all patients
+    const patients = await User.find({ role: "PATIENT" }, "userId firstName lastName email");
+
+    // 2. Get all consents
+    const consents = await Consent.find();
+
+    const now = new Date();
+
+    const report = patients.map(p => {
+      const patientConsents = consents.filter(c => c.patientId === p.userId);
+
+      let status = "MISSING";
+      if (patientConsents.length > 0) {
+        const active = patientConsents.find(c => c.status === "ACTIVE" && (!c.expiresAt || c.expiresAt > now));
+        const expired = patientConsents.find(c => c.status === "REVOKED" || (c.expiresAt && c.expiresAt <= now));
+
+        if (active) status = "VALID";
+        else if (expired) status = "EXPIRED";
+        else status = "PENDING";
+      }
+
+      return {
+        userId: p.userId,
+        name: `${p.firstName} ${p.lastName}`,
+        email: p.email,
+        status,
+        consentCount: patientConsents.length,
+        lastUpdated: patientConsents.length > 0 ?
+          new Date(Math.max(...patientConsents.map(c => c.requestedAt))).toISOString() : null
+      };
+    });
+
+    await auditService.logAuditEvent({
+      userId: req.user.userId,
+      action: "COMPLIANCE_REPORT_GENERATED",
+      resource: "/api/admin/analytics/compliance-consents",
+      method: "GET",
+      outcome: "SUCCESS",
+      complianceCategory: "HIPAA",
+      details: { reportType: "Consent Status" }
+    });
+
+    res.json({
+      report,
+      summary: {
+        valid: report.filter(r => r.status === "VALID").length,
+        expired: report.filter(r => r.status === "EXPIRED").length,
+        missing: report.filter(r => r.status === "MISSING").length,
+        pending: report.filter(r => r.status === "PENDING").length,
+        total: report.length
+      }
+    });
+
+  } catch (error) {
+    console.error("Compliance Report Error:", error);
+    res.status(500).json({ message: "Failed to generate compliance report" });
+  }
+});
+
 module.exports = router;

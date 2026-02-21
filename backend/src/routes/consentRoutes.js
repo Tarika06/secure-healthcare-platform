@@ -13,7 +13,7 @@ router.post(
     authorizeByUserId(["D"]),
     async (req, res) => {
         try {
-            const { patientId } = req.body;
+            const { patientId, purpose } = req.body;
             const doctorId = req.user.userId;
 
             // Verify patient exists
@@ -22,18 +22,19 @@ router.post(
                 return res.status(404).json({ message: "Patient not found" });
             }
 
-            // Check if consent already exists
+            // Check if consent already exists for THIS purpose
             const existingConsent = await Consent.findOne({
                 patientId,
                 doctorId,
+                purpose: purpose || "GENERAL",
                 status: { $in: ["PENDING", "ACTIVE"] }
             });
 
             if (existingConsent) {
                 return res.status(400).json({
                     message: existingConsent.status === "ACTIVE"
-                        ? "Consent already granted"
-                        : "Consent request already pending"
+                        ? `Consent for ${purpose || "GENERAL"} already granted`
+                        : `Consent request for ${purpose || "GENERAL"} already pending`
                 });
             }
 
@@ -41,6 +42,7 @@ router.post(
             const consent = new Consent({
                 patientId,
                 doctorId,
+                purpose: purpose || "GENERAL",
                 status: "PENDING"
             });
 

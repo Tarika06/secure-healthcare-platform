@@ -2,8 +2,8 @@ import apiClient from './client';
 
 export const consentApi = {
     // Doctor requests consent from patient
-    requestConsent: async (patientId) => {
-        const response = await apiClient.post('/consent/request', { patientId });
+    requestConsent: async (patientId, purpose = 'GENERAL') => {
+        const response = await apiClient.post('/consent/request', { patientId, purpose });
         return response.data;
     },
 

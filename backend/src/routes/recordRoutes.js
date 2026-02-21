@@ -192,12 +192,29 @@ router.get(
             let accessInfo;
 
             if (hasConsent) {
-                // Full access with consent: DECRYPT ALL records
-                accessibleRecords = allRecords.map(record => decryptRecord(record));
+                const purposeMappings = {
+                    TREATMENT: ["LAB_RESULT", "PRESCRIPTION", "DIAGNOSIS", "IMAGING", "VITALS", "GENERAL"],
+                    DIAGNOSIS: ["DIAGNOSIS", "LAB_RESULT", "IMAGING", "GENERAL"],
+                    PRESCRIPTION: ["PRESCRIPTION", "VITALS", "GENERAL"],
+                    RESEARCH: ["LAB_RESULT", "DIAGNOSIS", "IMAGING"],
+                    GENERAL: ["LAB_RESULT", "PRESCRIPTION", "DIAGNOSIS", "IMAGING", "VITALS", "GENERAL"]
+                };
+
+                const allowedTypes = purposeMappings[consent.purpose] || purposeMappings.GENERAL;
+
+                // Filter records: Doctor sees own records OR records matching consent purpose
+                accessibleRecords = allRecords
+                    .filter(record => record.createdBy === doctorId || allowedTypes.includes(record.recordType))
+                    .map(record => decryptRecord(record));
+
+                const blockedCount = allRecords.length - accessibleRecords.length;
+
                 accessInfo = {
                     consentStatus: "ACTIVE",
-                    fullAccess: true,
-                    message: "Full access granted via patient consent"
+                    fullAccess: consent.purpose === "TREATMENT" || consent.purpose === "GENERAL",
+                    purpose: consent.purpose,
+                    message: `Access restricted to ${consent.purpose} related records.`,
+                    hiddenRecordCount: blockedCount
                 };
             } else {
                 // Limited access: DECRYPT only own records
@@ -242,10 +259,6 @@ router.get(
     }
 );
 
-/**
- * GET /api/records/patients/list
- * Get list of all patients (for doctor/nurse dropdown)
- */
 router.get(
     "/patients/list",
     authenticate,
@@ -275,6 +288,155 @@ router.get(
         } catch (error) {
             console.error("Error fetching patients:", error);
             res.status(500).json({ message: "Error fetching patients" });
+        }
+    }
+);
+/**
+ * POST /api/records/:recordId/rectify
+ * Patient requests rectification of a medical record (GDPR Article 16)
+ */
+router.post(
+    "/:recordId/rectify",
+    authenticate,
+    authorizeByUserId(["P"]),
+    async (req, res) => {
+        try {
+            const { recordId } = req.params;
+            const { patientNote } = req.body;
+            const patientId = req.user.userId;
+
+            const record = await MedicalRecord.findOne({ _id: recordId, patientId });
+            if (!record) {
+                return res.status(404).json({ message: "Record not found" });
+            }
+
+            record.rectification = {
+                status: "REQUESTED",
+                patientNote,
+                requestedAt: new Date()
+            };
+
+            await record.save();
+
+            await auditService.logAuditEvent({
+                userId: patientId,
+                action: "RECTIFICATION_REQUESTED",
+                resource: `/api/records/${recordId}/rectify`,
+                method: "POST",
+                outcome: "SUCCESS",
+                details: { recordId }
+            });
+
+            res.json({ message: "Rectification request submitted successfully", record: decryptRecord(record.toObject()) });
+        } catch (error) {
+            console.error("Error requesting rectification:", error);
+            res.status(500).json({ message: "Error submitting rectification request" });
+        }
+    }
+);
+
+/**
+ * PUT /api/records/:recordId/rectify/resolve
+ * Doctor resolves rectification request (FIXED or DECLINED)
+ */
+router.put(
+    "/:recordId/rectify/resolve",
+    authenticate,
+    authorizeByUserId(["D"]),
+    async (req, res) => {
+        try {
+            const { recordId } = req.params;
+            const { status, doctorResponse, updatedData } = req.body;
+            const doctorId = req.user.userId;
+
+            const record = await MedicalRecord.findById(recordId);
+            if (!record) {
+                return res.status(404).json({ message: "Record not found" });
+            }
+
+            // Authorization: Only the creator of the record can resolve rectification
+            if (record.createdBy !== doctorId) {
+                return res.status(403).json({ message: "Not authorized to resolve rectification for this record" });
+            }
+
+            if (status === "FIXED" && updatedData) {
+                const { diagnosis, details, prescription } = updatedData;
+                const encryptedData = encryptRecordFields({ diagnosis, details, prescription });
+
+                record.diagnosis = encryptedData.diagnosis;
+                record.details = encryptedData.details;
+                record.prescription = encryptedData.prescription;
+            }
+
+            record.rectification.status = status;
+            record.rectification.doctorResponse = doctorResponse;
+            record.rectification.resolvedAt = new Date();
+
+            await record.save();
+
+            await auditService.logAuditEvent({
+                userId: doctorId,
+                action: "RECTIFICATION_RESOLVED",
+                resource: `/api/records/${recordId}/rectify/resolve`,
+                method: "PUT",
+                outcome: "SUCCESS",
+                details: { recordId, status }
+            });
+
+            res.json({ message: `Rectification resolved with status: ${status}`, record: decryptRecord(record.toObject()) });
+        } catch (error) {
+            console.error("Error resolving rectification:", error);
+            res.status(500).json({ message: "Error resolving rectification" });
+        }
+    }
+);
+
+/**
+ * POST /api/records/emergency/:patientId
+ * "Break-Glass" Emergency Access (HIPAA Security Rule)
+ * Grants instant access but triggers a high-priority audit alert.
+ */
+router.post(
+    "/emergency/:patientId",
+    authenticate,
+    authorizeByUserId(["D", "N"]),
+    async (req, res) => {
+        try {
+            const { patientId } = req.params;
+            const { justification } = req.body;
+            const doctorId = req.user.userId;
+
+            if (!justification || justification.length < 10) {
+                return res.status(400).json({ message: "Mandatory clinical justification required (min 10 chars)" });
+            }
+
+            const patient = await User.findOne({ userId: patientId });
+            if (!patient) {
+                return res.status(404).json({ message: "Patient not found" });
+            }
+
+            const allRecords = await MedicalRecord.find({ patientId }).sort({ createdAt: -1 }).lean();
+            const decryptedRecords = allRecords.map(record => decryptRecord(record));
+
+            await auditService.logEmergencyAccess({
+                userId: doctorId,
+                patientId,
+                justification,
+                resource: `/api/records/emergency/${patientId}`
+            });
+
+            res.json({
+                message: "EMERGENCY ACCESS GRANTED. This action has been logged for compliance review.",
+                records: decryptedRecords,
+                accessInfo: {
+                    consentStatus: "EMERGENCY_OVERRIDE",
+                    fullAccess: true,
+                    message: "Emergency 'Break-Glass' access active. All records decrypted."
+                }
+            });
+        } catch (error) {
+            console.error("Emergency access error:", error);
+            res.status(500).json({ message: "Error granting emergency access" });
         }
     }
 );

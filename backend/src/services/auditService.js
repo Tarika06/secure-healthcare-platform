@@ -242,6 +242,23 @@ const getAccessDeniedEvents = async (options = {}) => {
 };
 
 /**
+ * Log emergency "break-glass" access (HIPAA Security Rule)
+ */
+const logEmergencyAccess = async ({ userId, patientId, justification, resource }) => {
+  await logAuditEvent({
+    userId,
+    action: "EMERGENCY_ACCESS_OVERRIDE",
+    resource,
+    method: "POST",
+    outcome: "SUCCESS",
+    reason: "LIFE_THREATENING_EMERGENCY",
+    targetUserId: patientId,
+    details: { justification, priority: "URGENT", protocol: "BREAK_GLASS" },
+    complianceCategory: "HIPAA"
+  });
+};
+
+/**
  * Get patient data access history (for GDPR Right to Access)
  */
 const getPatientAccessHistory = async (patientId, options = {}) => {
@@ -262,6 +279,7 @@ module.exports = {
   logRecordAccess,
   logDataAccess,
   logConsentAction,
+  logEmergencyAccess,
   queryAuditLogs,
   getUserAuditLogs,
   getLoginHistory,
