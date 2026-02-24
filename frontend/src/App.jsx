@@ -13,6 +13,7 @@ import LabTechDashboard from './pages/lab/LabTechDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import MfaVerifyPage from './pages/MfaVerifyPage';
 import MfaSetupPage from './pages/MfaSetupPage';
+import ValidatedAppointmentPage from './pages/ValidatedAppointmentPage';
 import PageWrapper from './components/PageWrapper';
 
 function App() {
@@ -133,6 +134,8 @@ function App() {
                 </div>
               }
             />
+
+            <Route path="/appointment/:id" element={<PageWrapper><ValidatedAppointmentPage /></PageWrapper>} />
           </Routes>
         </Router>
       </AuthProvider>

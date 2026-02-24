@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3, ClipboardList, Activity, Upload, Plus, Eye, Bell, Stethoscope, FlaskConical, Settings, ChevronLeft, ChevronRight, Sun, Moon, KeyRound } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3, ClipboardList, Activity, Upload, Plus, Eye, Bell, Stethoscope, FlaskConical, Settings, ChevronLeft, ChevronRight, Sun, Moon, KeyRound, CalendarDays } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import logo from '../assets/logo.png';
 
@@ -19,6 +19,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
 
     const patientMenuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/patient/dashboard', tab: 'overview' },
+        { icon: CalendarDays, label: 'Appointments', path: '/patient/dashboard', tab: 'appointments' },
         { icon: FileText, label: 'My Records', path: '/patient/dashboard', tab: 'records' },
         { icon: Shield, label: 'Consent Manager', path: '/patient/dashboard', tab: 'consent', badge: pendingConsents },
         { icon: Eye, label: 'Access History', path: '/patient/dashboard', tab: 'history' }
@@ -26,6 +27,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
 
     const doctorMenuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/doctor/dashboard', tab: 'overview' },
+        { icon: CalendarDays, label: 'Appointments', path: '/doctor/dashboard', tab: 'appointments' },
         { icon: ClipboardList, label: 'My Records', path: '/doctor/dashboard', tab: 'myrecords' },
         { icon: Plus, label: 'Create Report', path: '/doctor/dashboard', tab: 'create' },
         { icon: Users, label: 'Patients', path: '/doctor/dashboard', tab: 'patients' }

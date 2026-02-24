@@ -62,9 +62,17 @@ const signQrToken = (appointment) => {
 
 /**
  * Generate QR code as base64 data URL from a token string
+ * Encodes a URL pointing to the frontend verification/details page
  */
-const generateQrCode = async (token) => {
-  return QRCode.toDataURL(token, {
+const generateQrCode = async (token, appointmentId) => {
+  // Read frontend URL from environment or default to localhost
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  // Construct a URL that the scanner can open
+  // We pass the token in the URL hash or query param
+  const verificationUrl = `${frontendUrl}/appointment/${appointmentId}?token=${token}`;
+
+  return QRCode.toDataURL(verificationUrl, {
     errorCorrectionLevel: "H",
     margin: 2,
     width: 300
@@ -133,7 +141,7 @@ const bookAppointment = async (patientId, { doctorId, date, timeSlot, reason }, 
 
   // Generate purpose-scoped QR token & QR image
   const qrToken = signQrToken(appointment);
-  const qrCode = await generateQrCode(qrToken);
+  const qrCode = await generateQrCode(qrToken, appointmentId);
 
   appointment.qrToken = qrToken;
   appointment.qrCode = qrCode;
@@ -233,9 +241,25 @@ const listAppointments = async (requestingUser, filters = {}) => {
   if (filters.status) query.status = filters.status;
   if (filters.date) query.date = filters.date;
 
-  return Appointment.find(query)
+  const appointments = await Appointment.find(query)
     .sort({ date: 1, timeSlot: 1 })
     .lean();
+
+  // Populate patient and doctor details
+  const populatedAppointments = await Promise.all(
+    appointments.map(async (apt) => {
+      const patient = await User.findOne({ userId: apt.patientId }).select('userId firstName lastName email');
+      const doctor = await User.findOne({ userId: apt.doctorId }).select('userId firstName lastName specialty');
+
+      return {
+        ...apt,
+        patient: patient || null,
+        doctor: doctor || null
+      };
+    })
+  );
+
+  return populatedAppointments;
 };
 
 /**
@@ -361,12 +385,18 @@ const verifyEntry = async (qrToken, verifier, ipAddress) => {
     complianceCategory: "HIPAA"
   });
 
+  // Fetch patient and doctor to get names
+  const patient = await User.findOne({ userId: appointment.patientId }).select('firstName lastName');
+  const doctor = await User.findOne({ userId: appointment.doctorId }).select('firstName lastName');
+
   return {
     message: "Entry verified successfully",
     appointment: {
       appointmentId: appointment.appointmentId,
       patientId: appointment.patientId,
+      patientName: patient ? `${patient.firstName} ${patient.lastName}` : "Unknown",
       doctorId: appointment.doctorId,
+      doctorName: doctor ? `${doctor.firstName} ${doctor.lastName}` : "Unknown",
       date: appointment.date,
       timeSlot: appointment.timeSlot,
       status: appointment.status,

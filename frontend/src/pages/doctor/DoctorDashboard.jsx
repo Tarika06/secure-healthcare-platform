@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, TrendingUp, MailCheck, Search, ArrowRight, ChevronRight, Clock } from 'lucide-react';
+import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, TrendingUp, MailCheck, Search, ArrowRight, ChevronRight, Clock, CalendarDays, Edit2, Save } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Modal from '../../components/Modal';
+import IdentityCard from '../../components/IdentityCard';
+import DoctorAppointmentsTab from '../../components/doctor/DoctorAppointmentsTab';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
@@ -142,6 +144,37 @@ const DoctorDashboard = () => {
         } catch (error) { alert(error.response?.data?.message || 'Failed to send consent request'); }
     };
 
+    // --- Edit Record State & Handlers ---
+    const [editingRecordId, setEditingRecordId] = useState(null);
+    const [editForm, setEditForm] = useState({ title: '', diagnosis: '', details: '', prescription: '', recordType: 'GENERAL' });
+    const [updatingRecord, setUpdatingRecord] = useState(false);
+
+    const handleEditRecordClick = (record) => {
+        setEditingRecordId(record._id);
+        setEditForm({
+            title: record.title,
+            diagnosis: record.diagnosis,
+            details: record.details || '',
+            prescription: record.prescription || '',
+            recordType: record.recordType || 'GENERAL'
+        });
+    };
+
+    const handleUpdateRecord = async (e) => {
+        e.preventDefault();
+        setUpdatingRecord(true);
+        try {
+            await apiClient.put(`/records/${editingRecordId}`, editForm);
+            alert('Medical record updated successfully!');
+            setEditingRecordId(null);
+            fetchMyCreatedRecords(); // Refresh the list
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to update record');
+        } finally {
+            setUpdatingRecord(false);
+        }
+    };
+
     const handleLogout = () => { logout(); navigate('/login'); };
 
     const getRecordTypeBadge = (type) => {
@@ -186,6 +219,7 @@ const DoctorDashboard = () => {
 
     const tabs = [
         { id: 'overview', label: 'Dashboard', icon: TrendingUp },
+        { id: 'appointments', label: 'Appointments', icon: CalendarDays },
         { id: 'myrecords', label: 'My Records', icon: ClipboardList },
         { id: 'create', label: 'Create Report', icon: Plus },
         { id: 'patients', label: 'Patients', icon: Users }
@@ -236,6 +270,9 @@ const DoctorDashboard = () => {
                     {/* ─── Overview Tab ─── */}
                     {activeTab === 'overview' && (
                         <div className="space-y-8 tab-content">
+                            <div className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+                                <IdentityCard user={user} />
+                            </div>
                             <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
                                 <StatCard icon={FileText} label="Records Created" value={dashboardStats?.recordsCreated} gradient="from-blue-500 to-indigo-600" delay={100} />
                                 <StatCard icon={CheckCircle} label="Active Consents" value={dashboardStats?.activeConsents} gradient="from-emerald-500 to-green-600" delay={200} />
@@ -243,6 +280,11 @@ const DoctorDashboard = () => {
                                 <StatCard icon={Users} label="Patients Served" value={dashboardStats?.patientsServed} gradient="from-violet-500 to-purple-600" delay={400} />
                             </div>
                         </div>
+                    )}
+
+                    {/* ─── Appointments Tab ─── */}
+                    {activeTab === 'appointments' && (
+                        <DoctorAppointmentsTab />
                     )}
 
                     {/* ─── My Records Tab ─── */}
@@ -276,26 +318,80 @@ const DoctorDashboard = () => {
                                         <div key={record._id} className={`glass-card hover:shadow-glass-hover border-l-4 ${getRecordBorderColor(record.recordType)} stagger-item`}
                                             style={{ animationDelay: `${idx * 80}ms` }}
                                         >
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`badge ${getRecordTypeBadge(record.recordType)}`}>{record.recordType}</span>
-                                                    <span className="text-sm text-slate-400 flex items-center gap-1">
-                                                        <Calendar className="w-3.5 h-3.5" />
-                                                        {new Date(record.createdAt).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <h3 className="text-lg font-bold text-slate-900 mb-1">{record.title}</h3>
-                                            <p className="text-sm text-slate-500 mb-3">Patient: {record.patientName}</p>
-                                            <div className="space-y-2">
-                                                <p className="text-slate-700"><strong className="text-slate-900">Diagnosis:</strong> {record.diagnosis}</p>
-                                                <p className="text-slate-600 text-sm">{record.details}</p>
-                                                {record.prescription && (
-                                                    <div className="mt-3 p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-100">
-                                                        <p className="text-emerald-800 text-sm"><strong>Rx:</strong> {record.prescription}</p>
+                                            {editingRecordId === record._id ? (
+                                                <form onSubmit={handleUpdateRecord} className="space-y-4">
+                                                    <div className="flex justify-between items-center bg-blue-50 -mt-6 -mx-6 px-6 py-4 mb-4 rounded-t-2xl border-b border-blue-100">
+                                                        <h3 className="font-bold text-blue-900 flex items-center gap-2">
+                                                            <Edit2 className="w-5 h-5" /> Editing Record
+                                                        </h3>
+                                                        <div className="flex gap-2">
+                                                            <button type="button" onClick={() => setEditingRecordId(null)} className="btn-outline text-xs py-1.5 px-3">Cancel</button>
+                                                            <button type="submit" disabled={updatingRecord} className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1">
+                                                                {updatingRecord ? 'Saving...' : <><Save className="w-3.5 h-3.5" /> Save Changes</>}
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                )}
-                                            </div>
+
+                                                    <div className="grid md:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="label text-xs">Title</label>
+                                                            <input type="text" value={editForm.title} onChange={e => setEditForm({ ...editForm, title: e.target.value })} required className="input-field py-2" />
+                                                        </div>
+                                                        <div>
+                                                            <label className="label text-xs">Record Type</label>
+                                                            <select value={editForm.recordType} onChange={e => setEditForm({ ...editForm, recordType: e.target.value })} className="input-field py-2">
+                                                                <option value="GENERAL">General</option>
+                                                                <option value="LAB_RESULT">Lab Result</option>
+                                                                <option value="PRESCRIPTION">Prescription</option>
+                                                                <option value="DIAGNOSIS">Diagnosis</option>
+                                                                <option value="IMAGING">Imaging</option>
+                                                                <option value="VITALS">Vitals</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="label text-xs">Diagnosis</label>
+                                                        <input type="text" value={editForm.diagnosis} onChange={e => setEditForm({ ...editForm, diagnosis: e.target.value })} required className="input-field py-2" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="label text-xs">Details</label>
+                                                        <textarea value={editForm.details} onChange={e => setEditForm({ ...editForm, details: e.target.value })} required rows="3" className="input-field" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="label text-xs">Prescription (Optional)</label>
+                                                        <textarea value={editForm.prescription} onChange={e => setEditForm({ ...editForm, prescription: e.target.value })} rows="2" className="input-field" />
+                                                    </div>
+                                                </form>
+                                            ) : (
+                                                <>
+                                                    <div className="flex items-start justify-between mb-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className={`badge ${getRecordTypeBadge(record.recordType)}`}>{record.recordType}</span>
+                                                            <span className="text-sm text-slate-400 flex items-center gap-1">
+                                                                <Calendar className="w-3.5 h-3.5" />
+                                                                {new Date(record.createdAt).toLocaleDateString()}
+                                                            </span>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleEditRecordClick(record)}
+                                                            className="text-slate-400 hover:text-blue-600 transition-colors p-1.5 hover:bg-blue-50 rounded-lg flex items-center gap-1 text-xs font-semibold"
+                                                        >
+                                                            <Edit2 className="w-3.5 h-3.5" /> Edit
+                                                        </button>
+                                                    </div>
+                                                    <h3 className="text-lg font-bold text-slate-900 mb-1">{record.title}</h3>
+                                                    <p className="text-sm text-slate-500 mb-3">Patient: {record.patientName}</p>
+                                                    <div className="space-y-2">
+                                                        <p className="text-slate-700"><strong className="text-slate-900">Diagnosis:</strong> {record.diagnosis}</p>
+                                                        <p className="text-slate-600 text-sm whitespace-pre-line">{record.details}</p>
+                                                        {record.prescription && (
+                                                            <div className="mt-3 p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-100">
+                                                                <p className="text-emerald-800 text-sm whitespace-pre-line"><strong>Rx:</strong> {record.prescription}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

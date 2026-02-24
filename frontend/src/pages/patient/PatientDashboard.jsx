@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Shield, Bell, CheckCircle, XCircle, LayoutDashboard, Eye, Heart, Clock, Activity, User, Download, Trash2, ArrowRight, Sun, Moon, Sparkles, KeyRound } from 'lucide-react';
+import { FileText, Shield, Bell, CheckCircle, XCircle, LayoutDashboard, Eye, Heart, Clock, Activity, User, Download, Trash2, ArrowRight, Sun, Moon, Sparkles, KeyRound, CalendarDays } from 'lucide-react';
 import MedicalCard from '../../components/MedicalCard';
+import IdentityCard from '../../components/IdentityCard';
+import PatientAppointmentsTab from '../../components/patient/PatientAppointmentsTab';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/client';
@@ -147,6 +149,7 @@ const PatientDashboard = () => {
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'records', label: 'Records', icon: FileText },
         { id: 'consent', label: 'Consent', icon: Shield, badge: pendingConsents.length },
+        { id: 'appointments', label: 'Appointments', icon: CalendarDays },
         { id: 'history', label: 'Access Log', icon: Eye },
         { id: 'privacy', label: 'Privacy', icon: Shield }
     ];
@@ -251,23 +254,9 @@ const PatientDashboard = () => {
                     {/* ─── Overview Tab ─── */}
                     {activeTab === 'overview' && (
                         <div className="space-y-8">
-                            {/* Hero Card */}
-                            <div className={`glass-card p-8 relative overflow-hidden transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Sparkles className="w-5 h-5 text-teal-500 dark:text-teal-400" />
-                                        <span className="text-sm font-medium text-teal-600 dark:text-teal-400">{getGreeting()}</span>
-                                    </div>
-                                    <h1 className="text-3xl font-heading font-bold text-slate-900 dark:text-white mb-2">
-                                        Welcome back, <span className="text-gradient">{user?.firstName}</span>
-                                    </h1>
-                                    <p className="text-slate-500 dark:text-slate-400 max-w-lg">
-                                        Your health data is securely managed. Review your records, manage consent, and control your privacy — all in one place.
-                                    </p>
-                                </div>
-                                {/* Decorative gradient orb */}
-                                <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-gradient-to-br from-teal-400/10 to-cyan-400/10 blur-2xl" />
-                                <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-gradient-to-br from-emerald-400/8 to-teal-400/8 blur-xl" />
+                            {/* Hero Identity Card */}
+                            <div className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+                                <IdentityCard user={user} />
                             </div>
 
                             {/* Stats Grid */}
@@ -500,6 +489,11 @@ const PatientDashboard = () => {
                                 </div>
                             )}
                         </div>
+                    )}
+
+                    {/* ─── Appointments Tab ─── */}
+                    {activeTab === 'appointments' && (
+                        <PatientAppointmentsTab />
                     )}
 
                     {/* ─── Privacy & GDPR Tab ─── */}

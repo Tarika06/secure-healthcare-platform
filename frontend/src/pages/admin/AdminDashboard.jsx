@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Users, FileText, BarChart3, Search, AlertTriangle, TrendingUp, Activity, Database, Clock, CheckCircle, XCircle, Cpu, AlertCircle, Ban, Download } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
+import IdentityCard from '../../components/IdentityCard';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import AlertService from '../../api/AlertService';
@@ -181,6 +182,9 @@ const AdminDashboard = () => {
                     {/* ═══ Overview Tab ═══ */}
                     {activeTab === 'overview' && (
                         <div className="tab-content space-y-8">
+                            <div className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+                                <IdentityCard user={user} />
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                                 <StatCard icon={Users} label="Total Patients" value={stats?.totalPatients} gradient="from-teal-500 to-emerald-500" delay={0} />
                                 <StatCard icon={Activity} label="Total Doctors" value={stats?.totalDoctors} gradient="from-blue-500 to-indigo-500" delay={80} />

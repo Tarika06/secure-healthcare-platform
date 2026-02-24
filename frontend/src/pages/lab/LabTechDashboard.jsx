@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FlaskConical, Upload, FileText, Search, User, CheckCircle, Clock, AlertCircle, ArrowRight } from 'lucide-react';
+import { FlaskConical, Upload, FileText, Search, User, CheckCircle, Clock, AlertCircle, ArrowRight, Edit2, Save } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
@@ -18,6 +18,11 @@ const LabTechDashboard = () => {
     const [uploadForm, setUploadForm] = useState({
         patientId: '', title: '', testType: '', results: '', notes: ''
     });
+
+    // --- Edit Record State & Handlers ---
+    const [editingRecordId, setEditingRecordId] = useState(null);
+    const [editForm, setEditForm] = useState({ title: '', testType: '', results: '', notes: '' });
+    const [updatingRecord, setUpdatingRecord] = useState(false);
 
     useEffect(() => { setMounted(true); fetchPatients(); }, []);
     useEffect(() => { if (activeTab === 'history') fetchUploadHistory(); }, [activeTab]);
@@ -51,6 +56,37 @@ const LabTechDashboard = () => {
             setUploadForm({ patientId: '', title: '', testType: '', results: '', notes: '' });
         } catch (error) { alert(error.response?.data?.message || 'Failed to upload results'); }
         finally { setLoading(false); }
+    };
+
+    const handleEditRecordClick = (record) => {
+        setEditingRecordId(record._id);
+        setEditForm({
+            title: record.title,
+            testType: record.diagnosis || '', // Lab test type is stored in diagnosis
+            results: record.details || '',    // Lab results are stored in details
+            notes: record.prescription || ''  // Lab notes are stored in prescription
+        });
+    };
+
+    const handleUpdateRecord = async (e) => {
+        e.preventDefault();
+        setUpdatingRecord(true);
+        try {
+            await apiClient.put(`/records/${editingRecordId}`, {
+                title: editForm.title,
+                recordType: 'LAB_RESULT',
+                diagnosis: editForm.testType,
+                details: editForm.results,
+                prescription: editForm.notes
+            });
+            alert('Lab record updated successfully!');
+            setEditingRecordId(null);
+            fetchUploadHistory(); // Refresh the list
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to update lab record');
+        } finally {
+            setUpdatingRecord(false);
+        }
     };
 
     const handleLogout = async () => { await logout(); navigate('/login'); };
@@ -222,37 +258,84 @@ const LabTechDashboard = () => {
                                         <div key={record._id} className={`glass-card border-l-4 ${getStatusColor(idx)} hover:shadow-glass-hover stagger-item`}
                                             style={{ animationDelay: `${idx * 80}ms` }}
                                         >
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center">
-                                                        <FlaskConical className="w-5 h-5 text-violet-600" />
+                                            {editingRecordId === record._id ? (
+                                                <form onSubmit={handleUpdateRecord} className="space-y-4">
+                                                    <div className="flex justify-between items-center bg-violet-50 -mt-6 -mx-6 px-6 py-4 mb-4 rounded-t-2xl border-b border-violet-100">
+                                                        <h3 className="font-bold text-violet-900 flex items-center gap-2">
+                                                            <Edit2 className="w-5 h-5" /> Editing Lab Result
+                                                        </h3>
+                                                        <div className="flex gap-2">
+                                                            <button type="button" onClick={() => setEditingRecordId(null)} className="btn-outline text-xs py-1.5 px-3">Cancel</button>
+                                                            <button type="submit" disabled={updatingRecord} className="btn-primary flex items-center gap-1 text-xs py-1.5 px-3">
+                                                                {updatingRecord ? 'Saving...' : <><Save className="w-3.5 h-3.5" /> Save Changes</>}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid md:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="label text-xs">Test Title</label>
+                                                            <input type="text" value={editForm.title} onChange={e => setEditForm({ ...editForm, title: e.target.value })} required className="input-field py-2" />
+                                                        </div>
+                                                        <div>
+                                                            <label className="label text-xs">Test Type</label>
+                                                            <select value={editForm.testType} onChange={e => setEditForm({ ...editForm, testType: e.target.value })} className="input-field py-2">
+                                                                {testTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                                                            </select>
+                                                        </div>
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-lg font-bold text-slate-900">{record.title}</h3>
-                                                        <p className="text-sm text-slate-500">Patient: {record.patientName}</p>
+                                                        <label className="label text-xs">Test Results</label>
+                                                        <textarea value={editForm.results} onChange={e => setEditForm({ ...editForm, results: e.target.value })} required rows="4" className="input-field" />
                                                     </div>
-                                                </div>
-                                                <span className="badge badge-lab">LAB RESULT</span>
-                                            </div>
+                                                    <div>
+                                                        <label className="label text-xs">Additional Notes (Optional)</label>
+                                                        <textarea value={editForm.notes} onChange={e => setEditForm({ ...editForm, notes: e.target.value })} rows="2" className="input-field" />
+                                                    </div>
+                                                </form>
+                                            ) : (
+                                                <>
+                                                    <div className="flex items-start justify-between mb-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center">
+                                                                <FlaskConical className="w-5 h-5 text-violet-600" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-lg font-bold text-slate-900">{record.title}</h3>
+                                                                <p className="text-sm text-slate-500">Patient: {record.patientName}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => handleEditRecordClick(record)}
+                                                                className="text-slate-400 hover:text-violet-600 transition-colors p-1.5 hover:bg-violet-50 rounded-lg flex items-center gap-1 text-xs font-semibold"
+                                                            >
+                                                                <Edit2 className="w-3.5 h-3.5" /> Edit
+                                                            </button>
+                                                            <span className="badge badge-lab">LAB RESULT</span>
+                                                        </div>
+                                                    </div>
 
-                                            <div className="mt-4 space-y-3">
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    <span className="font-medium text-slate-700">Test Type:</span>
-                                                    <span className="text-slate-600">{record.diagnosis}</span>
-                                                </div>
-                                                <div className="glass-card-l3 p-3">
-                                                    <p className="text-sm text-slate-600">{record.details}</p>
-                                                </div>
-                                                {record.prescription && (
-                                                    <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100">
-                                                        <p className="text-sm text-amber-800"><strong>Notes:</strong> {record.prescription}</p>
+                                                    <div className="mt-4 space-y-3">
+                                                        <div className="flex items-center gap-2 text-sm">
+                                                            <span className="font-medium text-slate-700">Test Type:</span>
+                                                            <span className="text-slate-600">{record.diagnosis}</span>
+                                                        </div>
+                                                        <div className="glass-card-l3 p-3">
+                                                            <p className="text-sm text-slate-600 whitespace-pre-line">{record.details}</p>
+                                                        </div>
+                                                        {record.prescription && (
+                                                            <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100">
+                                                                <p className="text-sm text-amber-800 whitespace-pre-line"><strong>Notes:</strong> {record.prescription}</p>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
+                                                            <Clock className="w-3.5 h-3.5" />
+                                                            Uploaded on {new Date(record.createdAt).toLocaleString()}
+                                                        </div>
                                                     </div>
-                                                )}
-                                                <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
-                                                    <Clock className="w-3.5 h-3.5" />
-                                                    Uploaded on {new Date(record.createdAt).toLocaleString()}
-                                                </div>
-                                            </div>
+                                                </>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

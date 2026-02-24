@@ -76,6 +76,64 @@ router.post(
 );
 
 /**
+ * PUT /api/records/:id
+ * Doctor/Lab Tech edits a medical record they created
+ */
+router.put(
+    "/:id",
+    authenticate,
+    authorizeByUserId(["D", "L"]),
+    async (req, res) => {
+        try {
+            const { title, diagnosis, details, prescription, recordType } = req.body;
+            const editorId = req.user.userId;
+            const recordId = req.params.id;
+
+            const record = await MedicalRecord.findById(recordId);
+            if (!record) {
+                return res.status(404).json({ message: "Record not found" });
+            }
+
+            // Authorization: Only the creator can edit the record
+            if (record.createdBy !== editorId) {
+                return res.status(403).json({ message: "Access denied. You can only edit records you created." });
+            }
+
+            // Re-encrypt sensitive fields
+            const encryptedData = encryptRecordFields({ diagnosis, details, prescription });
+
+            // Update record
+            record.title = title || record.title;
+            record.recordType = recordType || record.recordType;
+            record.diagnosis = encryptedData.diagnosis;
+            record.details = encryptedData.details;
+            record.prescription = encryptedData.prescription;
+
+            await record.save();
+
+            // Audit logging
+            await auditService.logAuditEvent({
+                userId: editorId,
+                action: "RECORD_EDITED",
+                resource: `/api/records/${record._id}`,
+                method: "PUT",
+                outcome: "SUCCESS",
+                targetUserId: record.patientId,
+                details: { recordType: record.recordType, title: record.title }
+            });
+
+            res.json({
+                message: "Medical record updated successfully",
+                record: decryptRecord(record.toObject())
+            });
+        } catch (error) {
+            console.error("Error updating medical record:", error);
+            res.status(500).json({ message: "Error updating medical record" });
+        }
+    }
+);
+
+/**
  * GET /api/records/my-records
  * Patient views their own medical records (DECRYPTED - they are the owner)
  */
@@ -275,6 +333,42 @@ router.get(
         } catch (error) {
             console.error("Error fetching patients:", error);
             res.status(500).json({ message: "Error fetching patients" });
+        }
+    }
+);
+
+/**
+ * GET /api/records/doctors/list
+ * Get list of all doctors (for patient booking dropdown)
+ */
+router.get(
+    "/doctors/list",
+    authenticate,
+    async (req, res) => {
+        try {
+            const doctors = await User.find({
+                $or: [
+                    { role: "DOCTOR" },
+                    { userId: { $regex: /^D/i } }
+                ],
+                status: "ACTIVE" // Only allow active doctors to be booked
+            }).select("userId firstName lastName specialty email");
+
+            await auditService.logAuditEvent({
+                userId: req.user.userId,
+                action: "DOCTOR_LIST_VIEWED",
+                resource: "/api/records/doctors/list",
+                method: "GET",
+                outcome: "SUCCESS"
+            });
+
+            res.json({
+                message: "Doctors retrieved successfully",
+                doctors
+            });
+        } catch (error) {
+            console.error("Error fetching doctors:", error);
+            res.status(500).json({ message: "Error fetching doctors" });
         }
     }
 );

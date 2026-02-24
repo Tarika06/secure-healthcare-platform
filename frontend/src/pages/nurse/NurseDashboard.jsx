@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, FileText, Plus, Search, User, Heart, Thermometer, Clock, ChevronRight } from 'lucide-react';
+import { Activity, FileText, Plus, Search, User, Heart, Thermometer, Clock, ChevronRight, ScanLine } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
+import QRScannerTab from '../../components/nurse/QRScannerTab';
+import IdentityCard from '../../components/IdentityCard';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 
@@ -72,7 +74,8 @@ const NurseDashboard = () => {
 
     const sidebarItems = [
         { id: 'vitals', label: 'Patient Vitals', icon: Activity },
-        { id: 'notes', label: 'Care Notes', icon: FileText }
+        { id: 'notes', label: 'Care Notes', icon: FileText },
+        { id: 'verify', label: 'Verify Entry', icon: ScanLine }
     ];
 
     return (
@@ -150,11 +153,14 @@ const NurseDashboard = () => {
                 </div>
 
                 {/* Right Panel: Workspace */}
-                <div className="flex-1 overflow-y-auto p-6">
-                    {!selectedPatient ? (
-                        <div className="h-full flex items-center justify-center">
-                            <div className="text-center">
-                                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-50 flex items-center justify-center">
+                <div className="flex-1 overflow-y-auto p-6 flex flex-col">
+                    {activeTab === 'verify' ? (
+                        <QRScannerTab />
+                    ) : !selectedPatient ? (
+                        <div className="h-full flex flex-col">
+                            <IdentityCard user={user} />
+                            <div className="flex-1 flex flex-col items-center justify-center text-center mt-[-40px]">
+                                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-50 flex items-center justify-center shadow-inner">
                                     <User className="w-10 h-10 text-emerald-300 animate-float" />
                                 </div>
                                 <h3 className="text-lg font-heading font-semibold text-slate-700 mb-2">Select a Patient</h3>
