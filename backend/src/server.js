@@ -45,6 +45,7 @@ app.use("/api/gdpr", require("./routes/gdprRoutes"));       // Direct GDPR acces
 app.use("/api/alerts", require("./routes/alertRoutes"));
 app.use("/api/appointments", require("./routes/appointmentRoutes"));
 app.use("/api/mfa", require("./middleware/authenticate"), require("./routes/mfaRoutes"));
+app.use("/api/notifications", require("./routes/notificationRoutes"));
 
 
 const startServer = async () => {

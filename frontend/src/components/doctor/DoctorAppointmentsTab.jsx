@@ -31,7 +31,8 @@ const DoctorAppointmentsTab = () => {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'BOOKED': return 'badge-prescription'; // Teal
+            case 'CONFIRMED': return 'badge-prescription'; // Teal
+            case 'BOOKED': return 'badge-prescription'; // Legacy Teal
             case 'VERIFIED': return 'badge-lab'; // Blue (Arrived/Verified at reception)
             case 'COMPLETED': return 'badge-general'; // Slate
             case 'CANCELLED':
@@ -73,7 +74,7 @@ const DoctorAppointmentsTab = () => {
         return a.timeSlot.localeCompare(b.timeSlot);
     });
 
-    const activeAppointments = sortedAppointments.filter(a => ['BOOKED', 'VERIFIED'].includes(a.status));
+    const activeAppointments = sortedAppointments.filter(a => ['CONFIRMED', 'VERIFIED', 'BOOKED'].includes(a.status));
     const pastAppointments = sortedAppointments.filter(a => ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(a.status));
 
     return (
@@ -224,9 +225,9 @@ const DoctorAppointmentsTab = () => {
                                         <p className="font-mono text-sm font-bold text-white break-all">{selectedAppointment.appointmentId}</p>
 
                                         <p className="text-[10px] uppercase font-bold text-teal-300 tracking-wider mt-4 mb-1">Status</p>
-                                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${selectedAppointment.status === 'BOOKED' ? 'bg-teal-400/20 text-teal-100' :
-                                            selectedAppointment.status === 'VERIFIED' ? 'bg-blue-400/20 text-blue-100' :
-                                                'bg-slate-400/20 text-slate-100'
+                                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${(selectedAppointment.status === 'CONFIRMED' || selectedAppointment.status === 'BOOKED') ? 'bg-teal-400/20 text-teal-100' :
+                                                selectedAppointment.status === 'VERIFIED' ? 'bg-blue-400/20 text-blue-100' :
+                                                    'bg-slate-400/20 text-slate-100'
                                             }`}>
                                             {selectedAppointment.status === 'VERIFIED' ? 'PATIENT WAITING' : selectedAppointment.status}
                                         </span>

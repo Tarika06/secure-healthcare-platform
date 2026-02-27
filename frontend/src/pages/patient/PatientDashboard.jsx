@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FileText, Shield, Bell, CheckCircle, XCircle, LayoutDashboard, Eye, Heart, Clock, Activity, User, Download, Trash2, ArrowRight, Sun, Moon, Sparkles, KeyRound, CalendarDays } from 'lucide-react';
 import MedicalCard from '../../components/MedicalCard';
 import IdentityCard from '../../components/IdentityCard';
+import NotificationsPopover from '../../components/NotificationsPopover';
 import PatientAppointmentsTab from '../../components/patient/PatientAppointmentsTab';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -232,6 +233,7 @@ const PatientDashboard = () => {
                         >
                             <KeyRound className="w-4.5 h-4.5" />
                         </button>
+                        <NotificationsPopover />
                         <button
                             onClick={() => navigate('/patient/profile')}
                             className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
