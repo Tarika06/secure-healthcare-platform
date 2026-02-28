@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Shield, Calendar, Building, ArrowLeft, Edit, Camera, CheckCircle, X, Eye, EyeOff, Lock, AlertCircle } from 'lucide-react';
+import { User, Mail, Phone, Shield, Calendar, Building, ArrowLeft, Edit, Camera, CheckCircle, X, Eye, EyeOff, Lock, AlertCircle, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
 
@@ -258,11 +258,32 @@ const ProfilePage = ({ role, dashboardPath }) => {
                         </div>
 
                         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                            <div>
-                                <p className="font-medium text-slate-900">Two-Factor Authentication</p>
-                                <p className="text-sm text-slate-500">Add an extra layer of security</p>
+                            <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${user?.mfaEnabled ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-400'}`}>
+                                    <Smartphone className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="font-medium text-slate-900">Two-Factor Authentication</p>
+                                    <div className="flex items-center gap-1.5">
+                                        {user?.mfaEnabled ? (
+                                            <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
+                                                <CheckCircle className="w-3 h-3" /> Active
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-slate-500 italic">Not configured</span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <button className="btn-primary text-sm" disabled>Coming Soon</button>
+                            <button
+                                onClick={() => navigate('/mfa-setup')}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${user?.mfaEnabled
+                                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                    : 'bg-primary-600 text-white hover:bg-primary-700 shadow-md shadow-primary-500/20'
+                                    }`}
+                            >
+                                {user?.mfaEnabled ? 'Manage MFA' : 'Set Up MFA'}
+                            </button>
                         </div>
                     </div>
                 </div>

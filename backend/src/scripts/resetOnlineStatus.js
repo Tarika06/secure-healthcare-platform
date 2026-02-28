@@ -8,7 +8,7 @@ const resetStatus = async () => {
         await mongoose.connect(process.env.MONGO_URI);
         console.log("Connected to MongoDB...");
 
-        const result = await User.updateMany({}, { isOnline: false });
+        const result = await User.updateMany({}, { isOnline: false, lastActive: null });
         console.log(`✅ Reset online status for ${result.modifiedCount} users.`);
 
         process.exit(0);

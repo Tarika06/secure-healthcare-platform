@@ -30,6 +30,7 @@ router.get("/profile", authenticate, async (req, res) => {
             specialty: user.specialty,
             phone: decryptedPhone,
             status: user.status,
+            mfaEnabled: user.mfaEnabled,
             createdAt: user.createdAt
         });
     } catch (error) {

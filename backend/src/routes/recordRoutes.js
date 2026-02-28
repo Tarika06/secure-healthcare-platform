@@ -18,6 +18,8 @@ const Consent = require("../models/Consent");
 const authenticate = require("../middleware/authenticate");
 const authorizeByUserId = require("../middleware/authorizeByUserId");
 const auditService = require("../services/auditService");
+const ArchivedRecord = require("../models/ArchivedRecord");
+const archivalService = require("../services/archivalService");
 const { decryptRecord, encryptRecordFields } = require("../services/encryptionService");
 
 /**
@@ -275,6 +277,72 @@ router.get(
         } catch (error) {
             console.error("Error fetching patients:", error);
             res.status(500).json({ message: "Error fetching patients" });
+        }
+    }
+);
+
+/**
+ * GET /api/records/admin/archived
+ * Admin views all archived records in cold storage
+ */
+router.get(
+    "/admin/archived",
+    authenticate,
+    authorizeByUserId(["A"]),
+    async (req, res) => {
+        try {
+            const archivedRecords = await ArchivedRecord.find().sort({ archivedAt: -1 }).lean();
+
+            // Decrypt for admin view (HIPAA compliant audit-logged view)
+            const decrypted = archivedRecords.map(r => decryptRecord(r));
+
+            await auditService.logAuditEvent({
+                userId: req.user.userId,
+                action: "ARCHIVE_LIST_VIEWED",
+                resource: "/api/records/admin/archived",
+                method: "GET",
+                outcome: "SUCCESS"
+            });
+
+            res.json({ records: decrypted });
+        } catch (error) {
+            res.status(500).json({ message: "Error fetching archive" });
+        }
+    }
+);
+
+/**
+ * GET /api/records/admin/hot-storage
+ * Admin views metadata of all active records in hot storage
+ */
+router.get(
+    "/admin/hot-storage",
+    authenticate,
+    authorizeByUserId(["A"]),
+    async (req, res) => {
+        try {
+            const records = await MedicalRecord.find().select("patientId title createdAt").sort({ createdAt: -1 }).lean();
+            res.json({ records });
+        } catch (error) {
+            res.status(500).json({ message: "Error fetching hot storage" });
+        }
+    }
+);
+
+/**
+ * POST /api/records/admin/restore/:archiveId
+ * Admin restores a record from cold storage back to hot storage
+ */
+router.post(
+    "/admin/restore/:archiveId",
+    authenticate,
+    authorizeByUserId(["A"]),
+    async (req, res) => {
+        try {
+            const record = await archivalService.restoreFromArchive(req.params.archiveId, req.user.userId);
+            res.json({ message: "Record restored to active database", record: decryptRecord(record.toObject()) });
+        } catch (error) {
+            res.status(500).json({ message: error.message });
         }
     }
 );

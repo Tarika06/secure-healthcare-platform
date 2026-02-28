@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3, ClipboardList, Activity, Upload, Plus, Eye, Bell, Stethoscope, FlaskConical, Settings, ChevronLeft, ChevronRight, Sun, Moon, KeyRound } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3, ClipboardList, Activity, Upload, Plus, Eye, Bell, Stethoscope, FlaskConical, Settings, ChevronLeft, ChevronRight, Sun, Moon, KeyRound, MailCheck } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import logo from '../assets/logo.png';
 
@@ -27,6 +27,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
     const doctorMenuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/doctor/dashboard', tab: 'overview' },
         { icon: ClipboardList, label: 'My Records', path: '/doctor/dashboard', tab: 'myrecords' },
+        { icon: MailCheck, label: 'Consultations', path: '/doctor/dashboard', tab: 'collaboration' },
         { icon: Plus, label: 'Create Report', path: '/doctor/dashboard', tab: 'create' },
         { icon: Users, label: 'Patients', path: '/doctor/dashboard', tab: 'patients' }
     ];

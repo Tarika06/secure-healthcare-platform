@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, TrendingUp, MailCheck, Search, ArrowRight, ChevronRight, Clock } from 'lucide-react';
+import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, TrendingUp, MailCheck, Search, ArrowRight, ChevronRight, Clock, Send, MessageSquare, Paperclip } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Modal from '../../components/Modal';
 import { useAuth } from '../../context/AuthContext';
@@ -29,6 +29,20 @@ const DoctorDashboard = () => {
     const [pendingConsentIds, setPendingConsentIds] = useState([]);
     const [loadingPatientId, setLoadingPatientId] = useState(null);
     const [patientSearch, setPatientSearch] = useState('');
+    const [doctors, setDoctors] = useState([]);
+    const [collaborations, setCollaborations] = useState({ incoming: [], outgoing: [] });
+    const [selectedCollab, setSelectedCollab] = useState(null);
+    const [collabMessages, setCollabMessages] = useState([]);
+    const [sharedRecords, setSharedRecords] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [showRequestCollabModal, setShowRequestCollabModal] = useState(false);
+    const [requestCollabForm, setRequestCollabForm] = useState({
+        patientId: '',
+        consultingDoctorId: '',
+        accessScope: 'SUMMARY',
+        message: '',
+        expiresAt: ''
+    });
 
     const handleConfirmRequest = async () => {
         if (!consentSentPatient) return;
@@ -62,7 +76,77 @@ const DoctorDashboard = () => {
         if (activeTab === 'patients' || activeTab === 'create') fetchPatients();
         if (activeTab === 'myrecords') fetchMyCreatedRecords();
         if (activeTab === 'overview') fetchDashboardStats();
+        if (activeTab === 'collaboration') {
+            fetchCollaborations();
+            fetchDoctors();
+        }
     }, [activeTab]);
+
+    const fetchCollaborations = async () => {
+        setLoading(true);
+        try {
+            const response = await apiClient.get('/collaboration/my-requests');
+            setCollaborations(response.data);
+        } catch (error) { console.error('Error fetching collaborations:', error); }
+        finally { setLoading(false); }
+    };
+
+    const fetchDoctors = async () => {
+        try {
+            const response = await apiClient.get('/doctor/list');
+            setDoctors(response.data.doctors || []);
+        } catch (error) { console.error('Error fetching doctors:', error); }
+    };
+
+    const fetchCollabDetails = async (collab) => {
+        setSelectedCollab(collab);
+        setLoading(true);
+        try {
+            const [msgRes, dataRes] = await Promise.all([
+                apiClient.get(`/collaboration/${collab._id}/messages`),
+                collab.status === 'ACCEPTED' ? apiClient.get(`/collaboration/${collab._id}/patient-data`) : Promise.resolve({ data: { records: [] } })
+            ]);
+            setCollabMessages(msgRes.data.messages || []);
+            setSharedRecords(dataRes.data.records || []);
+        } catch (error) { console.error('Error fetching collab details:', error); }
+        finally { setLoading(false); }
+    };
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!newMessage.trim()) return;
+        try {
+            await apiClient.post(`/collaboration/${selectedCollab._id}/message`, { message: newMessage });
+            setNewMessage('');
+            // Refresh messages
+            const resp = await apiClient.get(`/collaboration/${selectedCollab._id}/messages`);
+            setCollabMessages(resp.data.messages || []);
+        } catch (error) { alert(error.response?.data?.message || 'Failed to send message'); }
+    };
+
+    const handleRespondToCollab = async (id, status) => {
+        try {
+            await apiClient.patch(`/collaboration/respond/${id}`, { status });
+            fetchCollaborations();
+            if (selectedCollab && selectedCollab._id === id) {
+                const updated = { ...selectedCollab, status };
+                setSelectedCollab(updated);
+                fetchCollabDetails(updated);
+            }
+        } catch (error) { alert(error.response?.data?.message || 'Failed to respond'); }
+    };
+
+    const handleRequestCollaboration = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await apiClient.post('/collaboration/request', requestCollabForm);
+            setShowRequestCollabModal(false);
+            fetchCollaborations();
+            alert('Consultation request sent!');
+        } catch (error) { alert(error.response?.data?.message || 'Failed to request consultation'); }
+        finally { setLoading(false); }
+    };
 
     const fetchDashboardStats = async () => {
         try {
@@ -187,6 +271,7 @@ const DoctorDashboard = () => {
     const tabs = [
         { id: 'overview', label: 'Dashboard', icon: TrendingUp },
         { id: 'myrecords', label: 'My Records', icon: ClipboardList },
+        { id: 'collaboration', label: 'Consultations', icon: MailCheck },
         { id: 'create', label: 'Create Report', icon: Plus },
         { id: 'patients', label: 'Patients', icon: Users }
     ];
@@ -362,6 +447,208 @@ const DoctorDashboard = () => {
                                     )}
                                 </button>
                             </form>
+                        </div>
+                    )}
+
+                    {/* ─── Collaboration Tab ─── */}
+                    {activeTab === 'collaboration' && (
+                        <div className="tab-content h-[calc(100vh-180px)] flex gap-6 overflow-hidden">
+                            {/* Left: Collaboration Sidebar */}
+                            <div className="w-80 flex-shrink-0 flex flex-col glass-card p-0 overflow-hidden border-r border-slate-200/60">
+                                <div className="p-4 border-b border-slate-100/60 bg-slate-50/30 flex justify-between items-center">
+                                    <h3 className="font-heading font-bold text-slate-800 text-sm">Consultations</h3>
+                                    <button
+                                        onClick={() => setShowRequestCollabModal(true)}
+                                        className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
+                                        title="Request New Consultation"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-2 space-y-4">
+                                    {/* Incoming Section */}
+                                    {collaborations.incoming.length > 0 && (
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">Incoming Requests</p>
+                                            <div className="space-y-1">
+                                                {collaborations.incoming.map(c => (
+                                                    <div
+                                                        key={c._id}
+                                                        onClick={() => fetchCollabDetails(c)}
+                                                        className={`p-3 rounded-xl cursor-pointer transition-all ${selectedCollab?._id === c._id ? 'bg-blue-50 border border-blue-200' : 'hover:bg-slate-50 border border-transparent'}`}
+                                                    >
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <p className="text-xs font-bold text-slate-900">Patient: {c.patientId}</p>
+                                                            <span className={`status-dot ${c.status === 'ACCEPTED' ? 'status-active' : c.status === 'PENDING' ? 'status-pending' : 'status-offline'}`} />
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-500 font-medium">From: Dr. {c.requestingDoctorId}</p>
+                                                        {c.requestMessage && (
+                                                            <p className="text-[9px] text-slate-400 mt-1 italic truncate">"{c.requestMessage}"</p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Outgoing Section */}
+                                    {collaborations.outgoing.length > 0 && (
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">Sent Consultations</p>
+                                            <div className="space-y-1">
+                                                {collaborations.outgoing.map(c => (
+                                                    <div
+                                                        key={c._id}
+                                                        onClick={() => fetchCollabDetails(c)}
+                                                        className={`p-3 rounded-xl cursor-pointer transition-all ${selectedCollab?._id === c._id ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}`}
+                                                    >
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <p className="text-xs font-bold text-slate-900">Patient: {c.patientId}</p>
+                                                            <span className={`status-dot ${c.status === 'ACCEPTED' ? 'status-active' : c.status === 'PENDING' ? 'status-pending' : 'status-offline'}`} />
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-500 font-medium">To: Dr. {c.consultingDoctorId}</p>
+                                                        {c.requestMessage && (
+                                                            <p className="text-[9px] text-slate-400 mt-1 italic truncate">"{c.requestMessage}"</p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {collaborations.incoming.length === 0 && collaborations.outgoing.length === 0 && (
+                                        <div className="text-center py-10 px-4">
+                                            <MailCheck className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                                            <p className="text-xs text-slate-400">No consultation requests found</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Right: Workspace */}
+                            <div className="flex-1 flex flex-col glass-card p-0 overflow-hidden">
+                                {selectedCollab ? (
+                                    <>
+                                        {/* Collab Header */}
+                                        <div className="p-4 border-b border-slate-100 bg-slate-50/40 flex justify-between items-center">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-lg bg-white shadow-sm flex items-center justify-center">
+                                                    <MessageSquare className="w-5 h-5 text-blue-500" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-bold text-slate-900">Patient Workspace: {selectedCollab.patientId}</h3>
+                                                    <p className="text-[10px] text-slate-500">
+                                                        Access Context: <span className="font-bold text-blue-600">{selectedCollab.accessScope}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {selectedCollab.status === 'PENDING' && selectedCollab.consultingDoctorId === user.userId && (
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => handleRespondToCollab(selectedCollab._id, 'DECLINED')} className="px-3 py-1.5 text-[10px] font-bold text-red-600 bg-red-50 rounded-lg hover:bg-red-100">DECLINE</button>
+                                                        <button onClick={() => handleRespondToCollab(selectedCollab._id, 'ACCEPTED')} className="px-3 py-1.5 text-[10px] font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700">ACCEPT CONSULTATION</button>
+                                                    </div>
+                                                )}
+                                                <span className={`badge text-[10px] ${selectedCollab.status === 'ACCEPTED' ? 'badge-active' : 'badge-pending'}`}>
+                                                    {selectedCollab.status}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1 flex overflow-hidden">
+                                            {/* Chat Side */}
+                                            <div className="flex-1 flex flex-col border-r border-slate-100">
+                                                {/* Initial Request Reason */}
+                                                <div className="p-4 bg-blue-50/50 border-b border-blue-100">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                                            <AlertCircle className="w-4 h-4 text-blue-600" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-bold text-blue-800 uppercase tracking-wider mb-1">Consultation Reason</p>
+                                                            <p className="text-xs text-slate-700 italic">"{selectedCollab.requestMessage}"</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/20">
+                                                    {collabMessages.map(m => (
+                                                        <div key={m._id} className={`flex ${m.senderId === user.userId ? 'justify-end' : 'justify-start'}`}>
+                                                            <div className={`max-w-[80%] p-3 rounded-2xl shadow-sm ${m.senderId === user.userId ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 rounded-tl-none'}`}>
+                                                                <p className="text-xs line-height-relaxed">{m.message}</p>
+                                                                <p className={`text-[9px] mt-1 ${m.senderId === user.userId ? 'text-blue-100' : 'text-slate-400'}`}>
+                                                                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="p-3 border-t border-slate-100 bg-white">
+                                                    <form onSubmit={handleSendMessage} className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={newMessage}
+                                                            onChange={(e) => setNewMessage(e.target.value)}
+                                                            placeholder="Type encrypted message..."
+                                                            disabled={selectedCollab.status !== 'ACCEPTED'}
+                                                            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                        />
+                                                        <button type="submit" disabled={selectedCollab.status !== 'ACCEPTED'} className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all">
+                                                            <Send className="w-4 h-4" />
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+
+                                            {/* Data Scope Side */}
+                                            <div className="w-80 overflow-y-auto p-4 bg-white">
+                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                    <ShieldAlert className="w-3 h-3" /> Shared Patient Data
+                                                </h4>
+                                                {selectedCollab.status !== 'ACCEPTED' ? (
+                                                    <div className="flex flex-col items-center justify-center h-40 text-center opacity-60">
+                                                        <Clock className="w-8 h-8 text-slate-300 mb-2" />
+                                                        <p className="text-[10px] text-slate-500">Records will be visible once the consultation is accepted.</p>
+                                                    </div>
+                                                ) : sharedRecords.length === 0 ? (
+                                                    <div className="text-center py-10">
+                                                        <FileText className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                                                        <p className="text-[10px] text-slate-400">No records found within the "{selectedCollab.accessScope}" scope.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        {sharedRecords.map(rec => (
+                                                            <div key={rec._id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                                                <div className="flex justify-between items-start mb-1">
+                                                                    <span className="text-[8px] px-1.5 py-0.5 bg-white border border-slate-300 rounded text-slate-500 font-bold">{rec.recordType}</span>
+                                                                    <span className="text-[8px] text-slate-400">{new Date(rec.createdAt).toLocaleDateString()}</span>
+                                                                </div>
+                                                                <p className="text-[10px] font-bold text-slate-900 truncate">{rec.title}</p>
+                                                                <p className="text-[9px] text-slate-600 mt-1 line-clamp-2">{rec.diagnosis}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
+                                        <div className="w-16 h-16 rounded-3xl bg-blue-50 flex items-center justify-center mb-6">
+                                            <Stethoscope className="w-8 h-8 text-blue-400 animate-float" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-slate-800">Doctor-to-Doctor Consulting</h3>
+                                        <p className="text-sm text-slate-500 max-w-sm mt-2">
+                                            Securely request peer reviews, share diagnostic insights, and collaborate on patient care within a HIPAA-compliant encrypted workspace.
+                                        </p>
+                                        <button
+                                            onClick={() => setShowRequestCollabModal(true)}
+                                            className="mt-6 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform"
+                                        >
+                                            INITIATE NEW CONSULTATION
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -577,6 +864,95 @@ const DoctorDashboard = () => {
                         </div>
                         <button onClick={() => setShowConsentSentModal(false)} className="btn-primary w-full mt-4">OK</button>
                     </div>
+                </Modal>
+            )}
+            {/* Request Collaboration Modal */}
+            {showRequestCollabModal && (
+                <Modal
+                    isOpen={showRequestCollabModal}
+                    onClose={() => setShowRequestCollabModal(false)}
+                    title="Initiate Peer Consultation"
+                    icon={Users}
+                >
+                    <form onSubmit={handleRequestCollaboration} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="label">Patient</label>
+                                <select
+                                    value={requestCollabForm.patientId}
+                                    onChange={(e) => setRequestCollabForm({ ...requestCollabForm, patientId: e.target.value })}
+                                    required
+                                    className="input-field"
+                                >
+                                    <option value="">Select Patient</option>
+                                    {patients.map(p => <option key={p.userId} value={p.userId}>{p.firstName} {p.lastName} ({p.userId})</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="label">Consulting Physician</label>
+                                <select
+                                    value={requestCollabForm.consultingDoctorId}
+                                    onChange={(e) => setRequestCollabForm({ ...requestCollabForm, consultingDoctorId: e.target.value })}
+                                    required
+                                    className="input-field"
+                                >
+                                    <option value="">Select Specialist</option>
+                                    {doctors.filter(d => d.userId !== user.userId).map(d => (
+                                        <option key={d.userId} value={d.userId}>
+                                            Dr. {d.firstName} {d.lastName} {d.specialty ? `(${d.specialty})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="label">Data Access Scope (HIPAA Privacy Rule)</label>
+                            <select
+                                value={requestCollabForm.accessScope}
+                                onChange={(e) => setRequestCollabForm({ ...requestCollabForm, accessScope: e.target.value })}
+                                className="input-field"
+                            >
+                                <option value="SUMMARY">Clinical Summary (Last 5 Records)</option>
+                                <option value="LAB_REPORTS">Laboratory Results Only</option>
+                                <option value="PRESCRIPTIONS">Medication & Prescription History</option>
+                                <option value="RADIOLOGY">Radiology & Imaging</option>
+                                <option value="FULL">Complete Medical Record Access</option>
+                            </select>
+                            <p className="text-[10px] text-slate-400 mt-1 italic">
+                                * Minimum Necessary Standard: Only share data relevant to the consultation context.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="label">Consultation Detail</label>
+                            <textarea
+                                value={requestCollabForm.message}
+                                onChange={(e) => setRequestCollabForm({ ...requestCollabForm, message: e.target.value })}
+                                required
+                                rows="3"
+                                className="input-field"
+                                placeholder="State the purpose of this consultation and diagnostic questions..."
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="label">Access Expiry (Optional)</label>
+                                <input
+                                    type="date"
+                                    value={requestCollabForm.expiresAt}
+                                    onChange={(e) => setRequestCollabForm({ ...requestCollabForm, expiresAt: e.target.value })}
+                                    className="input-field"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                            <button type="button" onClick={() => setShowRequestCollabModal(false)} className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm">CANCEL</button>
+                            <button type="submit" className="flex-2 btn-primary py-2.5 px-8">SEND REQUEST</button>
+                        </div>
+                    </form>
                 </Modal>
             )}
         </div>
