@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Shield, Bell, CheckCircle, XCircle, LayoutDashboard, Eye, Heart, Clock, Activity, User, Download, Trash2, ArrowRight, Sun, Moon, Sparkles } from 'lucide-react';
+import { FileText, Shield, Bell, CheckCircle, XCircle, LayoutDashboard, Eye, Heart, Clock, Activity, User, Download, Trash2, ArrowRight, Sun, Moon, Sparkles, Target, ClipboardList, Stethoscope } from 'lucide-react';
 import MedicalCard from '../../components/MedicalCard';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -24,6 +24,8 @@ const PatientDashboard = () => {
     const [downloading, setDownloading] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [healthReport, setHealthReport] = useState(null);
+    const [reportLoading, setReportLoading] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -57,7 +59,17 @@ const PatientDashboard = () => {
 
     useEffect(() => {
         if (activeTab === 'history') fetchAccessHistory();
+        if (activeTab === 'report' && !healthReport) fetchHealthReport();
     }, [activeTab]);
+
+    const fetchHealthReport = async () => {
+        setReportLoading(true);
+        try {
+            const response = await apiClient.get('/patient/health-report');
+            setHealthReport(response.data.report);
+        } catch (error) { console.error('Error fetching health report:', error); }
+        finally { setReportLoading(false); }
+    };
 
     const handleGrantConsent = async (consentId) => {
         try { await consentApi.grantConsent(consentId); await fetchConsents(); }
@@ -146,6 +158,7 @@ const PatientDashboard = () => {
     const tabs = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'records', label: 'Records', icon: FileText },
+        { id: 'report', label: 'My Report', icon: ClipboardList },
         { id: 'consent', label: 'Consent', icon: Shield, badge: pendingConsents.length },
         { id: 'history', label: 'Access Log', icon: Eye },
         { id: 'privacy', label: 'Privacy', icon: Shield }
@@ -390,6 +403,11 @@ const PatientDashboard = () => {
                                                                 <Clock className="w-3 h-3" />
                                                                 Requested {new Date(consent.requestedAt).toLocaleDateString()}
                                                             </p>
+                                                            {consent.purpose && (
+                                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 mt-2 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
+                                                                    <Target className="w-2.5 h-2.5" />Purpose: {consent.purpose}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-2">
@@ -438,6 +456,11 @@ const PatientDashboard = () => {
                                                                     Access Expires: {new Date(consent.expiresAt).toLocaleDateString()}
                                                                     {new Date(consent.expiresAt) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) && ' (Soon)'}
                                                                 </p>
+                                                            )}
+                                                            {consent.purpose && (
+                                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 mt-1 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
+                                                                    <Target className="w-2.5 h-2.5" />Purpose: {consent.purpose}
+                                                                </span>
                                                             )}
                                                         </div>
                                                     </div>
@@ -490,6 +513,220 @@ const PatientDashboard = () => {
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ─── My Report Tab ─── */}
+                    {activeTab === 'report' && (
+                        <div className="space-y-8 tab-content">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md">
+                                        <ClipboardList className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-heading font-bold text-slate-900">Personal Health Report</h2>
+                                        <p className="text-xs text-slate-500 mt-0.5">HIPAA Right of Access | GDPR Article 15</p>
+                                    </div>
+                                </div>
+                                <button onClick={fetchHealthReport} disabled={reportLoading} className="btn-secondary flex items-center gap-2 text-sm">
+                                    {reportLoading ? <div className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" /> : <Activity className="w-4 h-4" />}
+                                    Refresh
+                                </button>
+                            </div>
+
+                            {reportLoading ? (
+                                <div className="flex items-center justify-center py-24">
+                                    <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+                                </div>
+                            ) : healthReport ? (
+                                <>
+                                    {/* Summary Cards */}
+                                    <div className="grid md:grid-cols-4 gap-5">
+                                        {[
+                                            { icon: FileText, label: 'Total Records', value: healthReport.summary.totalRecords, gradient: 'from-blue-500 to-indigo-600' },
+                                            { icon: Stethoscope, label: 'Healthcare Providers', value: healthReport.summary.totalDoctors, gradient: 'from-teal-500 to-emerald-600' },
+                                            { icon: Shield, label: 'Active Consents', value: healthReport.summary.activeConsents, gradient: 'from-emerald-500 to-green-600' },
+                                            { icon: Heart, label: 'Care Notes', value: healthReport.summary.totalCareNotes, gradient: 'from-rose-500 to-pink-600' }
+                                        ].map((card, idx) => (
+                                            <StatCard key={idx} icon={card.icon} label={card.label} value={card.value} gradient={card.gradient} delay={idx * 100} />
+                                        ))}
+                                    </div>
+
+                                    {/* Records by Type */}
+                                    <div className="glass-card">
+                                        <div className="flex items-center gap-3 mb-5">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md">
+                                                <FileText className="w-5 h-5 text-white" />
+                                            </div>
+                                            <h3 className="text-lg font-heading font-bold text-slate-900">Records by Type</h3>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {Object.entries(healthReport.recordsByType).map(([type, count], idx) => {
+                                                const maxCount = Math.max(...Object.values(healthReport.recordsByType), 1);
+                                                const pct = (count / maxCount) * 100;
+                                                const colors = {
+                                                    LAB_RESULT: 'from-amber-400 to-orange-500',
+                                                    PRESCRIPTION: 'from-blue-400 to-indigo-500',
+                                                    DIAGNOSIS: 'from-red-400 to-rose-500',
+                                                    IMAGING: 'from-purple-400 to-violet-500',
+                                                    VITALS: 'from-green-400 to-emerald-500',
+                                                    GENERAL: 'from-slate-400 to-gray-500'
+                                                };
+                                                return (
+                                                    <div key={type}>
+                                                        <div className="flex justify-between mb-1">
+                                                            <span className="text-sm font-semibold text-slate-700">{type.replace(/_/g, ' ')}</span>
+                                                            <span className="text-sm font-bold text-slate-500">{count}</span>
+                                                        </div>
+                                                        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div className={`h-full rounded-full bg-gradient-to-r ${colors[type] || 'from-slate-400 to-gray-500'} transition-all duration-700`}
+                                                                style={{ width: `${pct}%` }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Records by Purpose */}
+                                    <div className="glass-card">
+                                        <div className="flex items-center gap-3 mb-5">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-md">
+                                                <Target className="w-5 h-5 text-white" />
+                                            </div>
+                                            <h3 className="text-lg font-heading font-bold text-slate-900">Records by Purpose</h3>
+                                        </div>
+                                        <div className="flex flex-wrap gap-3">
+                                            {Object.entries(healthReport.recordsByPurpose).map(([purpose, count]) => {
+                                                const purposeIcons = { TREATMENT: '🏥', PAYMENT: '💳', RESEARCH: '🔬', LEGAL: '⚖️', EMERGENCY: '🚨', INSURANCE: '📋' };
+                                                return (
+                                                    <div key={purpose} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-50 border border-violet-200">
+                                                        <span className="text-lg">{purposeIcons[purpose] || '📌'}</span>
+                                                        <div>
+                                                            <p className="text-xs font-bold text-violet-700">{purpose}</p>
+                                                            <p className="text-lg font-heading font-bold text-violet-900">{count}</p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Timeline */}
+                                    {healthReport.timeline.length > 0 && (
+                                        <div className="glass-card">
+                                            <div className="flex items-center gap-3 mb-5">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center shadow-md">
+                                                    <Clock className="w-5 h-5 text-white" />
+                                                </div>
+                                                <h3 className="text-lg font-heading font-bold text-slate-900">Medical Timeline</h3>
+                                            </div>
+                                            <div className="space-y-4">
+                                                {healthReport.timeline.map((month, idx) => (
+                                                    <div key={month.month} className="relative pl-8 pb-4 border-l-2 border-teal-200 last:border-l-0 last:pb-0">
+                                                        <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 shadow-md" />
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <span className="text-sm font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full">{month.month}</span>
+                                                            <span className="text-xs text-slate-500">{month.count} record{month.count > 1 ? 's' : ''}</span>
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            {month.records.slice(0, 3).map(r => (
+                                                                <div key={r.id} className="flex items-center gap-2 text-sm">
+                                                                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${r.recordType === 'LAB_RESULT' ? 'bg-amber-400' : r.recordType === 'PRESCRIPTION' ? 'bg-blue-400' : r.recordType === 'DIAGNOSIS' ? 'bg-red-400' : 'bg-slate-400'}`} />
+                                                                    <span className="text-slate-700 font-medium truncate">{r.title}</span>
+                                                                    <span className="text-[10px] text-slate-400 flex-shrink-0">{new Date(r.date).toLocaleDateString()}</span>
+                                                                </div>
+                                                            ))}
+                                                            {month.records.length > 3 && <p className="text-xs text-slate-400 ml-4">+{month.records.length - 3} more</p>}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Latest Records */}
+                                    {healthReport.latestRecords.length > 0 && (
+                                        <div className="glass-card">
+                                            <div className="flex items-center gap-3 mb-5">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-md">
+                                                    <Activity className="w-5 h-5 text-white" />
+                                                </div>
+                                                <h3 className="text-lg font-heading font-bold text-slate-900">Latest Records</h3>
+                                            </div>
+                                            <div className="grid gap-3">
+                                                {healthReport.latestRecords.map((record, idx) => (
+                                                    <div key={record.id} className="glass-card-l2 p-4 hover:shadow-md transition-all">
+                                                        <div className="flex items-start justify-between">
+                                                            <div>
+                                                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{record.recordType}</span>
+                                                                    {record.purpose && (
+                                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 flex items-center gap-1">
+                                                                            <Target className="w-2.5 h-2.5" />{record.purpose}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <p className="font-semibold text-slate-800">{record.title}</p>
+                                                                <p className="text-sm text-slate-500 mt-0.5">{record.diagnosis}</p>
+                                                            </div>
+                                                            <span className="text-xs text-slate-400 flex-shrink-0">{new Date(record.createdAt).toLocaleDateString()}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Healthcare Providers */}
+                                    {healthReport.doctors.length > 0 && (
+                                        <div className="glass-card">
+                                            <div className="flex items-center gap-3 mb-5">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md">
+                                                    <Stethoscope className="w-5 h-5 text-white" />
+                                                </div>
+                                                <h3 className="text-lg font-heading font-bold text-slate-900">Your Healthcare Providers</h3>
+                                            </div>
+                                            <div className="grid sm:grid-cols-2 gap-3">
+                                                {healthReport.doctors.map((doc, idx) => (
+                                                    <div key={doc.userId} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-blue-50 transition-colors">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                                                            {doc.name.split(' ').slice(1).map(n => n.charAt(0)).join('')}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold text-slate-800 text-sm">{doc.name}</p>
+                                                            <p className="text-xs text-slate-500">{doc.specialty}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Compliance Note */}
+                                    <div className="glass-card border-l-4 border-teal-400 bg-gradient-to-r from-teal-50/60 to-cyan-50/40">
+                                        <div className="flex items-start gap-3">
+                                            <Shield className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-semibold text-teal-900 text-sm">Privacy & Compliance</p>
+                                                <p className="text-teal-700 text-xs mt-1">{healthReport.complianceNote}</p>
+                                                {healthReport.summary.dateRange.oldest && (
+                                                    <p className="text-teal-600 text-xs mt-2">
+                                                        Records from {new Date(healthReport.summary.dateRange.oldest).toLocaleDateString()} to {new Date(healthReport.summary.dateRange.newest).toLocaleDateString()}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="glass-card text-center py-16">
+                                    <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                    <h3 className="text-xl font-semibold text-slate-800 mb-2">No Report Available</h3>
+                                    <p className="text-slate-500">Your health report will be generated once you have medical records.</p>
                                 </div>
                             )}
                         </div>

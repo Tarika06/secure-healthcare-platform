@@ -28,7 +28,12 @@ const ConsentSchema = new mongoose.Schema({
     },
     purpose: {
         type: String,
-        default: "Access to medical records"
+        enum: ["TREATMENT", "PAYMENT", "RESEARCH", "LEGAL", "EMERGENCY", "INSURANCE"],
+        required: true
+    },
+    purposeDescription: {
+        type: String,
+        default: ""
     }
 });
 

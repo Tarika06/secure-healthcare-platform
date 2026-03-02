@@ -416,4 +416,37 @@ router.get("/roles", (req, res) => {
   res.json({ roles: getValidRoles() });
 });
 
+/**
+ * GET /api/admin/access-summary
+ * Data Access Summary Report
+ * 
+ * User Story 9: Aggregates access events by role, summarizes frequency,
+ * and flags unusual patterns via threshold indicators.
+ * 
+ * HIPAA §164.312(b) — Audit Controls
+ * GDPR Article 30 — Records of Processing Activities
+ */
+router.get("/access-summary", async (req, res) => {
+  try {
+    const timeRange = parseInt(req.query.timeRange) || 168; // default 7 days
+
+    const report = await auditService.getAccessSummaryReport(timeRange);
+
+    await auditService.logAuditEvent({
+      userId: req.user.userId,
+      action: "ADMIN_VIEW_ACCESS_SUMMARY",
+      resource: "/api/admin/access-summary",
+      method: "GET",
+      outcome: "SUCCESS",
+      complianceCategory: "SECURITY",
+      details: { timeRangeHours: timeRange, totalEvents: report.totals.totalEvents }
+    });
+
+    res.json({ report });
+  } catch (error) {
+    console.error("Error generating access summary:", error);
+    res.status(500).json({ message: "Error generating access summary report" });
+  }
+});
+
 module.exports = router;

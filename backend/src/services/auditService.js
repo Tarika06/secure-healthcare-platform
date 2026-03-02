@@ -251,6 +251,180 @@ const getPatientAccessHistory = async (patientId, options = {}) => {
   );
 };
 
+/**
+ * Get Data Access Summary Report
+ * Aggregates access events by role, action, and frequency.
+ * Identifies unusual access patterns via threshold indicators.
+ * 
+ * User Story 9: Data Access Summary Report
+ * HIPAA §164.312(b) — Audit Controls
+ * GDPR Article 30 — Records of Processing Activities
+ */
+const getAccessSummaryReport = async (timeRangeHours = 168) => {
+  const since = new Date(Date.now() - timeRangeHours * 60 * 60 * 1000);
+
+  // 1. Access counts by role
+  const accessByRole = await AuditLog.aggregate([
+    { $match: { timestamp: { $gte: since } } },
+    {
+      $group: {
+        _id: {
+          $switch: {
+            branches: [
+              { case: { $regexMatch: { input: "$userId", regex: /^A/i } }, then: "ADMIN" },
+              { case: { $regexMatch: { input: "$userId", regex: /^D/i } }, then: "DOCTOR" },
+              { case: { $regexMatch: { input: "$userId", regex: /^N/i } }, then: "NURSE" },
+              { case: { $regexMatch: { input: "$userId", regex: /^L/i } }, then: "LAB_TECH" },
+              { case: { $regexMatch: { input: "$userId", regex: /^P/i } }, then: "PATIENT" }
+            ],
+            default: "SYSTEM"
+          }
+        },
+        totalAccess: { $sum: 1 },
+        successCount: { $sum: { $cond: [{ $eq: ["$outcome", "SUCCESS"] }, 1, 0] } },
+        deniedCount: { $sum: { $cond: [{ $eq: ["$outcome", "DENIED"] }, 1, 0] } },
+        failureCount: { $sum: { $cond: [{ $eq: ["$outcome", "FAILURE"] }, 1, 0] } }
+      }
+    },
+    { $sort: { totalAccess: -1 } }
+  ]);
+
+  // 2. Access counts by action type
+  const accessByAction = await AuditLog.aggregate([
+    { $match: { timestamp: { $gte: since } } },
+    {
+      $group: {
+        _id: "$action",
+        count: { $sum: 1 },
+        successCount: { $sum: { $cond: [{ $eq: ["$outcome", "SUCCESS"] }, 1, 0] } },
+        deniedCount: { $sum: { $cond: [{ $eq: ["$outcome", "DENIED"] }, 1, 0] } }
+      }
+    },
+    { $sort: { count: -1 } },
+    { $limit: 15 }
+  ]);
+
+  // 3. Top active users
+  const topActiveUsers = await AuditLog.aggregate([
+    { $match: { timestamp: { $gte: since } } },
+    {
+      $group: {
+        _id: "$userId",
+        accessCount: { $sum: 1 },
+        lastAccess: { $max: "$timestamp" },
+        deniedCount: { $sum: { $cond: [{ $eq: ["$outcome", "DENIED"] }, 1, 0] } },
+        actions: { $addToSet: "$action" }
+      }
+    },
+    { $sort: { accessCount: -1 } },
+    { $limit: 10 }
+  ]);
+
+  // 4. Hourly access frequency
+  const hourlyFrequency = await AuditLog.aggregate([
+    { $match: { timestamp: { $gte: since } } },
+    {
+      $group: {
+        _id: {
+          date: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
+          hour: { $hour: "$timestamp" }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { "_id.date": -1, "_id.hour": -1 } },
+    { $limit: 168 }
+  ]);
+
+  // 5. Denied access events
+  const deniedAccess = await AuditLog.aggregate([
+    { $match: { timestamp: { $gte: since }, outcome: { $in: ["DENIED", "FAILURE"] } } },
+    {
+      $group: {
+        _id: { userId: "$userId", action: "$action" },
+        count: { $sum: 1 },
+        lastOccurrence: { $max: "$timestamp" },
+        reasons: { $addToSet: "$reason" }
+      }
+    },
+    { $sort: { count: -1 } },
+    { $limit: 10 }
+  ]);
+
+  // 6. Total counts
+  const totalEvents = await AuditLog.countDocuments({ timestamp: { $gte: since } });
+  const totalDenied = await AuditLog.countDocuments({ timestamp: { $gte: since }, outcome: { $in: ["DENIED", "FAILURE"] } });
+
+  // 7. Threshold indicators
+  const THRESHOLDS = {
+    HIGH_ACCESS_PER_ROLE: 50,
+    HIGH_DENIED_EVENTS: 10,
+    HIGH_USER_FREQUENCY: 100,
+    DENIED_RATIO_PERCENT: 20
+  };
+
+  const thresholdAlerts = [];
+
+  accessByRole.forEach(role => {
+    if (role.totalAccess > THRESHOLDS.HIGH_ACCESS_PER_ROLE) {
+      thresholdAlerts.push({
+        type: "HIGH_ROLE_ACTIVITY",
+        severity: "MEDIUM",
+        role: role._id,
+        count: role.totalAccess,
+        threshold: THRESHOLDS.HIGH_ACCESS_PER_ROLE,
+        message: `Role ${role._id} has ${role.totalAccess} access events (threshold: ${THRESHOLDS.HIGH_ACCESS_PER_ROLE})`
+      });
+    }
+    const deniedRatio = role.totalAccess > 0 ? (role.deniedCount / role.totalAccess) * 100 : 0;
+    if (deniedRatio > THRESHOLDS.DENIED_RATIO_PERCENT && role.deniedCount > 3) {
+      thresholdAlerts.push({
+        type: "HIGH_DENIED_RATIO",
+        severity: "HIGH",
+        role: role._id,
+        deniedRatio: deniedRatio.toFixed(1),
+        deniedCount: role.deniedCount,
+        message: `Role ${role._id} has ${deniedRatio.toFixed(1)}% denied access rate (${role.deniedCount} events)`
+      });
+    }
+  });
+
+  topActiveUsers.forEach(u => {
+    if (u.accessCount > THRESHOLDS.HIGH_USER_FREQUENCY) {
+      thresholdAlerts.push({
+        type: "HIGH_USER_ACTIVITY",
+        severity: "MEDIUM",
+        userId: u._id,
+        count: u.accessCount,
+        threshold: THRESHOLDS.HIGH_USER_FREQUENCY,
+        message: `User ${u._id} has ${u.accessCount} access events (threshold: ${THRESHOLDS.HIGH_USER_FREQUENCY})`
+      });
+    }
+    if (u.deniedCount > THRESHOLDS.HIGH_DENIED_EVENTS) {
+      thresholdAlerts.push({
+        type: "HIGH_USER_DENIED",
+        severity: "HIGH",
+        userId: u._id,
+        deniedCount: u.deniedCount,
+        threshold: THRESHOLDS.HIGH_DENIED_EVENTS,
+        message: `User ${u._id} has ${u.deniedCount} denied access events (threshold: ${THRESHOLDS.HIGH_DENIED_EVENTS})`
+      });
+    }
+  });
+
+  return {
+    timeRange: { hours: timeRangeHours, since: since.toISOString(), until: new Date().toISOString() },
+    totals: { totalEvents, totalDenied, deniedPercentage: totalEvents > 0 ? ((totalDenied / totalEvents) * 100).toFixed(1) : "0.0" },
+    accessByRole,
+    accessByAction,
+    topActiveUsers,
+    hourlyFrequency,
+    deniedAccess,
+    thresholdAlerts,
+    thresholds: THRESHOLDS
+  };
+};
+
 module.exports = {
   logAuditEvent,
   logLoginSuccess,
@@ -266,5 +440,7 @@ module.exports = {
   getUserAuditLogs,
   getLoginHistory,
   getAccessDeniedEvents,
-  getPatientAccessHistory
+  getPatientAccessHistory,
+  getAccessSummaryReport
 };
+

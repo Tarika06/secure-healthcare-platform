@@ -11,6 +11,11 @@ const MedicalRecordSchema = new mongoose.Schema({
         enum: ["LAB_RESULT", "PRESCRIPTION", "DIAGNOSIS", "IMAGING", "VITALS", "GENERAL"],
         default: "GENERAL"
     },
+    purpose: {
+        type: String,
+        enum: ["TREATMENT", "PAYMENT", "RESEARCH", "LEGAL", "EMERGENCY", "INSURANCE"],
+        default: "TREATMENT"
+    },
     title: {
         type: String,
         required: true

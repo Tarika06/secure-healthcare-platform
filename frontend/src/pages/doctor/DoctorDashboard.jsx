@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, TrendingUp, MailCheck, Search, ArrowRight, ChevronRight, Clock } from 'lucide-react';
+import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, TrendingUp, MailCheck, Search, ArrowRight, ChevronRight, Clock, Target } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Modal from '../../components/Modal';
 import { useAuth } from '../../context/AuthContext';
@@ -29,12 +29,22 @@ const DoctorDashboard = () => {
     const [pendingConsentIds, setPendingConsentIds] = useState([]);
     const [loadingPatientId, setLoadingPatientId] = useState(null);
     const [patientSearch, setPatientSearch] = useState('');
+    const [consentPurpose, setConsentPurpose] = useState('TREATMENT');
+
+    const PURPOSE_OPTIONS = [
+        { value: 'TREATMENT', label: 'Medical Treatment', icon: '🏥' },
+        { value: 'PAYMENT', label: 'Payment / Billing', icon: '💳' },
+        { value: 'RESEARCH', label: 'Medical Research', icon: '🔬' },
+        { value: 'LEGAL', label: 'Legal Compliance', icon: '⚖️' },
+        { value: 'EMERGENCY', label: 'Emergency Access', icon: '🚨' },
+        { value: 'INSURANCE', label: 'Insurance Processing', icon: '📋' }
+    ];
 
     const handleConfirmRequest = async () => {
         if (!consentSentPatient) return;
         setConfirmConsentModal(false);
         try {
-            await consentApi.requestConsent(consentSentPatient.userId);
+            await consentApi.requestConsent(consentSentPatient.userId, consentPurpose);
             setPendingConsentIds(ids => [...ids, consentSentPatient.userId]);
             setPatients(prev => prev.map(p =>
                 p.userId === consentSentPatient.userId ? { ...p, consentPending: true } : p
@@ -53,7 +63,7 @@ const DoctorDashboard = () => {
     };
 
     const [reportForm, setReportForm] = useState({
-        patientId: '', title: '', diagnosis: '', details: '', prescription: '', recordType: 'GENERAL'
+        patientId: '', title: '', diagnosis: '', details: '', prescription: '', recordType: 'GENERAL', purpose: 'TREATMENT'
     });
 
     useEffect(() => { setMounted(true); }, []);
@@ -111,7 +121,7 @@ const DoctorDashboard = () => {
         try {
             await apiClient.post('/records/create', reportForm);
             alert('Medical report created successfully!');
-            setReportForm({ patientId: '', title: '', diagnosis: '', details: '', prescription: '', recordType: 'GENERAL' });
+            setReportForm({ patientId: '', title: '', diagnosis: '', details: '', prescription: '', recordType: 'GENERAL', purpose: 'TREATMENT' });
         } catch (error) { alert(error.response?.data?.message || 'Failed to create report'); }
         finally { setLoading(false); }
     };
@@ -334,6 +344,14 @@ const DoctorDashboard = () => {
                                 </div>
 
                                 <div>
+                                    <label className="label flex items-center gap-2"><Target className="w-4 h-4 text-violet-500" /> Purpose (GDPR Art. 5)</label>
+                                    <select value={reportForm.purpose} onChange={(e) => setReportForm({ ...reportForm, purpose: e.target.value })} className="input-field">
+                                        {PURPOSE_OPTIONS.map(p => <option key={p.value} value={p.value}>{p.icon} {p.label}</option>)}
+                                    </select>
+                                    <p className="text-xs text-slate-400 mt-1">Records are tagged with a purpose for regulatory compliance</p>
+                                </div>
+
+                                <div>
                                     <label className="label">Title</label>
                                     <input type="text" value={reportForm.title} onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })} required className="input-field" placeholder="e.g., Annual Checkup Report" />
                                 </div>
@@ -490,11 +508,22 @@ const DoctorDashboard = () => {
 
                                                 {/* Records */}
                                                 <div className="flex-1 overflow-y-auto p-6">
-                                                    {accessInfo && !accessInfo.fullAccess && (
-                                                        <div className="glass-card-l2 border-l-4 border-amber-400 bg-amber-50/50 mb-6 p-4">
-                                                            <p className="text-amber-800 text-sm font-medium">{accessInfo.message}</p>
+                                                    {accessInfo && (
+                                                        <div className={`glass-card-l2 border-l-4 ${accessInfo.fullAccess ? 'border-emerald-400 bg-emerald-50/50' : 'border-amber-400 bg-amber-50/50'} mb-6 p-4`}>
+                                                            <p className={`${accessInfo.fullAccess ? 'text-emerald-800' : 'text-amber-800'} text-sm font-medium`}>{accessInfo.message}</p>
+                                                            {accessInfo.consentedPurposes && (
+                                                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                                                    {accessInfo.consentedPurposes.map(p => (
+                                                                        <span key={p.code} className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full bg-violet-100 text-violet-700">
+                                                                            <Target className="w-2.5 h-2.5" />{p.label}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                             {accessInfo.hiddenRecordCount > 0 && (
-                                                                <p className="text-amber-600 text-xs mt-1">{accessInfo.hiddenRecordCount} additional records require consent</p>
+                                                                <p className="text-amber-600 text-xs mt-2">
+                                                                    {accessInfo.hiddenRecordCount} record(s) hidden — require consent for: {accessInfo.hiddenPurposes?.map(p => p.label).join(', ')}
+                                                                </p>
                                                             )}
                                                         </div>
                                                     )}
@@ -520,8 +549,13 @@ const DoctorDashboard = () => {
                                                                     style={{ animationDelay: `${idx * 80}ms` }}
                                                                 >
                                                                     <div className="flex-1">
-                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                                                                             <span className={`badge text-[10px] py-1 ${getRecordTypeBadge(record.recordType)}`}>{record.recordType}</span>
+                                                                            {record.purpose && (
+                                                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full bg-violet-50 text-violet-600 border border-violet-200">
+                                                                                    <Target className="w-2.5 h-2.5" />{record.purpose}
+                                                                                </span>
+                                                                            )}
                                                                             <span className="text-xs text-slate-400">{new Date(record.createdAt).toLocaleDateString()}</span>
                                                                         </div>
                                                                         <p className="font-semibold text-slate-900">{record.title}</p>
@@ -549,11 +583,30 @@ const DoctorDashboard = () => {
                         <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex gap-3 text-left">
                             <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                             <div>
-                                <h4 className="font-semibold text-amber-900 text-sm">Consent Required</h4>
+                                <h4 className="font-semibold text-amber-900 text-sm">Purpose-Based Consent (GDPR Art. 5)</h4>
                                 <p className="text-amber-700 text-xs mt-1">
-                                    You are about to request access to medical records for <strong>{consentSentPatient.firstName} {consentSentPatient.lastName}</strong>.
-                                    The patient determines what you can see.
+                                    You are requesting access to records of <strong>{consentSentPatient.firstName} {consentSentPatient.lastName}</strong>.
+                                    You must specify why you need access. Only records matching this purpose will be visible.
                                 </p>
+                            </div>
+                        </div>
+                        <div className="mt-4">
+                            <label className="label flex items-center gap-2 text-sm"><Target className="w-4 h-4 text-violet-500" /> Select Access Purpose</label>
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                                {PURPOSE_OPTIONS.map(p => (
+                                    <button
+                                        key={p.value}
+                                        type="button"
+                                        onClick={() => setConsentPurpose(p.value)}
+                                        className={`p-3 rounded-xl border-2 text-left transition-all duration-200 text-sm ${consentPurpose === p.value
+                                                ? 'border-violet-500 bg-violet-50 shadow-md'
+                                                : 'border-slate-200 hover:border-violet-300 hover:bg-violet-50/50'
+                                            }`}
+                                    >
+                                        <span className="text-lg">{p.icon}</span>
+                                        <p className={`font-semibold text-xs mt-1 ${consentPurpose === p.value ? 'text-violet-700' : 'text-slate-700'}`}>{p.label}</p>
+                                    </button>
+                                ))}
                             </div>
                         </div>
                         <div className="flex gap-3 justify-end mt-4">

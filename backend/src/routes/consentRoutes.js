@@ -5,15 +5,17 @@ const User = require("../models/User");
 const authenticate = require("../middleware/authenticate");
 const authorizeByUserId = require("../middleware/authorizeByUserId");
 const auditService = require("../services/auditService");
+const { validatePurposeInBody, PURPOSE_LABELS } = require("../middleware/validatePurpose");
 
 // Doctor requests consent from patient
 router.post(
     "/request",
     authenticate,
     authorizeByUserId(["D"]),
+    validatePurposeInBody,
     async (req, res) => {
         try {
-            const { patientId } = req.body;
+            const { patientId, purpose, purposeDescription } = req.body;
             const doctorId = req.user.userId;
 
             // Verify patient exists
@@ -22,36 +24,41 @@ router.post(
                 return res.status(404).json({ message: "Patient not found" });
             }
 
-            // Check if consent already exists
+            // Check if consent already exists for the same purpose
             const existingConsent = await Consent.findOne({
                 patientId,
                 doctorId,
+                purpose,
                 status: { $in: ["PENDING", "ACTIVE"] }
             });
 
             if (existingConsent) {
                 return res.status(400).json({
                     message: existingConsent.status === "ACTIVE"
-                        ? "Consent already granted"
-                        : "Consent request already pending"
+                        ? `Consent already granted for purpose: ${PURPOSE_LABELS[purpose]}`
+                        : `Consent request already pending for purpose: ${PURPOSE_LABELS[purpose]}`
                 });
             }
 
-            // Create new consent request
+            // Create new consent request with purpose
             const consent = new Consent({
                 patientId,
                 doctorId,
-                status: "PENDING"
+                status: "PENDING",
+                purpose,
+                purposeDescription: purposeDescription || PURPOSE_LABELS[purpose] || ""
             });
 
             await consent.save();
 
             await auditService.logConsentAction(doctorId, patientId, "CONSENT_REQUESTED", {
-                consentId: consent._id
+                consentId: consent._id,
+                purpose,
+                purposeLabel: PURPOSE_LABELS[purpose]
             });
 
             res.status(201).json({
-                message: "Consent request sent successfully",
+                message: `Consent request sent for purpose: ${PURPOSE_LABELS[purpose]}`,
                 consent
             });
         } catch (error) {

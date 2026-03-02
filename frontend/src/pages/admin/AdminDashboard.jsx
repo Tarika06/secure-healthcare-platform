@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, FileText, BarChart3, Search, AlertTriangle, TrendingUp, Activity, Database, Clock, CheckCircle, XCircle, Cpu, AlertCircle, Ban, Download } from 'lucide-react';
+import { Shield, Users, FileText, BarChart3, Search, AlertTriangle, TrendingUp, Activity, Database, Clock, CheckCircle, XCircle, Cpu, AlertCircle, Ban, Download, PieChart, Target } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
@@ -18,6 +18,8 @@ const AdminDashboard = () => {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [mounted, setMounted] = useState(false);
+    const [accessSummary, setAccessSummary] = useState(null);
+    const [summaryTimeRange, setSummaryTimeRange] = useState(168);
 
     useEffect(() => { setMounted(true); }, []);
     useEffect(() => {
@@ -25,6 +27,7 @@ const AdminDashboard = () => {
         else if (activeTab === 'audit') fetchAuditLogs();
         else if (activeTab === 'alerts') fetchAlerts();
         else if (activeTab === 'overview') fetchStats();
+        else if (activeTab === 'summary') fetchAccessSummary();
     }, [activeTab]);
 
     const fetchUsers = async () => {
@@ -54,6 +57,17 @@ const AdminDashboard = () => {
         catch (e) { console.error('Error fetching alerts:', e); }
         finally { setLoading(false); }
     };
+
+    const fetchAccessSummary = async () => {
+        setLoading(true);
+        try { const r = await apiClient.get(`/admin/access-summary?timeRange=${summaryTimeRange}`); setAccessSummary(r.data.report); }
+        catch (e) { console.error('Error fetching access summary:', e); }
+        finally { setLoading(false); }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'summary') fetchAccessSummary();
+    }, [summaryTimeRange]);
 
     const handleAIAnalyze = async () => {
         setIsAnalyzing(true);
@@ -104,6 +118,7 @@ const AdminDashboard = () => {
 
     const sidebarItems = [
         { id: 'overview', label: 'Overview', icon: BarChart3 },
+        { id: 'summary', label: 'Access Summary', icon: PieChart },
         { id: 'users', label: 'User Management', icon: Users },
         { id: 'alerts', label: 'Security Alerts', icon: Shield },
         { id: 'audit', label: 'Audit Logs', icon: FileText }
@@ -128,6 +143,24 @@ const AdminDashboard = () => {
             LOW: { border: 'border-blue-400', bg: 'bg-blue-50 text-blue-600', badge: 'bg-blue-100 text-blue-700' }
         };
         return map[severity] || map.LOW;
+    };
+
+    const ROLE_COLORS = {
+        ADMIN: 'from-purple-500 to-violet-600',
+        DOCTOR: 'from-blue-500 to-indigo-600',
+        NURSE: 'from-green-500 to-emerald-600',
+        LAB_TECH: 'from-amber-500 to-orange-600',
+        PATIENT: 'from-teal-500 to-cyan-600',
+        SYSTEM: 'from-slate-500 to-gray-600'
+    };
+
+    const ROLE_BG = {
+        ADMIN: 'bg-purple-100 text-purple-700',
+        DOCTOR: 'bg-blue-100 text-blue-700',
+        NURSE: 'bg-green-100 text-green-700',
+        LAB_TECH: 'bg-amber-100 text-amber-700',
+        PATIENT: 'bg-teal-100 text-teal-700',
+        SYSTEM: 'bg-slate-100 text-slate-700'
     };
 
     const StatCard = ({ icon: Icon, label, value, gradient, delay }) => (
@@ -224,6 +257,203 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {/* ═══ Access Summary Tab ═══ */}
+                    {activeTab === 'summary' && (
+                        <div className="tab-content space-y-6">
+                            {/* Header + Time Range Selector */}
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md shadow-violet-500/25">
+                                        <PieChart className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-heading font-bold text-slate-900">Data Access Summary</h2>
+                                        <p className="text-xs text-slate-500 mt-0.5">HIPAA §164.312(b) — Audit Controls | GDPR Article 30</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    {[{ h: 24, label: '24h' }, { h: 72, label: '3 days' }, { h: 168, label: '7 days' }, { h: 720, label: '30 days' }].map(r => (
+                                        <button key={r.h} onClick={() => setSummaryTimeRange(r.h)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${summaryTimeRange === r.h
+                                                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-md'
+                                                    : 'bg-white/80 text-slate-600 hover:bg-violet-50 border border-slate-200'
+                                                }`}>{r.label}</button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {loading ? (
+                                <div className="flex items-center justify-center py-24">
+                                    <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+                                </div>
+                            ) : accessSummary ? (
+                                <>
+                                    {/* Summary Stats */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <StatCard icon={Activity} label="Total Access Events" value={accessSummary.totals.totalEvents} gradient="from-violet-500 to-purple-600" delay={0} />
+                                        <StatCard icon={XCircle} label="Denied Events" value={accessSummary.totals.totalDenied} gradient="from-red-500 to-rose-600" delay={80} />
+                                        <StatCard icon={AlertTriangle} label="Denied Rate" value={`${accessSummary.totals.deniedPercentage}%`} gradient="from-amber-500 to-orange-600" delay={160} />
+                                    </div>
+
+                                    {/* Threshold Alerts */}
+                                    {accessSummary.thresholdAlerts.length > 0 && (
+                                        <div className="glass-card border-l-4 border-red-500 bg-gradient-to-r from-red-50/60 to-orange-50/40">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-md">
+                                                    <AlertTriangle className="w-5 h-5 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-heading font-bold text-red-900">Threshold Alerts ({accessSummary.thresholdAlerts.length})</h3>
+                                                    <p className="text-xs text-red-700">Unusual access patterns detected</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {accessSummary.thresholdAlerts.map((alert, idx) => (
+                                                    <div key={idx} className={`flex items-start gap-3 p-3 rounded-xl ${alert.severity === 'HIGH' ? 'bg-red-100/60' : 'bg-amber-100/60'}`}>
+                                                        <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${alert.severity === 'HIGH' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                                                        <div>
+                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${alert.severity === 'HIGH' ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-800'}`}>{alert.severity}</span>
+                                                            <p className="text-sm font-medium text-slate-800 mt-1">{alert.message}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Access by Role Chart */}
+                                    <div className="glass-card">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md">
+                                                <Users className="w-5 h-5 text-white" />
+                                            </div>
+                                            <h3 className="text-lg font-heading font-bold text-slate-900">Access by Role</h3>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {accessSummary.accessByRole.map((role, idx) => {
+                                                const maxCount = Math.max(...accessSummary.accessByRole.map(r => r.totalAccess), 1);
+                                                const pct = (role.totalAccess / maxCount) * 100;
+                                                return (
+                                                    <div key={idx} className="group">
+                                                        <div className="flex items-center justify-between mb-1.5">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${ROLE_BG[role._id] || 'bg-slate-100 text-slate-700'}`}>{role._id}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 text-xs">
+                                                                <span className="font-bold text-slate-700">{role.totalAccess}</span>
+                                                                <span className="text-green-600">✓ {role.successCount}</span>
+                                                                {role.deniedCount > 0 && <span className="text-red-500">✗ {role.deniedCount}</span>}
+                                                                {role.failureCount > 0 && <span className="text-amber-500">! {role.failureCount}</span>}
+                                                            </div>
+                                                        </div>
+                                                        <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div className={`h-full rounded-full bg-gradient-to-r ${ROLE_COLORS[role._id] || 'from-slate-400 to-slate-500'} transition-all duration-700 group-hover:shadow-md`}
+                                                                style={{ width: `${pct}%` }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {/* Access by Action */}
+                                        <div className="glass-card">
+                                            <div className="flex items-center gap-3 mb-5">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-md">
+                                                    <Target className="w-5 h-5 text-white" />
+                                                </div>
+                                                <h3 className="text-lg font-heading font-bold text-slate-900">Access by Action</h3>
+                                            </div>
+                                            <div className="space-y-2.5 max-h-[400px] overflow-y-auto pr-2">
+                                                {accessSummary.accessByAction.map((action, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50 transition-colors">
+                                                        <span className="text-sm font-medium text-slate-700 truncate max-w-[200px]">{action._id}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm font-bold bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">{action.count}</span>
+                                                            {action.deniedCount > 0 && (
+                                                                <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-semibold">✗ {action.deniedCount}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Top Active Users */}
+                                        <div className="glass-card">
+                                            <div className="flex items-center gap-3 mb-5">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
+                                                    <TrendingUp className="w-5 h-5 text-white" />
+                                                </div>
+                                                <h3 className="text-lg font-heading font-bold text-slate-900">Most Active Users</h3>
+                                            </div>
+                                            <div className="space-y-2.5 max-h-[400px] overflow-y-auto pr-2">
+                                                {accessSummary.topActiveUsers.map((u, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50 transition-colors">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`w-6 h-6 rounded-full text-[10px] font-bold flex items-center justify-center text-white ${idx < 3 ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-slate-300'}`}>
+                                                                {idx + 1}
+                                                            </span>
+                                                            <span className="font-mono text-sm text-teal-600 font-medium">{u._id}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm font-bold text-slate-700">{u.accessCount}</span>
+                                                            {u.deniedCount > 0 && (
+                                                                <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-semibold">✗ {u.deniedCount}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Denied Access Events */}
+                                    {accessSummary.deniedAccess.length > 0 && (
+                                        <div className="glass-card">
+                                            <div className="flex items-center gap-3 mb-5">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center shadow-md">
+                                                    <XCircle className="w-5 h-5 text-white" />
+                                                </div>
+                                                <h3 className="text-lg font-heading font-bold text-slate-900">Denied Access Events</h3>
+                                            </div>
+                                            <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                                <table className="w-full">
+                                                    <thead style={{ background: 'rgba(248,250,252,0.95)' }}>
+                                                        <tr>
+                                                            <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase">User</th>
+                                                            <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Action</th>
+                                                            <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Count</th>
+                                                            <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Last Occurrence</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100">
+                                                        {accessSummary.deniedAccess.map((d, idx) => (
+                                                            <tr key={idx} className="hover:bg-red-50/40 transition-colors">
+                                                                <td className="py-3 px-4 font-mono text-sm text-teal-600">{d._id.userId}</td>
+                                                                <td className="py-3 px-4 text-sm font-medium text-slate-700">{d._id.action}</td>
+                                                                <td className="py-3 px-4">
+                                                                    <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-bold">{d.count}</span>
+                                                                </td>
+                                                                <td className="py-3 px-4 text-sm text-slate-500">{new Date(d.lastOccurrence).toLocaleString()}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="glass-card text-center py-16">
+                                    <PieChart className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                    <p className="text-slate-500">No data available for the selected time range.</p>
+                                </div>
+                            )}
                         </div>
                     )}
 

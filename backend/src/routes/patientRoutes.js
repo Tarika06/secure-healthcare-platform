@@ -118,4 +118,132 @@ router.get(
   }
 );
 
+/**
+ * GET /api/patient/health-report
+ * Personal Health Report — Aggregated summary of patient's medical history
+ * 
+ * User Story 8: Patient Personal Health Report
+ * Restricted to self-only (patient can only view their own report)
+ * 
+ * HIPAA: Patient right to access their own health information
+ * GDPR Article 15: Right of access by the data subject
+ */
+router.get(
+  "/health-report",
+  authenticate,
+  authorizeByUserId(["P"]),
+  async (req, res) => {
+    try {
+      const patientId = req.user.userId;
+      const MedicalRecord = require("../models/MedicalRecord");
+      const Consent = require("../models/Consent");
+      const { decryptRecord } = require("../services/encryptionService");
+
+      // Fetch ALL patient records (decrypted — patient owns the data)
+      const records = await MedicalRecord.find({ patientId }).sort({ createdAt: -1 }).lean();
+      const decryptedRecords = records.map(record => decryptRecord(record));
+
+      // 1. Record count by type
+      const recordsByType = {};
+      decryptedRecords.forEach(r => {
+        const type = r.recordType || "GENERAL";
+        recordsByType[type] = (recordsByType[type] || 0) + 1;
+      });
+
+      // 2. Records by purpose
+      const recordsByPurpose = {};
+      decryptedRecords.forEach(r => {
+        const purpose = r.purpose || "TREATMENT";
+        recordsByPurpose[purpose] = (recordsByPurpose[purpose] || 0) + 1;
+      });
+
+      // 3. Timeline — group by month
+      const timeline = {};
+      decryptedRecords.forEach(r => {
+        const date = new Date(r.createdAt);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        if (!timeline[key]) timeline[key] = { month: key, count: 0, records: [] };
+        timeline[key].count++;
+        timeline[key].records.push({
+          id: r._id,
+          title: r.title,
+          recordType: r.recordType,
+          purpose: r.purpose,
+          date: r.createdAt
+        });
+      });
+      const timelineArray = Object.values(timeline).sort((a, b) => b.month.localeCompare(a.month));
+
+      // 4. Latest records (top 5, read-only summary format)
+      const latestRecords = decryptedRecords.slice(0, 5).map(r => ({
+        id: r._id,
+        title: r.title,
+        recordType: r.recordType,
+        purpose: r.purpose,
+        diagnosis: r.diagnosis,
+        createdAt: r.createdAt,
+        createdBy: r.createdBy
+      }));
+
+      // 5. Care notes summary
+      const totalCareNotes = decryptedRecords.reduce((sum, r) => sum + (r.careNotes?.length || 0), 0);
+
+      // 6. Doctors who created records
+      const doctorIds = [...new Set(decryptedRecords.map(r => r.createdBy).filter(Boolean))];
+      const doctors = await User.find({ userId: { $in: doctorIds } })
+        .select("userId firstName lastName specialty")
+        .lean();
+
+      // 7. Active consents
+      const activeConsents = await Consent.find({ patientId, status: "ACTIVE" }).lean();
+
+      // 8. Date range
+      const oldestRecord = decryptedRecords.length > 0 ? decryptedRecords[decryptedRecords.length - 1].createdAt : null;
+      const newestRecord = decryptedRecords.length > 0 ? decryptedRecords[0].createdAt : null;
+
+      // Log the report access
+      await auditService.logAuditEvent({
+        userId: patientId,
+        action: "VIEW_HEALTH_REPORT",
+        resource: "/api/patient/health-report",
+        method: "GET",
+        outcome: "SUCCESS",
+        complianceCategory: "HIPAA",
+        details: { totalRecords: decryptedRecords.length }
+      });
+
+      res.json({
+        message: "Personal health report generated successfully",
+        report: {
+          patientId,
+          generatedAt: new Date().toISOString(),
+          summary: {
+            totalRecords: decryptedRecords.length,
+            totalCareNotes,
+            totalDoctors: doctors.length,
+            activeConsents: activeConsents.length,
+            dateRange: {
+              oldest: oldestRecord,
+              newest: newestRecord
+            }
+          },
+          recordsByType,
+          recordsByPurpose,
+          timeline: timelineArray,
+          latestRecords,
+          doctors: doctors.map(d => ({
+            userId: d.userId,
+            name: `Dr. ${d.firstName} ${d.lastName}`,
+            specialty: d.specialty || "General"
+          })),
+          complianceNote: "This report is generated under HIPAA Right of Access and GDPR Article 15. Only you can view this report."
+        }
+      });
+    } catch (error) {
+      console.error("Error generating health report:", error);
+      res.status(500).json({ message: "Error generating health report" });
+    }
+  }
+);
+
 module.exports = router;
