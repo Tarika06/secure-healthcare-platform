@@ -30,6 +30,16 @@ const LoginPage = () => {
         try {
             const user = await login(userId, password);
 
+            if (user?.mfaRequired) {
+                navigate('/verify-mfa', {
+                    state: {
+                        mfaToken: user.mfaToken,
+                        userId: user.userId
+                    }
+                });
+                return;
+            }
+
             // Redirect based on role
             if (user.role === 'DOCTOR') {
                 navigate('/doctor/dashboard');

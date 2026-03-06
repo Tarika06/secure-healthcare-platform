@@ -10,6 +10,8 @@ import PatientDashboard from './pages/patient/PatientDashboard';
 import NurseDashboard from './pages/nurse/NurseDashboard';
 import LabTechDashboard from './pages/lab/LabTechDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import MfaVerifyPage from './pages/MfaVerifyPage';
+import MfaSetupPage from './pages/MfaSetupPage';
 import PageWrapper from './components/PageWrapper';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -23,6 +25,8 @@ function App() {
             <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
             <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
             <Route path="/register" element={<PageWrapper><RegisterPage /></PageWrapper>} />
+            <Route path="/verify-mfa" element={<PageWrapper><MfaVerifyPage /></PageWrapper>} />
+            <Route path="/mfa/setup" element={<ProtectedRoute><PageWrapper><MfaSetupPage /></PageWrapper></ProtectedRoute>} />
 
             <Route
               path="/doctor/dashboard"
