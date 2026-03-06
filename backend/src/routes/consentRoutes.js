@@ -273,6 +273,23 @@ router.get(
                 status: "ACTIVE"
             });
 
+            if (consent && consent.expiresAt && new Date() > consent.expiresAt) {
+                // Auto-revoke if expired
+                consent.status = "REVOKED";
+                await consent.save();
+
+                await auditService.logConsentAction("SYSTEM", patientId, "CONSENT_AUTO_REVOKED", {
+                    consentId: consent._id,
+                    reason: "Expired"
+                });
+
+                return res.json({
+                    hasConsent: false,
+                    consent: null,
+                    message: "Consent has expired"
+                });
+            }
+
             res.json({
                 hasConsent: !!consent,
                 consent: consent || null

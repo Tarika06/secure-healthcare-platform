@@ -28,7 +28,10 @@ const UserSchema = new mongoose.Schema({
   },
   isOnline: { type: Boolean, default: false },
   lastLogin: { type: Date },
-  acceptPrivacyPolicy: { type: Boolean, default: false }
+  acceptPrivacyPolicy: { type: Boolean, default: false },
+  mfaEnabled: { type: Boolean, default: false },
+  mfaSecret: { type: String, default: null },
+  mfaTempSecret: { type: String, default: null }
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", UserSchema);

@@ -151,13 +151,27 @@ router.post("/login", async (req, res) => {
 
     recordLoginAttempt(userId);
 
-    const token = await authService.login(userId, password);
+    const result = await authService.login(userId, password);
 
     clearLoginAttempts(userId);
 
+    if (result.mfaRequired) {
+      // MFA is enabled — return mfaToken for second step
+      await auditService.logAuditEvent({
+        userId,
+        action: "MFA_CHALLENGE_ISSUED",
+        resource: "/api/auth/login",
+        method: "POST",
+        outcome: "PENDING",
+        ipAddress,
+        userAgent
+      });
+      return res.json({ mfaRequired: true, mfaToken: result.mfaToken });
+    }
+
     await auditService.logLoginSuccess(userId, ipAddress, userAgent);
 
-    res.json({ token });
+    res.json({ token: result.token });
   } catch (e) {
     await auditService.logLoginFailure(
       req.body.userId || "UNKNOWN",
@@ -166,6 +180,50 @@ router.post("/login", async (req, res) => {
       userAgent
     );
     res.status(401).json({ message: "Invalid credentials" });
+  }
+});
+
+router.post("/verify-mfa", async (req, res) => {
+  const ipAddress = req.ip;
+  const userAgent = req.get("User-Agent");
+
+  try {
+    const { mfaToken, code } = req.body;
+
+    if (!mfaToken || !code) {
+      return res.status(400).json({ message: "MFA token and verification code are required" });
+    }
+
+    const token = await authService.verifyMfaLogin(mfaToken, code);
+
+    // Decode to get userId for audit logging
+    const jwt = require("jsonwebtoken");
+    const decoded = jwt.decode(token);
+
+    await auditService.logLoginSuccess(decoded.userId, ipAddress, userAgent);
+    await auditService.logAuditEvent({
+      userId: decoded.userId,
+      action: "MFA_VERIFIED",
+      resource: "/api/auth/verify-mfa",
+      method: "POST",
+      outcome: "SUCCESS",
+      ipAddress,
+      userAgent
+    });
+
+    res.json({ token });
+  } catch (e) {
+    await auditService.logAuditEvent({
+      userId: "UNKNOWN",
+      action: "MFA_VERIFICATION_FAILED",
+      resource: "/api/auth/verify-mfa",
+      method: "POST",
+      outcome: "FAILURE",
+      ipAddress,
+      userAgent,
+      details: e.message
+    });
+    res.status(401).json({ message: e.message || "MFA verification failed" });
   }
 });
 

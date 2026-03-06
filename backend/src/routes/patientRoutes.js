@@ -101,6 +101,16 @@ router.get(
           pages: Math.ceil(totalCount / limit)
         }
       });
+
+      // Log that the patient viewed their own audit history
+      await auditService.logAuditEvent({
+        userId: patientId,
+        action: "ACCESS_HISTORY_VIEWED",
+        resource: "/api/patient/access-history",
+        method: "GET",
+        outcome: "SUCCESS",
+        complianceCategory: "GDPR"
+      });
     } catch (error) {
       console.error("Error fetching access history:", error);
       res.status(500).json({ message: "Error fetching access history" });
