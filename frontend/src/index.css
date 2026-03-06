@@ -824,7 +824,148 @@
 }
 
 .animate-fade-in {
-  animation: fade-in 0.6s ease-out forwards;
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+/* ========================================
+   HEALTH FLOW - PREMIUM DESIGN SYSTEM
+   ======================================== */
+.health-flow-theme {
+  --hf-primary: #0F766E;
+  --hf-accent: #22D3EE;
+  --hf-bg: #F0FDFB;
+  --hf-card-bg: rgba(255, 255, 255, 0.25);
+  --hf-border: rgba(255, 255, 255, 0.3);
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+.health-flow-bg {
+  background: #F8FFFD !important;
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(15, 118, 110, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(34, 211, 238, 0.06) 0%, transparent 40%) !important;
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+}
+
+.health-flow-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.medical-waveform {
+  position: absolute;
+  top: 15%;
+  left: 0;
+  width: 100%;
+  height: 250px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 100' preserveAspectRatio='none'%3E%3Cpath d='M0 50 L100 50 L120 20 L140 80 L160 50 L300 50 L320 10 L340 90 L360 50 L500 50 L520 20 L540 80 L560 50 L1000 50' fill='none' stroke='rgb(15, 118, 110)' stroke-width='2' opacity='0.08'/%3E%3C/svg%3E");
+  background-size: 1000px 100%;
+  animation: wave-scroll 30s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes wave-scroll {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: -1000px 0;
+  }
+}
+
+.floating-sidebar-wrapper {
+  @apply fixed left-0 top-0 bottom-0 w-72 p-6 z-[60] pointer-events-none transition-all duration-500;
+}
+
+.floating-sidebar {
+  @apply h-full w-full bg-white/40 backdrop-blur-3xl border border-white/60 rounded-[32px] pointer-events-auto flex flex-col overflow-hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+}
+
+.health-flow-card {
+  @apply bg-white/20 backdrop-blur-[20px] border border-white/40 rounded-[28px] p-8 transition-all duration-500 relative overflow-hidden;
+  box-shadow: 0 10px 30px rgba(15, 118, 110, 0.04);
+}
+
+.health-flow-card:hover {
+  @apply -translate-y-1.5 border-white/60;
+  box-shadow: 0 20px 50px rgba(15, 118, 110, 0.12);
+}
+
+.hf-accent-green {
+  border-left: 5px solid #10B981;
+}
+
+.hf-accent-blue {
+  border-left: 5px solid #3B82F6;
+}
+
+.hf-accent-orange {
+  border-left: 5px solid #F59E0B;
+}
+
+.hf-accent-red {
+  border-left: 5px solid #EF4444;
+}
+
+.health-flow-timeline {
+  @apply relative pl-10 border-l-2 border-primary-500/10 ml-5 space-y-12 py-4;
+}
+
+.timeline-dot {
+  @apply absolute -left-[51px] top-1.5 w-6 h-6 rounded-full bg-white border-[6px] border-primary-500;
+  box-shadow: 0 0 15px rgba(15, 118, 110, 0.3);
+}
+
+.stat-bubble-float {
+  @apply absolute -top-3 -right-3 w-14 h-14 bg-white/40 backdrop-blur-2xl rounded-2xl border border-white/60 flex items-center justify-center shadow-xl animate-float-slow;
+}
+
+.hf-sidebar-item {
+  @apply flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-600 transition-all duration-300 hover:bg-white/50 hover:text-primary-700 hover:shadow-sm;
+}
+
+.hf-sidebar-item-active {
+  @apply flex items-center gap-4 px-6 py-4 rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-500/30 transition-all duration-300;
+}
+
+.hf-label {
+  @apply text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block;
+}
+
+.hf-heading-large {
+  @apply text-4xl font-black text-slate-900 tracking-tight leading-tight;
+}
+
+.hf-heading-card {
+  @apply text-xl font-bold text-slate-900 tracking-tight;
+}
+
+.hf-body {
+  @apply text-slate-600 font-medium;
+}
+
+.hf-noise {
+  position: relative;
+}
+
+.hf-noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.015;
+  pointer-events: none;
 }
 
 .animate-scale-in {

@@ -50,15 +50,6 @@ const MedicalCard = ({ record, onClick }) => {
     const config = RECORD_TYPE_CONFIG[record.recordType] || RECORD_TYPE_CONFIG.GENERAL;
     const Icon = config.icon;
 
-    // Strict Condition: Only apply hover effect if check up is detected
-    // Broadened to catch "Checkup", "Check-up", "Check up"
-    const isCheckup = (record.title?.toLowerCase().replace(/[^a-z]/g, '').includes('checkup') ||
-        config.label?.toLowerCase().replace(/[^a-z]/g, '').includes('checkup'));
-
-    // Strict Condition: Only apply hover effect if "lab" is detected
-    const isLab = (record.title?.toLowerCase().includes('lab') ||
-        config.label?.toLowerCase().includes('lab'));
-
     return (
         <div
             className="card-glass-white p-5 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-1 relative overflow-hidden !bg-white/40 dark:!bg-slate-900/40"
@@ -82,27 +73,11 @@ const MedicalCard = ({ record, onClick }) => {
                         </span>
                     </div>
 
-                    {/* Prescription Badge - Moved up for better visibility */}
-                    {record.prescription && (
-                        <div className="mb-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg text-xs font-medium border border-green-100 dark:border-green-800">
-                            <Pill className="w-3.5 h-3.5" />
-                            {record.prescription}
-                        </div>
-                    )}
-
                     {/* Diagnosis */}
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         <span className="text-slate-400 dark:text-slate-500 text-xs uppercase tracking-wider mr-2">Diagnosis:</span>
                         {record.diagnosis}
                     </p>
-
-                    {/* Patient Name (If available - e.g. for Doctors view) */}
-                    {record.patientName && (
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            Patient: <span className="font-medium text-slate-700 dark:text-slate-300">{record.patientName}</span>
-                        </p>
-                    )}
 
                     {/* Details */}
                     <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-3 leading-relaxed">
@@ -113,11 +88,7 @@ const MedicalCard = ({ record, onClick }) => {
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800/50 mt-2">
                         <span className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1.5 font-medium">
                             <Calendar className="w-3.5 h-3.5" />
-                            {new Date(record.createdAt).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                            })}
+                            {new Date(record.createdAt).toLocaleDateString()}
                         </span>
                         <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 bg-slate-100/50 dark:bg-slate-800/50 px-2.5 py-1 rounded-full border border-slate-100 dark:border-slate-700">
                             <User className="w-3.5 h-3.5 text-primary-500 dark:text-primary-400" />
