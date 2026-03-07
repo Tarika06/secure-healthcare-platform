@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -14,11 +15,22 @@ import MfaVerifyPage from './pages/MfaVerifyPage';
 import MfaSetupPage from './pages/MfaSetupPage';
 import PageWrapper from './components/PageWrapper';
 import { ThemeProvider } from './context/ThemeContext';
+import IntroScreen from './components/IntroScreen';
 
 // Force HMR Update
 function App() {
+  const [showIntro, setShowIntro] = useState(() => {
+    return !sessionStorage.getItem('hasSeenIntro');
+  });
+
+  const handleIntroComplete = () => {
+    setShowIntro(false);
+    sessionStorage.setItem('hasSeenIntro', 'true');
+  };
+
   return (
     <ThemeProvider>
+      {showIntro && <IntroScreen onComplete={handleIntroComplete} />}
       <AuthProvider>
         <Router>
           <Routes>
