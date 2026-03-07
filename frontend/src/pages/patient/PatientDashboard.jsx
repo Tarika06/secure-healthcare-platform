@@ -5,6 +5,7 @@ import MedicalCard from '../../components/MedicalCard';
 import IdentityCard from '../../components/IdentityCard';
 import NotificationsPopover from '../../components/NotificationsPopover';
 import PatientAppointmentsTab from '../../components/patient/PatientAppointmentsTab';
+import HealthTipCard from '../../components/patient/HealthTipCard';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/client';
@@ -318,6 +319,11 @@ const PatientDashboard = () => {
                                         ))}
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Health Tip Card - Bottom Position */}
+                            <div className={`transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '800ms' }}>
+                                <HealthTipCard />
                             </div>
                         </div>
                     )}
