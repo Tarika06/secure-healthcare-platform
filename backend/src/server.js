@@ -31,24 +31,34 @@ const activeConnections = new promClient.Gauge({
 const app = express();
 // connectDB() called in startServer
 
-// CORS configuration - allow any localhost port for development
+// CORS configuration - allow localhost, Vercel, Render, and explicit origins
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
+    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
     if (!origin) return callback(null, true);
 
-    // Allow any localhost port
+    // Allow any localhost port (development)
     if (origin.match(/^http:\/\/localhost:\d+$/)) {
       return callback(null, true);
     }
 
-    // Allow configured origins
-    const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",");
+    // Allow all Vercel deployment URLs (production + preview)
+    if (origin.match(/^https:\/\/.*\.vercel\.app$/)) {
+      return callback(null, true);
+    }
+
+    // Allow all Render deployment URLs
+    if (origin.match(/^https:\/\/.*\.onrender\.com$/)) {
+      return callback(null, true);
+    }
+
+    // Allow explicitly configured origins (comma-separated env var)
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map(o => o.trim()).filter(Boolean);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    callback(new Error("Not allowed by CORS"));
+    callback(new Error(`CORS: Origin ${origin} not allowed`));
   },
   credentials: true
 }));
