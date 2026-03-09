@@ -1,6 +1,6 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProfilePage from './components/ProfilePage';
 import HomePage from './pages/HomePage';
@@ -13,27 +13,32 @@ import LabTechDashboard from './pages/lab/LabTechDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import MfaVerifyPage from './pages/MfaVerifyPage';
 import MfaSetupPage from './pages/MfaSetupPage';
-import ValidatedAppointmentPage from './pages/ValidatedAppointmentPage';
 import PageWrapper from './components/PageWrapper';
+import { ThemeProvider } from './context/ThemeContext';
+import IntroScreen from './components/IntroScreen';
 
+// Force HMR Update
 function App() {
+  const [showIntro, setShowIntro] = useState(() => {
+    return !sessionStorage.getItem('hasSeenIntro');
+  });
+
+  const handleIntroComplete = () => {
+    setShowIntro(false);
+    sessionStorage.setItem('hasSeenIntro', 'true');
+  };
+
   return (
     <ThemeProvider>
+      {showIntro && <IntroScreen onComplete={handleIntroComplete} />}
       <AuthProvider>
         <Router>
           <Routes>
             <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
             <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
             <Route path="/register" element={<PageWrapper><RegisterPage /></PageWrapper>} />
-            <Route path="/mfa-verify" element={<PageWrapper><MfaVerifyPage /></PageWrapper>} />
-            <Route
-              path="/mfa-setup"
-              element={
-                <ProtectedRoute allowedRoles={['PATIENT', 'DOCTOR', 'NURSE', 'LAB_TECHNICIAN', 'ADMIN']}>
-                  <PageWrapper><MfaSetupPage /></PageWrapper>
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/verify-mfa" element={<PageWrapper><MfaVerifyPage /></PageWrapper>} />
+            <Route path="/mfa/setup" element={<ProtectedRoute><PageWrapper><MfaSetupPage /></PageWrapper></ProtectedRoute>} />
 
             <Route
               path="/doctor/dashboard"
@@ -134,8 +139,6 @@ function App() {
                 </div>
               }
             />
-
-            <Route path="/appointment/:id" element={<PageWrapper><ValidatedAppointmentPage /></PageWrapper>} />
           </Routes>
         </Router>
       </AuthProvider>
