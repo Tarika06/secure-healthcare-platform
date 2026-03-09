@@ -16,12 +16,32 @@ import MfaSetupPage from './pages/MfaSetupPage';
 import PageWrapper from './components/PageWrapper';
 import { ThemeProvider } from './context/ThemeContext';
 import IntroScreen from './components/IntroScreen';
+import ValidatedAppointmentPage from './pages/ValidatedAppointmentPage';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 
 // Force HMR Update
 function App() {
   const [showIntro, setShowIntro] = useState(() => {
     return !sessionStorage.getItem('hasSeenIntro');
   });
+
+  const AppointmentsRedirect = () => {
+    const { user } = useAuth();
+    if (!user) return <Navigate to="/login" />;
+
+    let dashboard = '/patient/dashboard';
+    let tab = 'appointments';
+
+    if (user.role === 'ADMIN') dashboard = '/admin/dashboard';
+    else if (user.role === 'DOCTOR') dashboard = '/doctor/dashboard';
+    else if (user.role === 'NURSE') {
+      dashboard = '/nurse/dashboard';
+      tab = 'verify';
+    }
+
+    return <Navigate to={`${dashboard}?tab=${tab}`} />;
+  };
 
   const handleIntroComplete = () => {
     setShowIntro(false);
@@ -39,6 +59,12 @@ function App() {
             <Route path="/register" element={<PageWrapper><RegisterPage /></PageWrapper>} />
             <Route path="/verify-mfa" element={<PageWrapper><MfaVerifyPage /></PageWrapper>} />
             <Route path="/mfa/setup" element={<ProtectedRoute><PageWrapper><MfaSetupPage /></PageWrapper></ProtectedRoute>} />
+
+            {/* Appointment Routes */}
+            <Route path="/appointment/:id" element={<PageWrapper><ValidatedAppointmentPage /></PageWrapper>} />
+            <Route path="/appointments" element={<ProtectedRoute><AppointmentsRedirect /></ProtectedRoute>} />
+            <Route path="/appointments/create" element={<ProtectedRoute><AppointmentsRedirect /></ProtectedRoute>} />
+            <Route path="/appointments/:id" element={<ProtectedRoute><AppointmentsRedirect /></ProtectedRoute>} />
 
             <Route
               path="/doctor/dashboard"

@@ -124,13 +124,20 @@ app.use("/api/gdpr", require("./routes/gdprRoutes"));       // Direct GDPR acces
 app.use("/api/alerts", require("./routes/alertRoutes"));
 app.use("/api/appointments", require("./routes/appointmentRoutes"));
 app.use("/api/mfa", require("./middleware/authenticate"), require("./routes/mfaRoutes"));
+app.use("/api/deletion", require("./routes/deletionRoutes"));
+app.use("/api/collaboration", require("./routes/collaborationRoutes"));
 
+// Import deletion cron job
+const { startDeletionCron } = require("./services/deletionCron");
 
 const startServer = async () => {
   await connectDB();
 
   app.listen(process.env.PORT || 5000, () => {
     console.log(`Server running on port ${process.env.PORT || 5000}`);
+
+    // Start the deletion cron job
+    startDeletionCron();
   });
 };
 

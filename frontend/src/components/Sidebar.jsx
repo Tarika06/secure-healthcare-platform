@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3,
     ClipboardList, Activity, Plus, Eye, Stethoscope,
-    FlaskConical, Settings, Sun, Moon, ChevronLeft, ChevronRight
+    FlaskConical, Settings, Sun, Moon, ChevronLeft, ChevronRight,
+    Calendar, MailCheck, ScanLine
 } from 'lucide-react';
 import logo from '../assets/logo.png';
 import { useTheme } from '../context/ThemeContext';
@@ -16,6 +17,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
 
     const patientMenuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/patient/dashboard', tab: 'overview' },
+        { icon: Calendar, label: 'Appointments', path: '/patient/dashboard', tab: 'appointments' },
         { icon: FileText, label: 'My Records', path: '/patient/dashboard', tab: 'records' },
         { icon: Shield, label: 'Consent Manager', path: '/patient/dashboard', tab: 'consent', badge: pendingConsents },
         { icon: Eye, label: 'Access History', path: '/patient/dashboard', tab: 'history' },
@@ -24,15 +26,30 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
 
     const doctorMenuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/doctor/dashboard', tab: 'overview' },
+        { icon: Calendar, label: 'My Schedule', path: '/doctor/dashboard', tab: 'appointments' },
         { icon: ClipboardList, label: 'My Records', path: '/doctor/dashboard', tab: 'myrecords' },
+        { icon: MailCheck, label: 'Consultations', path: '/doctor/dashboard', tab: 'collaboration' },
         { icon: Plus, label: 'Create Report', path: '/doctor/dashboard', tab: 'create' },
         { icon: Users, label: 'Patients', path: '/doctor/dashboard', tab: 'patients' }
     ];
 
     const adminMenuItems = [
         { icon: BarChart3, label: 'Overview', id: 'overview' },
+        { icon: Calendar, label: 'Appointments', id: 'appointments' },
         { icon: Users, label: 'User Management', id: 'users' },
         { icon: ClipboardList, label: 'Audit Logs', id: 'audit' }
+    ];
+
+    const nurseMenuItems = [
+        { icon: LayoutDashboard, label: 'Vitals Entry', path: '/nurse/dashboard', tab: 'vitals' },
+        { icon: ScanLine, label: 'Verify Entry', path: '/nurse/dashboard', tab: 'verify' },
+        { icon: FileText, label: 'Care Notes', path: '/nurse/dashboard', tab: 'notes' }
+    ];
+
+    const labTechMenuItems = [
+        { icon: LayoutDashboard, label: 'Test Queues', path: '/lab/dashboard', tab: 'overview' },
+        { icon: FlaskConical, label: 'Process Tests', path: '/lab/dashboard', tab: 'process' },
+        { icon: FileText, label: 'Release Reports', path: '/lab/dashboard', tab: 'reports' }
     ];
 
     const effectiveRole = role || user?.role;
@@ -175,21 +192,6 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                         )}
                     </button>
                     <button
-                        onClick={() => {
-                            const profilePath = effectiveRole === 'ADMIN' ? '/admin/profile'
-                                : effectiveRole === 'DOCTOR' ? '/doctor/profile'
-                                    : effectiveRole === 'PATIENT' ? '/patient/profile'
-                                        : effectiveRole === 'NURSE' ? '/nurse/profile'
-                                            : '/lab/profile';
-                            navigate(profilePath);
-                        }}
-                        title={isCollapsed ? "View Profile" : ""}
-                        className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-700 dark:hover:text-primary-400 transition-all duration-300 group`}
-                    >
-                        <Settings className="h-5 w-5 flex-shrink-0" />
-                        {!isCollapsed && <span className="font-medium text-slate-700 dark:text-slate-200 animate-fade-in">View Profile</span>}
-                    </button>
-                    <button
                         onClick={onLogout}
                         title={isCollapsed ? "Logout" : ""}
                         className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300 group`}
@@ -208,6 +210,10 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
         menuItems = adminMenuItems;
     } else if (effectiveRole === 'PATIENT') {
         menuItems = patientMenuItems;
+    } else if (effectiveRole === 'NURSE') {
+        menuItems = nurseMenuItems;
+    } else if (effectiveRole === 'LAB_TECHNICIAN') {
+        menuItems = labTechMenuItems;
     } else {
         menuItems = doctorMenuItems;
     }
@@ -246,28 +252,22 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                         ? window.location.search.includes(`tab=${item.id}`)
                         : window.location.search.includes(`tab=${item.tab}`);
 
+                    const path = item.id
+                        ? `/admin/dashboard?tab=${item.id}`
+                        : `${item.path}?tab=${item.tab}`;
+
                     return (
-                        <a
+                        <div
                             key={item.label}
-                            href={item.id ? `/admin/dashboard?tab=${item.id}` : `${item.path}?tab=${item.tab}`}
-                            className="block"
+                            onClick={() => navigate(path)}
+                            className="cursor-pointer block"
                             title={isCollapsed ? item.label : ''}
                         >
                             {renderMenuItem(item, isActive)}
-                        </a>
+                        </div>
                     );
                 })}
             </nav>
-
-            {/* Security Badge */}
-            {!isCollapsed && (
-                <div className="mx-4 mb-4 p-3 rounded-xl bg-gradient-to-r from-primary-50 to-teal-50 dark:from-primary-900/20 dark:to-teal-900/20 border border-primary-100 dark:border-primary-800 animate-fade-in">
-                    <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-primary-600 dark:text-primary-400 flex-shrink-0" />
-                        <span className="text-xs font-medium text-primary-700 dark:text-primary-300 truncate">256-bit Encrypted</span>
-                    </div>
-                </div>
-            )}
 
             {/* Footer */}
             <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">

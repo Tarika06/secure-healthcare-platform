@@ -16,6 +16,7 @@ const appointmentService = require("../services/appointmentService");
  * GET    /:id                    → Get appointment by ID (PATIENT, DOCTOR, ADMIN)
  * POST   /verify-entry           → Verify QR code at reception (NURSE, ADMIN)
  * PUT    /:id/cancel             → Cancel appointment (PATIENT)
+ * DELETE /:id                    → Delete appointment (ADMIN)
  */
 
 // All routes require authentication
@@ -68,9 +69,9 @@ router.post(
       console.error("Book appointment error:", err.message);
       const status = err.message.includes("not found") ? 404
         : err.message.includes("already booked") ? 409
-        : err.message.includes("past") ? 400
-        : err.message.includes("Invalid time") ? 400
-        : 500;
+          : err.message.includes("past") ? 400
+            : err.message.includes("Invalid time") ? 400
+              : 500;
       res.status(status).json({ message: err.message });
     }
   }
@@ -150,7 +151,7 @@ router.get(
       console.error("Get appointment error:", err.message);
       const status = err.message.includes("not found") ? 404
         : err.message.includes("Access denied") ? 403
-        : 500;
+          : 500;
       res.status(status).json({ message: err.message });
     }
   }
@@ -184,11 +185,11 @@ router.post(
       console.error("Verify entry error:", err.message);
       const status = err.message.includes("expired") ? 410
         : err.message.includes("already been used") ? 409
-        : err.message.includes("not found") ? 404
-        : err.message.includes("cancelled") ? 410
-        : err.message.includes("not valid today") ? 403
-        : err.message.includes("Invalid") ? 401
-        : 500;
+          : err.message.includes("not found") ? 404
+            : err.message.includes("cancelled") ? 410
+              : err.message.includes("not valid today") ? 403
+                : err.message.includes("Invalid") ? 401
+                  : 500;
       res.status(status).json({ message: err.message });
     }
   }
@@ -219,7 +220,35 @@ router.put(
       console.error("Cancel appointment error:", err.message);
       const status = err.message.includes("not found") ? 404
         : err.message.includes("Cannot cancel") ? 400
-        : 500;
+          : 500;
+      res.status(status).json({ message: err.message });
+    }
+  }
+);
+
+// ─── Delete Appointment ──────────────────────────────────────────────
+// DELETE /api/appointments/:id
+// Role: ADMIN only
+router.delete(
+  "/:id",
+  authorize(["ADMIN"]),
+  async (req, res) => {
+    try {
+      const appointment = await appointmentService.deleteAppointment(
+        req.params.id,
+        req.user,
+        req.ip
+      );
+
+      res.json({
+        message: "Appointment deleted permanently (audit logged)",
+        appointmentId: appointment.appointmentId
+      });
+    } catch (err) {
+      console.error("Delete appointment error:", err.message);
+      const status = err.message.includes("not found") ? 404
+        : err.message.includes("Unauthorized") ? 403
+          : 500;
       res.status(status).json({ message: err.message });
     }
   }

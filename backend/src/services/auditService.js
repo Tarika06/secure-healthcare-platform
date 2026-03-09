@@ -93,7 +93,7 @@ const logLoginSuccess = async (userId, ipAddress, userAgent) => {
 const logLoginFailure = async (userId, reason, ipAddress, userAgent) => {
   await logAuditEvent({
     userId: userId || "UNKNOWN",
-    action: "LOGIN_FAILURE",
+    action: "LOGIN_FAILED",
     resource: "/api/auth/login",
     method: "POST",
     outcome: "FAILURE",

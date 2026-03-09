@@ -131,55 +131,80 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-  const ipAddress = req.ip;
-  const userAgent = req.get("User-Agent");
+  const ipAddress = req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const userAgent = req.get("User-Agent") || "UNKNOWN";
+  const { userId, password } = req.body;
 
   try {
-    const { userId, password } = req.body;
-
     if (!userId || !password) {
       return res.status(400).json({ message: "User ID and password are required" });
     }
 
+    // 1. Check Rate Limit
     const rateCheck = checkRateLimit(userId);
     if (rateCheck.limited) {
       await auditService.logLoginFailure(userId, "RATE_LIMITED", ipAddress, userAgent);
       return res.status(429).json({
-        message: `Too many login attempts. Try again after ${rateCheck.unlockTime.toLocaleTimeString()}`
+        message: `Too many failed login attempts. Try again after ${rateCheck.unlockTime.toLocaleTimeString()}`
       });
     }
 
-    recordLoginAttempt(userId);
+    // 2. Attempt Authentication
+    try {
+      const result = await authService.login(userId, password);
 
-    const result = await authService.login(userId, password);
+      // Success Path
+      clearLoginAttempts(userId);
 
-    clearLoginAttempts(userId);
+      if (result.mfaRequired) {
+        await auditService.logAuditEvent({
+          userId,
+          action: "MFA_CHALLENGE_ISSUED",
+          resource: "/api/auth/login",
+          method: "POST",
+          outcome: "PENDING",
+          ipAddress,
+          userAgent,
+          complianceCategory: "SECURITY"
+        });
+        return res.json({ mfaRequired: true, mfaToken: result.mfaToken });
+      }
 
-    if (result.mfaRequired) {
-      // MFA is enabled — return mfaToken for second step
-      await auditService.logAuditEvent({
+      // Final Login Success
+      await auditService.logLoginSuccess(userId, ipAddress, userAgent);
+      return res.json({ token: result.token });
+
+    } catch (authError) {
+      // 3. Handle Authentication Failure (Incorrect Password/Invalid User)
+      recordLoginAttempt(userId); // Increment failed attempts counter
+
+      // IMPORTANT: Log failure asynchronously but guarantee it's written before response
+      await auditService.logLoginFailure(
         userId,
-        action: "MFA_CHALLENGE_ISSUED",
-        resource: "/api/auth/login",
-        method: "POST",
-        outcome: "PENDING",
+        authError.message || "INVALID_CREDENTIALS",
         ipAddress,
         userAgent
-      });
-      return res.json({ mfaRequired: true, mfaToken: result.mfaToken });
+      );
+
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+  } catch (e) {
+    // 4. Handle Unexpected System Errors
+    console.error("Critical login controller error:", e);
+
+    // Attempt to log the system error if possible
+    try {
+      await auditService.logLoginFailure(
+        userId || "UNKNOWN",
+        "SYSTEM_ERROR: " + (e.message || "Unknown error"),
+        ipAddress,
+        userAgent
+      );
+    } catch (logError) {
+      console.error("Failed to log system error to audit trail:", logError);
     }
 
-    await auditService.logLoginSuccess(userId, ipAddress, userAgent);
-
-    res.json({ token: result.token });
-  } catch (e) {
-    await auditService.logLoginFailure(
-      req.body.userId || "UNKNOWN",
-      e.message || "INVALID_CREDENTIALS",
-      ipAddress,
-      userAgent
-    );
-    res.status(401).json({ message: "Invalid credentials" });
+    res.status(500).json({ message: "An internal security error occurred" });
   }
 });
 
@@ -246,7 +271,13 @@ router.post("/logout", async (req, res) => {
 
 
     if (userId) {
-      await User.findOneAndUpdate({ userId }, { isOnline: false });
+      await User.findOneAndUpdate(
+        { userId },
+        {
+          isOnline: false,
+          lastActive: undefined
+        }
+      );
     } else {
       // Silent fail or just ignore if no userId
     }

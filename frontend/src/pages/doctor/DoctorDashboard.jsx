@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, TrendingUp, MailCheck } from 'lucide-react';
+import {
+    FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle,
+    ClipboardList, Stethoscope, Calendar, TrendingUp, MailCheck,
+    Search, ArrowRight, ChevronRight, Clock, Send, MessageSquare, Paperclip
+} from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Modal from '../../components/Modal';
 import MedicalCard from '../../components/MedicalCard';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
+import DoctorAppointmentsTab from '../../components/doctor/DoctorAppointmentsTab';
 
 const DoctorDashboard = () => {
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const activeTab = searchParams.get('tab') || 'overview';
@@ -27,6 +32,21 @@ const DoctorDashboard = () => {
     const [consentSentPatient, setConsentSentPatient] = useState(null);
     const [pendingConsentIds, setPendingConsentIds] = useState([]);
     const [loadingPatientId, setLoadingPatientId] = useState(null);
+    const [patientSearch, setPatientSearch] = useState('');
+    const [doctors, setDoctors] = useState([]);
+    const [collaborations, setCollaborations] = useState({ incoming: [], outgoing: [] });
+    const [selectedCollab, setSelectedCollab] = useState(null);
+    const [collabMessages, setCollabMessages] = useState([]);
+    const [sharedRecords, setSharedRecords] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [showRequestCollabModal, setShowRequestCollabModal] = useState(false);
+    const [requestCollabForm, setRequestCollabForm] = useState({
+        patientId: '',
+        consultingDoctorId: '',
+        accessScope: 'SUMMARY',
+        message: '',
+        expiresAt: ''
+    });
 
     const handleConfirmRequest = useCallback(async () => {
         if (!consentSentPatient) return;
@@ -56,7 +76,80 @@ const DoctorDashboard = () => {
 
     useEffect(() => {
         setMounted(true);
-    }, []);
+        if (activeTab === 'patients' || activeTab === 'create') fetchPatients();
+        if (activeTab === 'myrecords') fetchMyCreatedRecords();
+        if (activeTab === 'overview') fetchDashboardStats();
+        if (activeTab === 'collaboration') {
+            fetchCollaborations();
+            fetchDoctors();
+        }
+    }, [activeTab]);
+
+    const fetchCollaborations = async () => {
+        setLoading(true);
+        try {
+            const response = await apiClient.get('/collaboration/my-requests');
+            setCollaborations(response.data);
+        } catch (error) { console.error('Error fetching collaborations:', error); }
+        finally { setLoading(false); }
+    };
+
+    const fetchDoctors = async () => {
+        try {
+            const response = await apiClient.get('/doctor/list');
+            setDoctors(response.data.doctors || []);
+        } catch (error) { console.error('Error fetching doctors:', error); }
+    };
+
+    const fetchCollabDetails = async (collab) => {
+        setSelectedCollab(collab);
+        setLoading(true);
+        try {
+            const [msgRes, dataRes] = await Promise.all([
+                apiClient.get(`/collaboration/${collab._id}/messages`),
+                collab.status === 'ACCEPTED' ? apiClient.get(`/collaboration/${collab._id}/patient-data`) : Promise.resolve({ data: { records: [] } })
+            ]);
+            setCollabMessages(msgRes.data.messages || []);
+            setSharedRecords(dataRes.data.records || []);
+        } catch (error) { console.error('Error fetching collab details:', error); }
+        finally { setLoading(false); }
+    };
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!newMessage.trim()) return;
+        try {
+            await apiClient.post(`/collaboration/${selectedCollab._id}/message`, { message: newMessage });
+            setNewMessage('');
+            // Refresh messages
+            const resp = await apiClient.get(`/collaboration/${selectedCollab._id}/messages`);
+            setCollabMessages(resp.data.messages || []);
+        } catch (error) { alert(error.response?.data?.message || 'Failed to send message'); }
+    };
+
+    const handleRespondToCollab = async (id, status) => {
+        try {
+            await apiClient.patch(`/collaboration/respond/${id}`, { status });
+            fetchCollaborations();
+            if (selectedCollab && selectedCollab._id === id) {
+                const updated = { ...selectedCollab, status };
+                setSelectedCollab(updated);
+                fetchCollabDetails(updated);
+            }
+        } catch (error) { alert(error.response?.data?.message || 'Failed to respond'); }
+    };
+
+    const handleRequestCollaboration = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await apiClient.post('/collaboration/request', requestCollabForm);
+            setShowRequestCollabModal(false);
+            fetchCollaborations();
+            alert('Consultation request sent!');
+        } catch (error) { alert(error.response?.data?.message || 'Failed to request consultation'); }
+        finally { setLoading(false); }
+    };
 
     const fetchDashboardStats = useCallback(async () => {
         try {
@@ -104,12 +197,6 @@ const DoctorDashboard = () => {
         finally { setLoading(false); }
     }, []);
 
-    useEffect(() => {
-        if (activeTab === 'patients' || activeTab === 'create') fetchPatients();
-        if (activeTab === 'myrecords') fetchMyCreatedRecords();
-        if (activeTab === 'overview') fetchDashboardStats();
-    }, [activeTab, fetchPatients, fetchMyCreatedRecords, fetchDashboardStats]);
-
     const handleCreateReport = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -140,73 +227,110 @@ const DoctorDashboard = () => {
 
     const handleLogout = () => { logout(); navigate('/login'); };
 
-    // eslint-disable-next-line no-unused-vars
-    const StatCard = ({ icon: Icon, label, value, colorClass, delay }) => {
-        return (
-            <div
-                className={`card-stat group transition-all duration-700 relative overflow-hidden ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-                style={{ transitionDelay: `${delay}ms` }}
-            >
-                <div className="relative z-10 flex items-center gap-4">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colorClass}`}>
-                        <Icon className="w-7 h-7" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
-                        <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{value ?? 0}</p>
-                    </div>
+    const StatCard = ({ icon: Icon, label, value, gradient, delay }) => (
+        <div
+            className={`glass-card group relative overflow-hidden transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+            style={{ transitionDelay: `${delay}ms` }}
+        >
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-medium text-slate-500">{label}</p>
+                    <p className={`stat-number mt-2 bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
+                        {value ?? '—'}
+                    </p>
+                </div>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg bg-gradient-to-br ${gradient}`}>
+                    <Icon className="w-7 h-7 text-white" />
                 </div>
             </div>
-        );
-    };
+            <div className={`absolute top-0 right-0 w-28 h-28 rounded-bl-[80px] opacity-[0.04] bg-gradient-to-br ${gradient}`} />
+        </div>
+    );
+
+    const tabs = [
+        { id: 'overview', label: 'Dashboard', icon: TrendingUp },
+        { id: 'appointments', label: 'My Schedule', icon: Calendar },
+        { id: 'myrecords', label: 'My Records', icon: ClipboardList },
+        { id: 'collaboration', label: 'Consultations', icon: MailCheck },
+        { id: 'create', label: 'Create Report', icon: Plus },
+        { id: 'patients', label: 'Patients', icon: Users }
+    ];
 
     return (
-        <div className="flex h-screen overflow-hidden dashboard-bg-doctor bg-dots">
-            <Sidebar role="DOCTOR" onLogout={handleLogout} />
+        <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white transition-colors duration-500">
+            <Sidebar role="DOCTOR" onLogout={handleLogout} user={user} />
 
-            <div className="flex-1 overflow-y-auto">
-                <div className="max-w-full mx-auto px-6 py-8">
+            <div className="flex-1 overflow-y-auto relative z-10">
+                {/* Top Action Bar */}
+                <div className="sticky top-0 z-20 px-6 py-3 bg-slate-50/80 backdrop-blur-md border-b border-white/40 dark:bg-slate-900/80 dark:border-white/10">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+                                <Stethoscope className="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-lg font-heading font-bold text-slate-900">Dr. {user?.firstName} {user?.lastName}</h1>
+                                {user?.specialty && <p className="text-xs text-slate-500">{user.specialty}</p>}
+                            </div>
+                        </div>
 
+                        {/* Tab pills in action bar */}
+                        <div className="flex items-center gap-1">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => navigate(`/doctor/dashboard?tab=${tab.id}`)}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${activeTab === tab.id
+                                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                                        : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
+                                        }`}
+                                >
+                                    <tab.icon className="w-4 h-4" />
+                                    <span className="hidden lg:inline">{tab.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        <button onClick={() => navigate('/doctor/dashboard?tab=create')} className="btn-glow text-sm py-2.5 px-5 flex items-center gap-2 hidden xl:flex">
+                            <Plus className="w-4 h-4" /> New Report
+                        </button>
+                    </div>
+                </div>
+
+                <div className="max-w-7xl mx-auto px-6 py-8">
                     {/* Overview Tab */}
                     {activeTab === 'overview' && (
                         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
-                            <StatCard icon={FileText} label="Records Created" value={dashboardStats?.recordsCreated} colorClass="icon-container-blue" delay={100} />
-                            <StatCard icon={CheckCircle} label="Active Consents" value={dashboardStats?.activeConsents} colorClass="icon-container-green" delay={200} />
-                            <StatCard icon={AlertCircle} label="Pending Requests" value={dashboardStats?.pendingRequests} colorClass="icon-container-amber" delay={300} />
-                            <StatCard icon={Users} label="Patients Served" value={dashboardStats?.patientsServed} colorClass="icon-container-purple" delay={400} />
+                            <StatCard icon={FileText} label="Records Created" value={dashboardStats?.recordsCreated} gradient="from-blue-500 to-indigo-600" delay={100} />
+                            <StatCard icon={CheckCircle} label="Active Consents" value={dashboardStats?.activeConsents} gradient="from-emerald-500 to-teal-600" delay={200} />
+                            <StatCard icon={AlertCircle} label="Pending Requests" value={dashboardStats?.pendingRequests} gradient="from-amber-400 to-orange-500" delay={300} />
+                            <StatCard icon={Users} label="Total Patients" value={dashboardStats?.patientsServed} gradient="from-purple-500 to-indigo-600" delay={400} />
+                        </div>
+                    )}
+
+                    {/* Appointments Tab */}
+                    {activeTab === 'appointments' && (
+                        <div className="animate-fade-in">
+                            <DoctorAppointmentsTab />
                         </div>
                     )}
 
                     {/* My Records Tab */}
                     {activeTab === 'myrecords' && (
-                        <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-                            <div className="flex items-center justify-between mb-6">
-                                <div>
-                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">My Created Records</h2>
-                                    <p className="text-slate-500 dark:text-slate-400 mt-1">Records you have created for patients</p>
-                                </div>
+                        <div className="animate-fade-in">
+                            <div className="mb-6">
+                                <h2 className="text-2xl font-bold text-slate-900">My Created Records</h2>
                             </div>
-
                             {loading ? (
-                                <div className="flex items-center justify-center py-16">
-                                    <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-                                </div>
+                                <div className="text-center py-12"><div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
                             ) : myCreatedRecords.length === 0 ? (
-                                <div className="card text-center py-16">
-                                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                        <ClipboardList className="w-10 h-10 text-slate-400" />
-                                    </div>
-                                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No Records Created Yet</h3>
-                                    <p className="text-slate-500 dark:text-slate-400 mb-6">Start by creating a medical report for a patient</p>
-                                    <button onClick={() => navigate('/doctor/dashboard?tab=create')} className="btn-primary">
-                                        <Plus className="w-5 h-5 mr-2" />Create Report
-                                    </button>
+                                <div className="glass-card text-center py-16">
+                                    <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                    <p className="text-slate-500">No records created by you yet.</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-4">
-                                    {myCreatedRecords.map((record) => (
-                                        <MedicalCard key={record._id} record={record} />
-                                    ))}
+                                    {myCreatedRecords.map(record => <MedicalCard key={record._id} record={record} />)}
                                 </div>
                             )}
                         </div>
@@ -214,19 +338,17 @@ const DoctorDashboard = () => {
 
                     {/* Create Report Tab */}
                     {activeTab === 'create' && (
-                        <div className={`max-w-3xl animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className="max-w-3xl animate-fade-in">
                             <div className="mb-6">
-                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Create Medical Report</h2>
-                                <p className="text-slate-500 dark:text-slate-400 mt-1">Generate a new medical record for a patient</p>
+                                <h2 className="text-2xl font-bold text-slate-900">Create Medical Report</h2>
                             </div>
-
-                            <form onSubmit={handleCreateReport} className="card space-y-6">
+                            <form onSubmit={handleCreateReport} className="glass-card space-y-6">
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="label">Patient</label>
                                         <select value={reportForm.patientId} onChange={(e) => setReportForm({ ...reportForm, patientId: e.target.value })} required className="input-field">
                                             <option value="">Select Patient</option>
-                                            {patients.map(p => <option key={p.userId} value={p.userId}>{p.userId} - {p.firstName} {p.lastName}</option>)}
+                                            {patients.map(p => <option key={p.userId} value={p.userId}>{p.firstName} {p.lastName} ({p.userId})</option>)}
                                         </select>
                                     </div>
                                     <div>
@@ -241,131 +363,139 @@ const DoctorDashboard = () => {
                                         </select>
                                     </div>
                                 </div>
-
-                                <div>
-                                    <label className="label">Title</label>
-                                    <input type="text" value={reportForm.title} onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })} required className="input-field" placeholder="e.g., Annual Checkup Report" />
-                                </div>
-
-                                <div>
-                                    <label className="label">Diagnosis</label>
-                                    <input type="text" value={reportForm.diagnosis} onChange={(e) => setReportForm({ ...reportForm, diagnosis: e.target.value })} required className="input-field" placeholder="Primary diagnosis" />
-                                </div>
-
-                                <div>
-                                    <label className="label">Details</label>
-                                    <textarea value={reportForm.details} onChange={(e) => setReportForm({ ...reportForm, details: e.target.value })} required rows="4" className="input-field" placeholder="Detailed observations and findings..." />
-                                </div>
-
-                                <div>
-                                    <label className="label dark:text-slate-300">Prescription (Optional)</label>
-                                    <textarea value={reportForm.prescription} onChange={(e) => setReportForm({ ...reportForm, prescription: e.target.value })} rows="3" className="input-field dark:bg-slate-800 dark:border-slate-700 dark:text-white" placeholder="Medications, dosage, and instructions..." />
-                                </div>
-
-                                <button type="submit" disabled={loading} className="btn-glow w-full">
-                                    {loading ? (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            Creating...
-                                        </span>
-                                    ) : (
-                                        <span className="flex items-center justify-center gap-2">
-                                            <Plus className="w-5 h-5" />
-                                            Create Medical Report
-                                        </span>
-                                    )}
-                                </button>
+                                <div><label className="label">Title</label><input type="text" value={reportForm.title} onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })} required className="input-field" placeholder="Annual Checkup" /></div>
+                                <div><label className="label">Diagnosis</label><input type="text" value={reportForm.diagnosis} onChange={(e) => setReportForm({ ...reportForm, diagnosis: e.target.value })} required className="input-field" placeholder="Primary diagnosis" /></div>
+                                <div><label className="label">Details</label><textarea value={reportForm.details} onChange={(e) => setReportForm({ ...reportForm, details: e.target.value })} required rows="4" className="input-field" placeholder="Detailed findings..." /></div>
+                                <div><label className="label">Prescription (Optional)</label><textarea value={reportForm.prescription} onChange={(e) => setReportForm({ ...reportForm, prescription: e.target.value })} rows="3" className="input-field" placeholder="Medications..." /></div>
+                                <button type="submit" disabled={loading} className="btn-primary w-full py-3">{loading ? 'Creating...' : 'Create Record'}</button>
                             </form>
+                        </div>
+                    )}
+
+                    {/* Collaboration Tab */}
+                    {activeTab === 'collaboration' && (
+                        <div className="h-[calc(100vh-180px)] flex gap-6 overflow-hidden animate-fade-in">
+                            <div className="w-80 flex-shrink-0 flex flex-col glass-card p-0 overflow-hidden border-r border-slate-200/60">
+                                <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                                    <h3 className="font-bold text-slate-800 text-sm">Consultations</h3>
+                                    <button onClick={() => setShowRequestCollabModal(true)} className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600"><Plus className="w-4 h-4" /></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-2 space-y-4">
+                                    {collaborations.incoming.length > 0 && (
+                                        <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">Incoming</p>
+                                            {collaborations.incoming.map(c => (
+                                                <div key={c._id} onClick={() => fetchCollabDetails(c)} className={`p-3 rounded-xl cursor-pointer ${selectedCollab?._id === c._id ? 'bg-blue-50 border-blue-200' : 'hover:bg-slate-50'}`}>
+                                                    <div className="flex justify-between items-center"><p className="text-xs font-bold">Patient: {c.patientId}</p><span className={`w-2 h-2 rounded-full ${c.status === 'ACCEPTED' ? 'bg-green-500' : 'bg-amber-500'}`} /></div>
+                                                    <p className="text-[10px] text-slate-500">From: Dr. {c.requestingDoctorId}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {collaborations.outgoing.length > 0 && (
+                                        <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">Outgoing</p>
+                                            {collaborations.outgoing.map(c => (
+                                                <div key={c._id} onClick={() => fetchCollabDetails(c)} className={`p-3 rounded-xl cursor-pointer ${selectedCollab?._id === c._id ? 'bg-indigo-50 border-indigo-200' : 'hover:bg-slate-50'}`}>
+                                                    <div className="flex justify-between items-center"><p className="text-xs font-bold">Patient: {c.patientId}</p><span className={`w-2 h-2 rounded-full ${c.status === 'ACCEPTED' ? 'bg-green-500' : 'bg-amber-500'}`} /></div>
+                                                    <p className="text-[10px] text-slate-500">To: Dr. {c.consultingDoctorId}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex-1 flex flex-col glass-card p-0 overflow-hidden">
+                                {selectedCollab ? (
+                                    <>
+                                        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                                            <div><h3 className="text-sm font-bold">Workspace: {selectedCollab.patientId}</h3><p className="text-[10px] text-blue-600 font-bold">{selectedCollab.accessScope}</p></div>
+                                            {selectedCollab.status === 'PENDING' && selectedCollab.consultingDoctorId === user.userId && (
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => handleRespondToCollab(selectedCollab._id, 'DECLINED')} className="px-3 py-1.5 text-[10px] font-bold text-red-600 bg-red-50 rounded-lg">DECLINE</button>
+                                                    <button onClick={() => handleRespondToCollab(selectedCollab._id, 'ACCEPTED')} className="px-3 py-1.5 text-[10px] font-bold text-white bg-blue-600 rounded-lg">ACCEPT</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 flex overflow-hidden">
+                                            <div className="flex-1 flex flex-col border-r border-slate-100">
+                                                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                                    {collabMessages.map(m => (
+                                                        <div key={m._id} className={`flex ${m.senderId === user.userId ? 'justify-end' : 'justify-start'}`}>
+                                                            <div className={`max-w-[80%] p-3 rounded-2xl ${m.senderId === user.userId ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800'}`}>
+                                                                <p className="text-xs">{m.message}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="p-3 border-t bg-white">
+                                                    <form onSubmit={handleSendMessage} className="flex gap-2">
+                                                        <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type message..." disabled={selectedCollab.status !== 'ACCEPTED'} className="flex-1 px-4 py-2 bg-slate-50 border rounded-xl text-xs focus:outline-none" />
+                                                        <button type="submit" disabled={selectedCollab.status !== 'ACCEPTED'} className="p-2 bg-blue-600 text-white rounded-xl"><Send className="w-4 h-4" /></button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                            <div className="w-80 overflow-y-auto p-4 bg-white">
+                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Shared History</h4>
+                                                {sharedRecords.map(rec => (
+                                                    <div key={rec._id} className="p-3 bg-slate-50 border rounded-xl mb-3">
+                                                        <p className="text-[10px] font-bold uppercase text-blue-600 mb-1">{rec.recordType}</p>
+                                                        <p className="text-[10px] font-bold truncate">{rec.title}</p>
+                                                        <p className="text-[9px] text-slate-500 line-clamp-2">{rec.diagnosis}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
+                                        <MailCheck className="w-12 h-12 text-blue-300 mb-4 animate-float" />
+                                        <h3 className="text-lg font-bold">Medical Collaboration</h3>
+                                        <p className="text-xs text-slate-500 max-w-xs mt-2">Connect with specialists for peer reviews and diagnostic consultations.</p>
+                                        <button onClick={() => setShowRequestCollabModal(true)} className="mt-6 btn-primary px-6 py-2">NEW CONSULTATION</button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
                     {/* Patients Tab */}
                     {activeTab === 'patients' && (
-                        <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className="animate-fade-in">
                             <div className="mb-6">
-                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Patient Management</h2>
-                                <p className="text-slate-500 dark:text-slate-400 mt-1">View and manage patient records</p>
+                                <h2 className="text-2xl font-bold text-slate-900">Patient Directory</h2>
+                                <div className="mt-4 relative max-w-md">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <input type="text" value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} placeholder="Search name or ID..." className="input-field pl-10" />
+                                </div>
                             </div>
 
                             {loading ? (
-                                <div className="flex items-center justify-center py-16">
-                                    <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-                                </div>
-                            ) : patients.length === 0 ? (
-                                <div className="card text-center py-16">
-                                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                        <Users className="w-10 h-10 text-slate-400" />
-                                    </div>
-                                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white">No Patients Found</h3>
-                                </div>
+                                <div className="text-center py-12"><div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
                             ) : (
                                 <div className="grid gap-4">
-                                    {patients.map((patient, idx) => (
-                                        <div
-                                            key={patient.userId}
-                                            className="card hover:shadow-xl transition-all duration-300"
-                                            style={{ animationDelay: `${idx * 50}ms` }}
-                                        >
+                                    {filteredPatients.map((patient) => (
+                                        <div key={patient.userId} className="glass-card hover:shadow-lg transition-all p-5">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white font-semibold">
-                                                        {patient.firstName?.charAt(0)}{patient.lastName?.charAt(0)}
-                                                    </div>
+                                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">{patient.firstName?.[0]}</div>
                                                     <div>
-                                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{patient.firstName} {patient.lastName}</h3>
-                                                        <p className="text-sm text-slate-500 dark:text-slate-400">ID: {patient.userId} • {patient.email}</p>
+                                                        <h3 className="font-bold text-slate-900">{patient.firstName} {patient.lastName}</h3>
+                                                        <p className="text-xs text-slate-500">ID: {patient.userId}</p>
                                                     </div>
                                                 </div>
-                                                {patient.hasConsent ? (
-                                                    <button onClick={() => handleViewPatientRecords(patient)} className="btn-primary">
-                                                        View Records
-                                                    </button>
-                                                ) : (pendingConsentIds.includes(patient.userId) || patient.consentPending) ? (
-                                                    <button
-                                                        className="rounded-xl px-6 py-2 font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700 shadow-sm cursor-not-allowed transition-all duration-200"
-                                                        style={{ minWidth: 140 }}
-                                                        disabled
-                                                    >
-                                                        Consent Pending
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => {
-                                                            setConsentSentPatient(patient);
-                                                            setConfirmConsentModal(true);
-                                                        }}
-                                                        className="btn-outline"
-                                                    >
-                                                        Request Consent
-                                                    </button>
-                                                )}
-                                            </div>
-
-                                            {selectedPatient?.userId === patient.userId && (
-                                                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                                                    {accessInfo && !accessInfo.fullAccess && (
-                                                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-4">
-                                                            <p className="text-amber-800 dark:text-amber-200 text-sm font-medium">{accessInfo.message}</p>
-                                                            {accessInfo.hiddenRecordCount > 0 && (
-                                                                <p className="text-amber-600 dark:text-amber-400 text-xs mt-1">{accessInfo.hiddenRecordCount} additional records require consent</p>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    <h4 className="font-bold text-slate-900 dark:text-white mb-4">Medical Timeline</h4>
-                                                    {loadingPatientId === patient.userId ? (
-                                                        <div className="text-center text-slate-400 py-8">
-                                                            <div className="w-8 h-8 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-2" />
-                                                            Loading records...
-                                                        </div>
-                                                    ) : patientRecords.length === 0 ? (
-                                                        <div className="text-center text-slate-400 py-8">No records found for this patient.</div>
+                                                <div className="flex gap-2">
+                                                    {patient.hasConsent ? (
+                                                        <button onClick={() => handleViewPatientRecords(patient)} className="btn-primary py-2 px-4 text-xs">View Records</button>
+                                                    ) : (patient.consentPending || pendingConsentIds.includes(patient.userId)) ? (
+                                                        <span className="px-3 py-2 bg-amber-50 text-amber-600 rounded-xl text-xs font-bold border border-amber-200">Consent Pending</span>
                                                     ) : (
-                                                        <div className="space-y-3">
-                                                            {patientRecords.map(record => (
-                                                                <MedicalCard key={record._id} record={record} />
-                                                            ))}
-                                                        </div>
+                                                        <button onClick={() => { setConsentSentPatient(patient); setConfirmConsentModal(true); }} className="btn-outline py-2 px-4 text-xs font-bold">Request Access</button>
                                                     )}
+                                                </div>
+                                            </div>
+                                            {selectedPatient?.userId === patient.userId && (
+                                                <div className="mt-6 pt-6 border-t space-y-3">
+                                                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400">Medical Timeline</h4>
+                                                    {patientRecords.map(record => <MedicalCard key={record._id} record={record} />)}
                                                 </div>
                                             )}
                                         </div>
@@ -377,48 +507,30 @@ const DoctorDashboard = () => {
                 </div>
             </div>
 
-            {/* Confirmation Modal */}
-            {
-                confirmConsentModal && consentSentPatient && (
-                    <Modal isOpen={confirmConsentModal} onClose={() => setConfirmConsentModal(false)} title="Request Access" icon={ShieldAlert} size="sm">
-                        <div className="space-y-4">
-                            <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800 flex gap-3 text-left">
-                                <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <h4 className="font-semibold text-amber-900 dark:text-amber-200 text-sm">Consent Required</h4>
-                                    <p className="text-amber-700 dark:text-amber-300 text-xs mt-1">
-                                        You are about to request access to medical records for <strong>{consentSentPatient.firstName} {consentSentPatient.lastName}</strong>.
-                                        The patient determines what you can see.
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex gap-3 justify-end mt-4">
-                                <button onClick={() => setConfirmConsentModal(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm font-medium transition-colors">Cancel</button>
-                                <button onClick={handleConfirmRequest} className="btn-primary py-2 px-4 text-sm">Request Access</button>
-                            </div>
-                        </div>
-                    </Modal>
-                )
-            }
+            {/* Modals */}
+            <Modal isOpen={confirmConsentModal} onClose={() => setConfirmConsentModal(false)} title="HIPAA Authorization" icon={ShieldAlert} size="sm">
+                <div className="space-y-4">
+                    <p className="text-sm text-slate-600 italic">"I am requesting access to provide essential medical care. I understand this action is logged for HIPAA compliance."</p>
+                    <div className="flex gap-3 justify-end"><button onClick={() => setConfirmConsentModal(false)} className="px-4 py-2 text-sm font-bold">CANCEL</button><button onClick={handleConfirmRequest} className="btn-primary px-6 py-2">SEND REQUEST</button></div>
+                </div>
+            </Modal>
 
-            {/* Consent Sent Modal */}
-            {
-                showConsentSentModal && consentSentPatient && (
-                    <Modal isOpen={showConsentSentModal} onClose={() => setShowConsentSentModal(false)} title="Consent Request Sent" icon={MailCheck} size="sm">
-                        <div className="space-y-3 text-center">
-                            <div className="flex flex-col items-center gap-2">
-                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 flex items-center justify-center mb-2">
-                                    <MailCheck className="w-8 h-8 text-green-600" />
-                                </div>
-                                <h4 className="text-lg font-semibold text-slate-900 dark:text-white">Request Sent!</h4>
-                                <p className="text-slate-600 dark:text-slate-400 text-sm">A consent request has been sent to <span className="font-bold">{consentSentPatient.firstName} {consentSentPatient.lastName}</span> (ID: {consentSentPatient.userId}).<br />They will need to approve it before you can view their records.</p>
-                            </div>
-                            <button onClick={() => setShowConsentSentModal(false)} className="btn-primary w-full mt-4">OK</button>
-                        </div>
-                    </Modal>
-                )
-            }
-        </div >
+            <Modal isOpen={showConsentSentModal} onClose={() => setShowConsentSentModal(false)} title="Request Transmitted" icon={CheckCircle} size="sm">
+                <div className="text-center py-4"><CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" /><p className="text-sm font-medium">Authorization request sent successfully.</p><button onClick={() => setShowConsentSentModal(false)} className="btn-primary w-full mt-6 py-2.5">DISMISS</button></div>
+            </Modal>
+
+            <Modal isOpen={showRequestCollabModal} onClose={() => setShowRequestCollabModal(false)} title="Peer Consultation" icon={Users}>
+                <form onSubmit={handleRequestCollaboration} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className="label">Patient ID</label><select value={requestCollabForm.patientId} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, patientId: e.target.value })} required className="input-field">{patients.map(p => <option key={p.userId} value={p.userId}>{p.firstName} {p.lastName}</option>)}</select></div>
+                        <div><label className="label">Consulting Specialist</label><select value={requestCollabForm.consultingDoctorId} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, consultingDoctorId: e.target.value })} required className="input-field">{doctors.filter(d => d.userId !== user.userId).map(d => <option key={d.userId} value={d.userId}>Dr. {d.firstName} {d.lastName}</option>)}</select></div>
+                    </div>
+                    <div><label className="label">Access Scope</label><select value={requestCollabForm.accessScope} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, accessScope: e.target.value })} className="input-field"><option value="SUMMARY">Clinical Summary</option><option value="FULL">Full Record</option></select></div>
+                    <div><label className="label">Details</label><textarea value={requestCollabForm.message} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, message: e.target.value })} required rows="3" className="input-field" placeholder="Diagnostic questions..." /></div>
+                    <div className="flex gap-3 pt-4"><button type="button" onClick={() => setShowRequestCollabModal(false)} className="flex-1 px-4 py-2.5 bg-slate-100 rounded-xl font-bold">CANCEL</button><button type="submit" className="flex-1 btn-primary py-2.5">SEND REQUEST</button></div>
+                </form>
+            </Modal>
+        </div>
     );
 };
 

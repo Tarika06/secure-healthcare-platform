@@ -4,6 +4,8 @@ import { Activity, FileText, Plus, Search, User, Heart, Clock, TrendingUp, X } f
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
+import NurseAppointmentsTab from '../../components/nurse/NurseAppointmentsTab';
+import { ScanLine } from 'lucide-react';
 
 const NurseDashboard = () => {
     const navigate = useNavigate();
@@ -104,6 +106,7 @@ const NurseDashboard = () => {
 
     const sidebarItems = [
         { id: 'vitals', label: 'Patient Vitals', icon: Activity },
+        { id: 'verify', label: 'Verify Entry', icon: ScanLine },
         { id: 'notes', label: 'Care Notes', icon: FileText }
     ];
 
@@ -115,7 +118,7 @@ const NurseDashboard = () => {
                     activeItem={activeTab}
                     onItemClick={(id) => {
                         setActiveTab(id);
-                        if (selectedPatient) {
+                        if (selectedPatient && id !== 'verify') {
                             if (id === 'vitals') fetchPatientVitals(selectedPatient.userId);
                             else fetchPatientNotes(selectedPatient.userId);
                         }
@@ -191,6 +194,10 @@ const NurseDashboard = () => {
                                                 ))}
                                             </div>
                                         )}
+                                    </div>
+                                ) : activeTab === 'verify' ? (
+                                    <div className="animate-fade-in">
+                                        <NurseAppointmentsTab />
                                     </div>
                                 ) : (
                                     <div>

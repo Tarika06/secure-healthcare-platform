@@ -121,5 +121,26 @@ router.get(
   }
 );
 
+/**
+ * GET /api/doctor/list
+ * List of all doctors in the system (for consultation)
+ */
+router.get(
+  "/list",
+  authenticate,
+  authorizeByUserId(["D", "P"]), // Allowed for patients too to request consent/see doctors
+  async (req, res) => {
+    try {
+      const User = require("../models/User");
+      const doctors = await User.find({ role: "DOCTOR" })
+        .select("userId firstName lastName specialty email")
+        .lean();
+      res.json({ doctors });
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching doctors" });
+    }
+  }
+);
+
 module.exports = router;
 

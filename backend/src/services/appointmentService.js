@@ -406,9 +406,6 @@ const verifyEntry = async (qrToken, verifier, ipAddress) => {
   };
 };
 
-/**
- * Cancel an appointment (patient only, for their own)
- */
 const cancelAppointment = async (appointmentId, patientId, ipAddress) => {
   const appointment = await Appointment.findOne({ appointmentId, patientId });
   if (!appointment) {
@@ -436,6 +433,33 @@ const cancelAppointment = async (appointmentId, patientId, ipAddress) => {
   return appointment;
 };
 
+/**
+ * Hard delete an appointment (ADMIN only)
+ */
+const deleteAppointment = async (appointmentId, requestingUser, ipAddress) => {
+  if (requestingUser.role !== 'ADMIN') {
+    throw new Error('Unauthorized - Admin access required for hard deletion');
+  }
+
+  const appointment = await Appointment.findOneAndDelete({ appointmentId });
+  if (!appointment) {
+    throw new Error('Appointment not found');
+  }
+
+  await auditService.logAuditEvent({
+    userId: requestingUser.userId,
+    action: 'APPOINTMENT_DELETED',
+    resource: `/api/appointments/${appointmentId}`,
+    method: 'DELETE',
+    outcome: 'SUCCESS',
+    details: { appointmentId, deletedBy: requestingUser.userId },
+    ipAddress,
+    complianceCategory: 'HIPAA'
+  });
+
+  return appointment;
+};
+
 module.exports = {
   bookAppointment,
   getAvailableSlots,
@@ -443,5 +467,6 @@ module.exports = {
   listAppointments,
   verifyEntry,
   cancelAppointment,
+  deleteAppointment,
   VALID_TIME_SLOTS
 };

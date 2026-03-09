@@ -18,6 +18,8 @@ const Consent = require("../models/Consent");
 const authenticate = require("../middleware/authenticate");
 const authorizeByUserId = require("../middleware/authorizeByUserId");
 const auditService = require("../services/auditService");
+const ArchivedRecord = require("../models/ArchivedRecord");
+const archivalService = require("../services/archivalService");
 const { decryptRecord, encryptRecordFields } = require("../services/encryptionService");
 
 /**
@@ -135,7 +137,7 @@ router.put(
 
 /**
  * GET /api/records/my-records
- * Patient views their own medical records (DECRYPTED - they are the owner)
+ * Patient views their own medical records
  */
 router.get(
     "/my-records",
@@ -145,8 +147,6 @@ router.get(
         try {
             const patientId = req.user.userId;
             const records = await MedicalRecord.find({ patientId }).sort({ createdAt: -1 }).lean();
-
-            // DECRYPT: Patient is the owner, full access to their own records
             const decryptedRecords = records.map(record => decryptRecord(record));
 
             await auditService.logAuditEvent({
@@ -171,7 +171,7 @@ router.get(
 
 /**
  * GET /api/records/my-created-records
- * Doctor views records THEY CREATED (DECRYPTED - they are the author)
+ * Doctor views records THEY CREATED
  */
 router.get(
     "/my-created-records",
@@ -181,11 +181,8 @@ router.get(
         try {
             const doctorId = req.user.userId;
             const records = await MedicalRecord.find({ createdBy: doctorId }).sort({ createdAt: -1 }).lean();
-
-            // DECRYPT: Doctor created these records, they have access
             const decryptedRecords = records.map(record => decryptRecord(record));
 
-            // Enrich with patient names
             const patientIds = [...new Set(records.map(r => r.patientId))];
             const patients = await User.find({ userId: { $in: patientIds } }).select("userId firstName lastName").lean();
             const patientMap = {};
@@ -220,9 +217,6 @@ router.get(
 /**
  * GET /api/records/patient/:patientId
  * Doctor views patient medical records
- * - Own records: DECRYPTED (doctor created them)
- * - Other records with consent: DECRYPTED
- * - Other records without consent: NOT VISIBLE
  */
 router.get(
     "/patient/:patientId",
@@ -234,37 +228,25 @@ router.get(
             const doctorId = req.user.userId;
 
             const patient = await User.findOne({ userId: patientId });
-            if (!patient) {
-                return res.status(404).json({ message: "Patient not found" });
-            }
+            if (!patient) return res.status(404).json({ message: "Patient not found" });
 
             const consent = await Consent.findOne({ patientId, doctorId, status: "ACTIVE" });
             const hasConsent = !!consent;
-
             const allRecords = await MedicalRecord.find({ patientId }).sort({ createdAt: -1 }).lean();
-
-            const ownRecords = allRecords.filter(r => r.createdBy === doctorId);
-            const otherRecords = allRecords.filter(r => r.createdBy !== doctorId);
 
             let accessibleRecords;
             let accessInfo;
 
             if (hasConsent) {
-                // Full access with consent: DECRYPT ALL records
                 accessibleRecords = allRecords.map(record => decryptRecord(record));
-                accessInfo = {
-                    consentStatus: "ACTIVE",
-                    fullAccess: true,
-                    message: "Full access granted via patient consent"
-                };
+                accessInfo = { consentStatus: "ACTIVE", fullAccess: true, message: "Full access granted via patient consent" };
             } else {
-                // Limited access: DECRYPT only own records
-                accessibleRecords = ownRecords.map(record => decryptRecord(record));
+                accessibleRecords = allRecords.filter(r => r.createdBy === doctorId).map(record => decryptRecord(record));
                 accessInfo = {
                     consentStatus: "NONE",
                     fullAccess: false,
-                    message: "Showing only records you created. Request consent for full access.",
-                    hiddenRecordCount: otherRecords.length
+                    message: "Showing only records you created.",
+                    hiddenRecordCount: allRecords.length - accessibleRecords.length
                 };
             }
 
@@ -275,24 +257,10 @@ router.get(
                 method: "GET",
                 outcome: "SUCCESS",
                 targetUserId: patientId,
-                details: {
-                    hasConsent,
-                    totalRecords: allRecords.length,
-                    accessibleRecords: accessibleRecords.length,
-                    accessType: hasConsent ? "FULL_CONSENT" : "OWN_RECORDS_ONLY"
-                },
-                complianceCategory: "HIPAA"
+                details: { hasConsent, totalRecords: allRecords.length, accessibleRecords: accessibleRecords.length }
             });
 
-            res.json({
-                message: "Records retrieved successfully",
-                records: accessibleRecords,
-                accessInfo,
-                patientInfo: {
-                    userId: patient.userId,
-                    name: `${patient.firstName} ${patient.lastName}`
-                }
-            });
+            res.json({ records: accessibleRecords, accessInfo, patientInfo: { userId: patient.userId, name: `${patient.firstName} ${patient.lastName}` } });
         } catch (error) {
             console.error("Error fetching patient records:", error);
             res.status(500).json({ message: "Error fetching records" });
@@ -302,7 +270,7 @@ router.get(
 
 /**
  * GET /api/records/patients/list
- * Get list of all patients (for doctor/nurse dropdown)
+ * Get list of all patients
  */
 router.get(
     "/patients/list",
@@ -311,10 +279,7 @@ router.get(
     async (req, res) => {
         try {
             const patients = await User.find({
-                $or: [
-                    { role: "PATIENT" },
-                    { userId: { $regex: /^P/i } }
-                ]
+                $or: [{ role: "PATIENT" }, { userId: { $regex: /^P/i } }]
             }).select("userId firstName lastName email");
 
             await auditService.logAuditEvent({
@@ -326,10 +291,7 @@ router.get(
                 details: { patientCount: patients.length }
             });
 
-            res.json({
-                message: "Patients retrieved successfully",
-                patients
-            });
+            res.json({ message: "Patients retrieved successfully", patients });
         } catch (error) {
             console.error("Error fetching patients:", error);
             res.status(500).json({ message: "Error fetching patients" });
@@ -339,7 +301,7 @@ router.get(
 
 /**
  * GET /api/records/doctors/list
- * Get list of all doctors (for patient booking dropdown)
+ * Get list of all doctors (for booking)
  */
 router.get(
     "/doctors/list",
@@ -347,11 +309,8 @@ router.get(
     async (req, res) => {
         try {
             const doctors = await User.find({
-                $or: [
-                    { role: "DOCTOR" },
-                    { userId: { $regex: /^D/i } }
-                ],
-                status: "ACTIVE" // Only allow active doctors to be booked
+                $or: [{ role: "DOCTOR" }, { userId: { $regex: /^D/i } }],
+                status: "ACTIVE"
             }).select("userId firstName lastName specialty email");
 
             await auditService.logAuditEvent({
@@ -362,13 +321,72 @@ router.get(
                 outcome: "SUCCESS"
             });
 
-            res.json({
-                message: "Doctors retrieved successfully",
-                doctors
-            });
+            res.json({ message: "Doctors retrieved successfully", doctors });
         } catch (error) {
             console.error("Error fetching doctors:", error);
             res.status(500).json({ message: "Error fetching doctors" });
+        }
+    }
+);
+
+/**
+ * GET /api/records/admin/archived
+ * Admin views all archived records
+ */
+router.get(
+    "/admin/archived",
+    authenticate,
+    authorizeByUserId(["A"]),
+    async (req, res) => {
+        try {
+            const archivedRecords = await ArchivedRecord.find().sort({ archivedAt: -1 }).lean();
+            const decrypted = archivedRecords.map(r => decryptRecord(r));
+            await auditService.logAuditEvent({
+                userId: req.user.userId,
+                action: "ARCHIVE_LIST_VIEWED",
+                resource: "/api/records/admin/archived",
+                method: "GET",
+                outcome: "SUCCESS"
+            });
+            res.json({ records: decrypted });
+        } catch (error) {
+            res.status(500).json({ message: "Error fetching archive" });
+        }
+    }
+);
+
+/**
+ * GET /api/records/admin/hot-storage
+ * Admin views metadata of all active records
+ */
+router.get(
+    "/admin/hot-storage",
+    authenticate,
+    authorizeByUserId(["A"]),
+    async (req, res) => {
+        try {
+            const records = await MedicalRecord.find().select("patientId title createdAt").sort({ createdAt: -1 }).lean();
+            res.json({ records });
+        } catch (error) {
+            res.status(500).json({ message: "Error fetching hot storage" });
+        }
+    }
+);
+
+/**
+ * POST /api/records/admin/restore/:archiveId
+ * Admin restores a record from cold storage
+ */
+router.post(
+    "/admin/restore/:archiveId",
+    authenticate,
+    authorizeByUserId(["A"]),
+    async (req, res) => {
+        try {
+            const record = await archivalService.restoreFromArchive(req.params.archiveId, req.user.userId);
+            res.json({ message: "Record restored to active database", record: decryptRecord(record.toObject()) });
+        } catch (error) {
+            res.status(500).json({ message: error.message });
         }
     }
 );
