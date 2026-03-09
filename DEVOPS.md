@@ -203,15 +203,20 @@ volumes:
 
 ## 6. Deliverables Checklist
 - [x] Version Control (GitHub) Status: **Active**
-- [ ] CI/CD Pipeline (`.github/workflows/ci.yml`) Status: **Drafted**
-- [ ] Dockerfiles (Frontend/Backend) Status: **Drafted**
-- [ ] Infrastructure Code (Terraform) Status: **Pending**
-- [ ] Final Report Status: **Drafted (This Document)**
+- [x] CI Pipeline (`.github/workflows/ci.yml`) Status: **Implemented** (Lint, Test, Docker Build, Trivy Scan)
+- [x] CD Pipeline (`.github/workflows/cd.yml`) Status: **Implemented** (Docker Hub Push, SSH Deploy)
+- [x] Dockerfiles (Frontend/Backend) Status: **Implemented**
+- [x] Docker Compose (`docker-compose.yml`) Status: **Implemented** (with Prometheus & Grafana)
+- [x] Infrastructure Code (`terraform/`) Status: **Implemented** (VPC, ECS Fargate, ALB, ECR)
+- [x] Monitoring (Prometheus + Grafana) Status: **Implemented**
+- [x] Health & Metrics Endpoints Status: **Implemented** (`/api/health`, `/api/metrics`)
+- [x] Security Scanning (Trivy) Status: **Implemented**
+- [x] Final Report Status: **Complete (This Document)**
 
 ## 7. Known Issues & Improvements
-*   **Current**: No automated rollback strategy yet (planned for Sprint 3).
-*   **Improvement**: Implement Blue/Green deployment to minimize downtime.
+*   **Current**: Rollback strategy requires manual `docker compose` revert (automated Blue/Green planned as enhancement).
 *   **Improvement**: Add end-to-end (E2E) testing with Cypress in the CI pipeline.
+*   **Improvement**: Add SonarQube integration for continuous code quality analysis.
 
 ## 8. Bonus / Advanced Strategy
 *   **Cost Optimization**: Use AWS Spot Instances for non-critical workloads.

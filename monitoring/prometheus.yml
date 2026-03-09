@@ -1,0 +1,24 @@
+# ============================================================
+#  Prometheus Configuration
+#  Scrapes metrics from the backend /api/metrics endpoint
+# ============================================================
+
+global:
+  scrape_interval: 15s       # How often to scrape targets
+  evaluation_interval: 15s   # How often to evaluate rules
+  scrape_timeout: 10s
+
+scrape_configs:
+  # ── Backend Application Metrics ────────────────────────────────
+  - job_name: "securecare-backend"
+    metrics_path: /api/metrics
+    static_configs:
+      - targets: ["backend:5000"]
+        labels:
+          service: "backend"
+          environment: "development"
+
+  # ── Prometheus Self-Monitoring ─────────────────────────────────
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

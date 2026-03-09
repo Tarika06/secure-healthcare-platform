@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log*
+.env
+.env.*
+tests/
+*.test.js
+*.spec.js
+.git
+.gitignore
+README.md
+check*.js
+debug*.js
+fix*.js
+hash.js
+test*.js
+reset_password.js
+users.json

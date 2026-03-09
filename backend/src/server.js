@@ -3,6 +3,31 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/database");
 
+// ── Prometheus Metrics Setup ────────────────────────────────────
+const promClient = require("prom-client");
+
+// Collect default metrics (CPU, memory, event loop, etc.)
+promClient.collectDefaultMetrics({ prefix: "securecare_" });
+
+// Custom metrics
+const httpRequestDuration = new promClient.Histogram({
+  name: "securecare_http_request_duration_seconds",
+  help: "Duration of HTTP requests in seconds",
+  labelNames: ["method", "route", "status_code"],
+  buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5],
+});
+
+const httpRequestTotal = new promClient.Counter({
+  name: "securecare_http_requests_total",
+  help: "Total number of HTTP requests",
+  labelNames: ["method", "route", "status_code"],
+});
+
+const activeConnections = new promClient.Gauge({
+  name: "securecare_active_connections",
+  help: "Number of active connections",
+});
+
 const app = express();
 // connectDB() called in startServer
 
@@ -29,6 +54,53 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// ── Prometheus Middleware: Track every request ──────────────────
+app.use((req, res, next) => {
+  activeConnections.inc();
+  const end = httpRequestDuration.startTimer();
+
+  res.on("finish", () => {
+    const route = req.route ? req.route.path : req.path;
+    const labels = {
+      method: req.method,
+      route: route,
+      status_code: res.statusCode,
+    };
+    end(labels);
+    httpRequestTotal.inc(labels);
+    activeConnections.dec();
+  });
+
+  next();
+});
+
+// ── Health Check Endpoint ───────────────────────────────────────
+app.get("/api/health", async (req, res) => {
+  const mongoose = require("mongoose");
+  const dbState = mongoose.connection.readyState;
+  const dbStatus = {
+    0: "disconnected",
+    1: "connected",
+    2: "connecting",
+    3: "disconnecting",
+  };
+
+  res.status(dbState === 1 ? 200 : 503).json({
+    status: dbState === 1 ? "healthy" : "unhealthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    database: dbStatus[dbState] || "unknown",
+    version: require("../../package.json").version,
+  });
+});
+
+// ── Prometheus Metrics Endpoint ─────────────────────────────────
+app.get("/api/metrics", async (req, res) => {
+  res.set("Content-Type", promClient.register.contentType);
+  res.end(await promClient.register.metrics());
+});
+
 app.use(require("./middleware/checkBlockedIP"));
 
 app.use("/api/auth", require("./routes/authRoutes"));

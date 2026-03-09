@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.*
+cypress
+cypress.config.js
+.git
+.gitignore
+README.md
+*.log

@@ -1,0 +1,104 @@
+# ============================================================
+#  SecureCare+ Full Development Stack (with Monitoring)
+#  Usage:  docker compose up --build
+#  Stop:   docker compose down
+#  Reset:  docker compose down -v   (removes all data)
+# ============================================================
+
+version: '3.8'
+
+services:
+  # ── Backend (Node.js / Express) ──────────────────────────────
+  backend:
+    build: ./backend
+    container_name: securecare-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://mongo:27017/securecare
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-6465766c6f706d656e742d7365637265742d6b65792d33322d63686172732d21}
+      - ALLOWED_ORIGINS=http://localhost:3000
+    depends_on:
+      mongo:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - securecare-net
+
+  # ── Frontend (React / Nginx) ─────────────────────────────────
+  frontend:
+    build: ./frontend
+    container_name: securecare-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - securecare-net
+
+  # ── Database (MongoDB) ───────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: securecare-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    networks:
+      - securecare-net
+
+  # ── Prometheus (Metrics Collector) ───────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: securecare-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - securecare-net
+
+  # ── Grafana (Metrics Dashboard) ──────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: securecare-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=securecare
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - securecare-net
+
+# ── Volumes ────────────────────────────────────────────────────
+volumes:
+  mongo-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# ── Networks ───────────────────────────────────────────────────
+networks:
+  securecare-net:
+    driver: bridge

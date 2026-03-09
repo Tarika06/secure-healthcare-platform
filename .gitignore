@@ -59,3 +59,7 @@ temp/
 
 # User Data
 users.json
+
+# Docker
+docker-compose.override.yml
+mongo-data/
