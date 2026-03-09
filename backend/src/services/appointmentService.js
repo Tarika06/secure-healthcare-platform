@@ -25,11 +25,11 @@ for (let h = 9; h < 17; h++) {
 
 /**
  * Generate a unique appointment ID
- * Format: APT-<timestamp>-<random4hex>
+ * Format: APT-<timestamp>-<random8hex>
  */
 const generateAppointmentId = () => {
   const timestamp = Date.now();
-  const random = crypto.randomBytes(2).toString("hex");
+  const random = crypto.randomBytes(4).toString("hex");
   return `APT-${timestamp}-${random}`;
 };
 

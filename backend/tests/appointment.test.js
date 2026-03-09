@@ -71,7 +71,7 @@ describe("Smart Appointment & Hospital Entry Verification", () => {
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const requiredFields = ["appointmentId", "patientId", "doctorId", "date", "purpose"];
-      
+
       requiredFields.forEach((field) => {
         expect(decoded).toHaveProperty(field);
         expect(decoded[field]).toBeTruthy();
@@ -281,7 +281,7 @@ describe("Smart Appointment & Hospital Entry Verification", () => {
 
     const generateAppointmentId = () => {
       const timestamp = Date.now();
-      const random = crypto.randomBytes(2).toString("hex");
+      const random = crypto.randomBytes(4).toString("hex");
       return `APT-${timestamp}-${random}`;
     };
 
@@ -298,9 +298,9 @@ describe("Smart Appointment & Hospital Entry Verification", () => {
       expect(ids.size).toBe(100);
     });
 
-    test("Should match expected format APT-<timestamp>-<4hex>", () => {
+    test("Should match expected format APT-<timestamp>-<8hex>", () => {
       const id = generateAppointmentId();
-      const pattern = /^APT-\d{13,}-[a-f0-9]{4}$/;
+      const pattern = /^APT-\d{13,}-[a-f0-9]{8}$/;
       expect(pattern.test(id)).toBe(true);
     });
   });
