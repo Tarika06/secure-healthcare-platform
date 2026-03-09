@@ -26,9 +26,10 @@ const AppointmentSchema = new mongoose.Schema({
     index: true
   },
 
-  // Doctor assigned (optional during request phase)
+  // Doctor assigned
   doctorId: {
     type: String,
+    required: true,
     ref: "User",
     index: true
   },
@@ -39,7 +40,8 @@ const AppointmentSchema = new mongoose.Schema({
     required: true
   },
   timeSlot: {
-    type: String       // e.g., "09:00", "09:30", "10:00" (optional during request)
+    type: String,       // e.g., "09:00", "09:30", "10:00"
+    required: true
   },
   reason: {
     type: String,
@@ -50,15 +52,9 @@ const AppointmentSchema = new mongoose.Schema({
   // Appointment lifecycle status
   status: {
     type: String,
-    enum: ["PENDING_ADMIN_APPROVAL", "CONFIRMED", "REJECTED", "BOOKED", "VERIFIED", "CANCELLED", "NO_SHOW", "COMPLETED"],
-    default: "PENDING_ADMIN_APPROVAL",
+    enum: ["BOOKED", "VERIFIED", "CANCELLED", "NO_SHOW", "COMPLETED"],
+    default: "BOOKED",
     index: true
-  },
-
-  // Reason for rejection if denied by Admin
-  rejectionReason: {
-    type: String,
-    default: null
   },
 
   // QR code data (base64 data URL)
@@ -84,10 +80,10 @@ const AppointmentSchema = new mongoose.Schema({
   timestamps: true      // adds createdAt, updatedAt
 });
 
-// Prevent double-booking: one doctor, one date, one time slot (only for confirmed)
+// Prevent double-booking: one doctor, one date, one time slot
 AppointmentSchema.index(
   { doctorId: 1, date: 1, timeSlot: 1 },
-  { unique: true, partialFilterExpression: { status: "CONFIRMED" } }
+  { unique: true }
 );
 
 module.exports = mongoose.model("Appointment", AppointmentSchema);

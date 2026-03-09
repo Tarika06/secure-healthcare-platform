@@ -1,86 +1,101 @@
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const QRCode = require("qrcode");
 const Appointment = require("../models/Appointment");
 const User = require("../models/User");
-const Notification = require("../models/Notification");
 const auditService = require("./auditService");
 
 /**
+ * Appointment Service
+ * 
+ * Handles all appointment business logic:
+ * - Booking with double-booking prevention
+ * - Purpose-scoped QR JWT generation (single-use, expires end-of-day)
+ * - Available slot lookup
+ * - Entry verification (QR scan at hospital reception)
+ * - Appointment lifecycle management
+ */
+
+// Valid time slots (30-minute intervals, 09:00–17:00)
+const VALID_TIME_SLOTS = [];
+for (let h = 9; h < 17; h++) {
+  VALID_TIME_SLOTS.push(`${String(h).padStart(2, "0")}:00`);
+  VALID_TIME_SLOTS.push(`${String(h).padStart(2, "0")}:30`);
+}
+
+/**
  * Generate a unique appointment ID
+ * Format: APT-<timestamp>-<random4hex>
  */
 const generateAppointmentId = () => {
-  return "APT-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+  const timestamp = Date.now();
+  const random = crypto.randomBytes(2).toString("hex");
+  return `APT-${timestamp}-${random}`;
 };
 
 /**
- * Valid time slots (e.g., every 30 mins from 09:00 to 17:00)
- */
-const VALID_TIME_SLOTS = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-  "15:00", "15:30", "16:00", "16:30", "17:00"
-];
-
-/**
- * Generates a signed JWT payload for the QR code
- * The JWT specifies its purpose (HOSPITAL_ENTRY) and binds the patient context
- * It should expire at the end of the appointment day
- * @param {Object} appointment Appointment Document
- * @returns {string} Signed JWT Base64 String
+ * Sign a purpose-scoped JWT for QR code
+ * - Distinct from login JWT (has purpose: "HOSPITAL_ENTRY")
+ * - Expires at 23:59:59 on the appointment date
+ * - Contains appointmentId, patientId, doctorId, date
  */
 const signQrToken = (appointment) => {
-  const appointmentDate = new Date(`${appointment.date}T23:59:59Z`); // Expire end of day
-  const expiresInMs = appointmentDate.getTime() - Date.now();
-  const expiresInSecs = Math.max(Math.floor(expiresInMs / 1000), 3600); // At least 1 hour
+  // Expire at end of appointment day (23:59:59 local)
+  const endOfDay = new Date(`${appointment.date}T23:59:59`);
+  const expiresIn = Math.max(
+    Math.floor((endOfDay.getTime() - Date.now()) / 1000),
+    60 // minimum 60 seconds
+  );
 
-  const payload = {
-    purpose: "HOSPITAL_ENTRY",
-    appointmentId: appointment.appointmentId,
-    patientId: appointment.patientId,
-    doctorId: appointment.doctorId,
-    date: appointment.date,
-    timeSlot: appointment.timeSlot
-  };
-
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: expiresInSecs });
+  return jwt.sign(
+    {
+      appointmentId: appointment.appointmentId,
+      patientId: appointment.patientId,
+      doctorId: appointment.doctorId,
+      date: appointment.date,
+      purpose: "HOSPITAL_ENTRY"
+    },
+    process.env.JWT_SECRET,
+    { expiresIn }
+  );
 };
 
 /**
- * Generate a QR code Base64 image
- * In a real application, this might point to a frontend verification URL
- * like: https://app.hospital.com/verify-qr?token=...
- * @param {string} token 
- * @param {string} aptId 
- * @returns {Promise<string>} Base64 Data URI of the QR code image
+ * Generate QR code as base64 data URL from a token string
+ * Encodes a URL pointing to the frontend verification/details page
  */
-const generateQrCode = async (token, aptId) => {
-  try {
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    const verificationUrl = `${frontendUrl}/appointment/${aptId}?token=${token}`;
-    const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
-      width: 300,
-      margin: 2,
-      color: { dark: '#000000', light: '#ffffff' }
-    });
-    return qrDataUrl;
-  } catch (err) {
-    console.error("QR Code Generation Error: ", err);
-    throw new Error("Failed to generate QR Code");
-  }
+const generateQrCode = async (token, appointmentId) => {
+  // Read frontend URL from environment or default to localhost
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+  // Construct a URL that the scanner can open
+  // We pass the token in the URL hash or query param
+  const verificationUrl = `${frontendUrl}/appointment/${appointmentId}?token=${token}`;
+
+  return QRCode.toDataURL(verificationUrl, {
+    errorCorrectionLevel: "H",
+    margin: 2,
+    width: 300
+  });
 };
 
 /**
- * Patient requests a new appointment
+ * Book a new appointment
  * 
  * @param {string} patientId - The patient's userId
- * @param {Object} data - { doctorId (optional), date, timeSlot (optional), reason }
+ * @param {Object} data - { doctorId, date, timeSlot, reason }
  * @param {string} ipAddress - Requester IP for audit
- * @returns {Object} Created pending appointment
+ * @returns {Object} Created appointment with QR code
  */
-const requestAppointment = async (patientId, { doctorId, date, timeSlot, reason }, ipAddress) => {
+const bookAppointment = async (patientId, { doctorId, date, timeSlot, reason }, ipAddress) => {
   // --- Validations ---
 
-  // 1. Validate date is not in the past
+  // 1. Validate time slot format
+  if (!VALID_TIME_SLOTS.includes(timeSlot)) {
+    throw new Error(`Invalid time slot. Valid slots: ${VALID_TIME_SLOTS.join(", ")}`);
+  }
+
+  // 2. Validate date is not in the past
   const appointmentDate = new Date(`${date}T00:00:00`);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -88,58 +103,55 @@ const requestAppointment = async (patientId, { doctorId, date, timeSlot, reason 
     throw new Error("Cannot book appointments in the past");
   }
 
-  // 2. Validate patient exists
+  // 3. Validate doctor exists and has DOCTOR role
+  const doctor = await User.findOne({ userId: doctorId, role: "DOCTOR" });
+  if (!doctor) {
+    throw new Error("Doctor not found");
+  }
+
+  // 4. Validate patient exists
   const patient = await User.findOne({ userId: patientId, role: "PATIENT" });
   if (!patient) {
     throw new Error("Patient not found");
   }
 
-  // Optional: If doctorId is provided, validate it
-  if (doctorId) {
-    const doctor = await User.findOne({ userId: doctorId, role: "DOCTOR" });
-    if (!doctor) {
-      throw new Error("Doctor not found");
-    }
+  // 5. Check for double-booking (compound index will also enforce this)
+  const existing = await Appointment.findOne({
+    doctorId,
+    date,
+    timeSlot,
+    status: { $nin: ["CANCELLED"] }
+  });
+  if (existing) {
+    throw new Error("This time slot is already booked for the selected doctor");
   }
 
-  // Optional: If timeSlot is provided, validate format
-  if (timeSlot && !VALID_TIME_SLOTS.includes(timeSlot)) {
-    throw new Error(`Invalid time slot. Valid slots: ${VALID_TIME_SLOTS.join(", ")}`);
-  }
-
-  // Check if they already have a pending/booked appointment for that same date/time/doctor
-  // This is a soft check for the request phase
-  if (doctorId && timeSlot) {
-    const existing = await Appointment.findOne({
-      doctorId,
-      date,
-      timeSlot,
-      status: { $in: ["PENDING_ADMIN_APPROVAL", "CONFIRMED"] }
-    });
-    if (existing && existing.status === "CONFIRMED") {
-      throw new Error("This time slot is already confirmed for the selected doctor");
-    }
-  }
-
-  // --- Create appointment request ---
+  // --- Create appointment ---
   const appointmentId = generateAppointmentId();
 
   const appointment = new Appointment({
     appointmentId,
     patientId,
-    doctorId: doctorId || undefined,
+    doctorId,
     date,
-    timeSlot: timeSlot || undefined,
+    timeSlot,
     reason,
-    status: "PENDING_ADMIN_APPROVAL"
+    status: "BOOKED"
   });
+
+  // Generate purpose-scoped QR token & QR image
+  const qrToken = signQrToken(appointment);
+  const qrCode = await generateQrCode(qrToken, appointmentId);
+
+  appointment.qrToken = qrToken;
+  appointment.qrCode = qrCode;
 
   await appointment.save();
 
   // Audit log
   await auditService.logAuditEvent({
     userId: patientId,
-    action: "APPOINTMENT_REQUESTED",
+    action: "APPOINTMENT_BOOKED",
     resource: `/api/appointments/${appointmentId}`,
     method: "POST",
     outcome: "SUCCESS",
@@ -152,113 +164,14 @@ const requestAppointment = async (patientId, { doctorId, date, timeSlot, reason 
 };
 
 /**
- * Admin approves and assigns an appointment request
- */
-const approveAppointment = async (appointmentId, { doctorId, date, timeSlot }, adminId, ipAddress) => {
-  const appointment = await Appointment.findOne({ appointmentId });
-  if (!appointment) throw new Error("Appointment not found");
-  if (appointment.status !== "PENDING_ADMIN_APPROVAL") {
-    throw new Error(`Appointment is not pending approval (Current status: ${appointment.status})`);
-  }
-
-  // Validate doctor & time slot
-  const doctor = await User.findOne({ userId: doctorId, role: "DOCTOR" });
-  if (!doctor) throw new Error("Assigned doctor not found");
-  if (!VALID_TIME_SLOTS.includes(timeSlot)) throw new Error("Invalid time slot");
-
-  // Check double-booking
-  const existing = await Appointment.findOne({ doctorId, date, timeSlot, status: "CONFIRMED" });
-  if (existing) throw new Error("This slot is already confirmed for the assigned doctor");
-
-  // Update appointment
-  appointment.doctorId = doctorId;
-  appointment.date = date;
-  appointment.timeSlot = timeSlot;
-  appointment.status = "CONFIRMED";
-
-  // Generate QR Token
-  const qrToken = signQrToken(appointment);
-  const qrCode = await generateQrCode(qrToken, appointmentId);
-  appointment.qrToken = qrToken;
-  appointment.qrCode = qrCode;
-
-  await appointment.save();
-
-  // Create Notifications
-  let patientName = "Patient";
-  const patient = await User.findOne({ userId: appointment.patientId });
-  if (patient) {
-    patientName = patient.firstName + " " + patient.lastName;
-  }
-
-  await Notification.create({
-    userId: appointment.patientId,
-    message: `Your appointment request for ${date} at ${timeSlot} has been Confirmed with Dr. ${doctor.lastName}.`,
-    type: "SUCCESS"
-  });
-
-  await Notification.create({
-    userId: doctorId,
-    message: `You have a new appointment assigned on ${date} at ${timeSlot} with patient ${patientName}.`,
-    type: "INFO"
-  });
-
-  // Audit
-  await auditService.logAuditEvent({
-    userId: adminId,
-    action: "APPOINTMENT_APPROVED",
-    resource: `/api/appointments/${appointmentId}`,
-    method: "PUT",
-    outcome: "SUCCESS",
-    details: { doctorId, date, timeSlot },
-    ipAddress,
-    complianceCategory: "HIPAA"
-  });
-
-  return appointment;
-};
-
-/**
- * Admin rejects an appointment request
- */
-const rejectAppointment = async (appointmentId, reason, adminId, ipAddress) => {
-  const appointment = await Appointment.findOne({ appointmentId });
-  if (!appointment) throw new Error("Appointment not found");
-  if (appointment.status !== "PENDING_ADMIN_APPROVAL") {
-    throw new Error(`Appointment is not pending approval (Current status: ${appointment.status})`);
-  }
-
-  appointment.status = "REJECTED";
-  appointment.rejectionReason = reason || "No reason provided by admin";
-  await appointment.save();
-
-  // Notify Patient
-  await Notification.create({
-    userId: appointment.patientId,
-    message: `Your appointment request for ${appointment.date} was rejected. Reason: ${appointment.rejectionReason}`,
-    type: "ERROR"
-  });
-
-  // Audit
-  await auditService.logAuditEvent({
-    userId: adminId,
-    action: "APPOINTMENT_REJECTED",
-    resource: `/api/appointments/${appointmentId}`,
-    method: "PUT",
-    outcome: "SUCCESS",
-    details: { reason },
-    ipAddress,
-    complianceCategory: "HIPAA"
-  });
-
-  return appointment;
-};
-
-/**
  * Get available time slots for a doctor on a given date
+ * 
+ * @param {string} doctorId
+ * @param {string} date - "YYYY-MM-DD"
+ * @returns {string[]} Available time slots
  */
 const getAvailableSlots = async (doctorId, date) => {
-  // Validate doctor exists
+  // Verify doctor exists
   const doctor = await User.findOne({ userId: doctorId, role: "DOCTOR" });
   if (!doctor) {
     throw new Error("Doctor not found");
@@ -268,85 +181,80 @@ const getAvailableSlots = async (doctorId, date) => {
   const booked = await Appointment.find({
     doctorId,
     date,
-    status: { $in: ["CONFIRMED", "BOOKED"] } // Handle legacy "BOOKED" as well if any
+    status: { $nin: ["CANCELLED"] }
   }).select("timeSlot");
 
   const bookedSlots = new Set(booked.map((a) => a.timeSlot));
 
-  const availableSlots = VALID_TIME_SLOTS.filter(slot => !bookedSlots.has(slot));
-
-  return availableSlots;
+  return VALID_TIME_SLOTS.filter((slot) => !bookedSlots.has(slot));
 };
 
 /**
- * Get unified appointment details by ID
+ * Get appointment by ID (with role-based access)
+ * 
+ * @param {string} appointmentId
+ * @param {Object} requestingUser - { userId, role }
+ * @returns {Object} Appointment document
  */
 const getAppointmentById = async (appointmentId, requestingUser) => {
-  const apt = await Appointment.findOne({ appointmentId });
-  if (!apt) throw new Error("Appointment not found");
-
-  // Authorization Check
-  if (requestingUser.role === "PATIENT" && apt.patientId !== requestingUser.userId) {
-    throw new Error("Access denied");
-  }
-  if (requestingUser.role === "DOCTOR" && apt.doctorId !== requestingUser.userId) {
-    throw new Error("Access denied");
+  const appointment = await Appointment.findOne({ appointmentId }).lean();
+  if (!appointment) {
+    throw new Error("Appointment not found");
   }
 
-  const patient = await User.findOne({ userId: apt.patientId }).select('userId firstName lastName email');
-  const doctor = apt.doctorId
-    ? await User.findOne({ userId: apt.doctorId }).select('userId firstName lastName specialty')
-    : null;
+  // RBAC: patients see only their own, doctors see their schedule, admin sees all
+  if (
+    requestingUser.role === "PATIENT" &&
+    appointment.patientId !== requestingUser.userId
+  ) {
+    throw new Error("Access denied — you can only view your own appointments");
+  }
+  if (
+    requestingUser.role === "DOCTOR" &&
+    appointment.doctorId !== requestingUser.userId
+  ) {
+    throw new Error("Access denied — you can only view your own schedule");
+  }
 
-  return {
-    ...apt.toObject(),
-    patient,
-    doctor
-  };
+  return appointment;
 };
 
 /**
- * List appointments with role-based filtering
+ * List appointments for the requesting user
+ * 
+ * @param {Object} requestingUser - { userId, role }
+ * @param {Object} filters - Optional { status, date }
+ * @returns {Object[]} Appointments
  */
-const listAppointments = async (user, filters = {}) => {
-  let query = {};
+const listAppointments = async (requestingUser, filters = {}) => {
+  const query = {};
 
-  if (user.role === "PATIENT") {
-    query.patientId = user.userId;
-  } else if (user.role === "DOCTOR") {
-    query.doctorId = user.userId;
-    // Doctors only see confirmed slots
-    if (!filters.status) query.status = { $in: ["CONFIRMED", "VERIFIED", "COMPLETED", "CANCELLED", "NO_SHOW"] };
-  } else if (user.role === "NURSE" || user.role === "ADMIN") {
-    // Admins/Nurses see all with optional filters
-    if (filters.patientId) query.patientId = filters.patientId;
-    if (filters.doctorId) query.doctorId = filters.doctorId;
-  } else {
-    throw new Error("Unauthorized to access appointments");
+  // Scope by role
+  if (requestingUser.role === "PATIENT") {
+    query.patientId = requestingUser.userId;
+  } else if (requestingUser.role === "DOCTOR") {
+    query.doctorId = requestingUser.userId;
   }
+  // ADMIN sees all — no scoping
 
-  if (filters.date) {
-    query.date = filters.date;
-  }
+  // Apply optional filters
+  if (filters.status) query.status = filters.status;
+  if (filters.date) query.date = filters.date;
 
-  if (filters.status) {
-    query.status = filters.status;
-  }
+  const appointments = await Appointment.find(query)
+    .sort({ date: 1, timeSlot: 1 })
+    .lean();
 
-  const appointments = await Appointment.find(query).sort({ date: 1, timeSlot: 1 });
-
-  // Enrich with user names (could use populate if we configured refs differently, but User schema uses string custom IDs)
+  // Populate patient and doctor details
   const populatedAppointments = await Promise.all(
     appointments.map(async (apt) => {
       const patient = await User.findOne({ userId: apt.patientId }).select('userId firstName lastName email');
-      const doctor = apt.doctorId
-        ? await User.findOne({ userId: apt.doctorId }).select('userId firstName lastName specialty')
-        : null;
+      const doctor = await User.findOne({ userId: apt.doctorId }).select('userId firstName lastName specialty');
 
       return {
-        ...apt.toObject(),
-        patient,
-        doctor
+        ...apt,
+        patient: patient || null,
+        doctor: doctor || null
       };
     })
   );
@@ -355,88 +263,159 @@ const listAppointments = async (user, filters = {}) => {
 };
 
 /**
- * Verify a patient's QR code at entry (e.g., used by Nurse/Receptionist)
+ * Verify hospital entry via QR token
+ * 
+ * This is the core security verification:
+ * 1. Decode & verify JWT signature
+ * 2. Check token has HOSPITAL_ENTRY purpose
+ * 3. Check JWT expiry (built into jwt.verify)
+ * 4. Look up appointment in DB
+ * 5. Validate appointment date matches today
+ * 6. Ensure not already used (single-use)
+ * 7. Mark as VERIFIED
+ * 
+ * @param {string} qrToken - The JWT string scanned from QR code
+ * @param {Object} verifier - { userId, role } of the nurse/admin scanning
+ * @param {string} ipAddress - For audit logging
+ * @returns {Object} Verification result with appointment details
  */
-const verifyEntryByNurse = async (appointmentId, token, nurseId, ipAddress) => {
-  const appointment = await Appointment.findOne({ appointmentId });
-  if (!appointment) {
-    throw new Error("Appointment not found");
-  }
-
-  if (appointment.status !== "CONFIRMED" && appointment.status !== "BOOKED") {
-    throw new Error(`Appointment cannot be verified. Current status: ${appointment.status}`);
-  }
-
+const verifyEntry = async (qrToken, verifier, ipAddress) => {
+  // 1. Verify JWT signature and expiry
+  let decoded;
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    if (payload.appointmentId !== appointmentId || payload.purpose !== "HOSPITAL_ENTRY") {
-      throw new Error("Invalid Token Context");
-    }
-
-    // Verify date is today
-    const today = new Date().toISOString().split('T')[0];
-    if (payload.date !== today) {
-      throw new Error(`Appointment date (${payload.date}) does not match today's date (${today})`);
-    }
-
-    // Update status to VERIFIED (arrived)
-    appointment.status = "VERIFIED";
-    await appointment.save();
-
-    // Audit log
-    await auditService.logAuditEvent({
-      userId: nurseId,
-      action: "PATIENT_VERIFIED",
-      resource: `/api/appointments/${appointmentId}`,
-      method: "POST",
-      outcome: "SUCCESS",
-      details: { patientId: appointment.patientId },
-      ipAddress,
-      complianceCategory: "SECURITY"
-    });
-
-    return appointment;
-
+    decoded = jwt.verify(qrToken, process.env.JWT_SECRET);
   } catch (err) {
-    // Determine specific errors
-    const isExpired = err.name === "TokenExpiredError";
-    const msg = isExpired ? "QR Code Expired" : "Invalid QR Code Token";
-
-    // Log failed verification attempt
     await auditService.logAuditEvent({
-      userId: nurseId,
-      action: "QR_VERIFICATION_FAILED",
-      resource: `/api/appointments/${appointmentId}`,
+      userId: verifier.userId,
+      action: "ENTRY_VERIFICATION_FAILED",
+      resource: "/api/appointments/verify-entry",
       method: "POST",
       outcome: "FAILURE",
-      details: { error: msg },
+      reason: `JWT verification failed: ${err.message}`,
       ipAddress,
       complianceCategory: "SECURITY"
     });
 
-    throw new Error(msg);
+    if (err.name === "TokenExpiredError") {
+      throw new Error("QR code has expired — appointment date has passed");
+    }
+    throw new Error("Invalid QR code — signature verification failed");
   }
+
+  // 2. Validate purpose claim
+  if (decoded.purpose !== "HOSPITAL_ENTRY") {
+    await auditService.logAuditEvent({
+      userId: verifier.userId,
+      action: "ENTRY_VERIFICATION_FAILED",
+      resource: "/api/appointments/verify-entry",
+      method: "POST",
+      outcome: "FAILURE",
+      reason: `Invalid token purpose: ${decoded.purpose}`,
+      ipAddress,
+      complianceCategory: "SECURITY"
+    });
+    throw new Error("Invalid QR code — not a hospital entry token");
+  }
+
+  // 3. Look up appointment
+  const appointment = await Appointment.findOne({
+    appointmentId: decoded.appointmentId
+  });
+
+  if (!appointment) {
+    throw new Error("Appointment not found for this QR code");
+  }
+
+  // 4. Validate appointment date is today
+  const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+  if (appointment.date !== today) {
+    await auditService.logAuditEvent({
+      userId: verifier.userId,
+      action: "ENTRY_VERIFICATION_FAILED",
+      resource: `/api/appointments/${appointment.appointmentId}`,
+      method: "POST",
+      outcome: "FAILURE",
+      reason: `Date mismatch: appointment is for ${appointment.date}, today is ${today}`,
+      ipAddress,
+      complianceCategory: "SECURITY"
+    });
+    throw new Error(`QR code is not valid today — appointment is for ${appointment.date}`);
+  }
+
+  // 5. Check single-use: not already verified
+  if (appointment.status === "VERIFIED") {
+    await auditService.logAuditEvent({
+      userId: verifier.userId,
+      action: "ENTRY_VERIFICATION_FAILED",
+      resource: `/api/appointments/${appointment.appointmentId}`,
+      method: "POST",
+      outcome: "FAILURE",
+      reason: "Token already used",
+      ipAddress,
+      complianceCategory: "SECURITY"
+    });
+    throw new Error("QR code has already been used — entry was already verified");
+  }
+
+  // 6. Check appointment isn't cancelled
+  if (appointment.status === "CANCELLED") {
+    throw new Error("This appointment has been cancelled");
+  }
+
+  // 7. Mark as VERIFIED (single-use consumed)
+  appointment.status = "VERIFIED";
+  appointment.entryVerifiedAt = new Date();
+  appointment.entryVerifiedBy = verifier.userId;
+  await appointment.save();
+
+  // 8. Audit log — successful entry
+  await auditService.logAuditEvent({
+    userId: verifier.userId,
+    action: "ENTRY_VERIFIED",
+    resource: `/api/appointments/${appointment.appointmentId}`,
+    method: "POST",
+    outcome: "SUCCESS",
+    details: {
+      appointmentId: appointment.appointmentId,
+      patientId: appointment.patientId,
+      doctorId: appointment.doctorId,
+      verifiedBy: verifier.userId
+    },
+    ipAddress,
+    complianceCategory: "HIPAA"
+  });
+
+  // Fetch patient and doctor to get names
+  const patient = await User.findOne({ userId: appointment.patientId }).select('firstName lastName');
+  const doctor = await User.findOne({ userId: appointment.doctorId }).select('firstName lastName');
+
+  return {
+    message: "Entry verified successfully",
+    appointment: {
+      appointmentId: appointment.appointmentId,
+      patientId: appointment.patientId,
+      patientName: patient ? `${patient.firstName} ${patient.lastName}` : "Unknown",
+      doctorId: appointment.doctorId,
+      doctorName: doctor ? `${doctor.firstName} ${doctor.lastName}` : "Unknown",
+      date: appointment.date,
+      timeSlot: appointment.timeSlot,
+      status: appointment.status,
+      entryVerifiedAt: appointment.entryVerifiedAt,
+      entryVerifiedBy: appointment.entryVerifiedBy
+    }
+  };
 };
 
 /**
- * Cancel an appointment
+ * Cancel an appointment (patient only, for their own)
  */
-const cancelAppointment = async (appointmentId, user, ipAddress) => {
-  const appointment = await Appointment.findOne({ appointmentId });
-
+const cancelAppointment = async (appointmentId, patientId, ipAddress) => {
+  const appointment = await Appointment.findOne({ appointmentId, patientId });
   if (!appointment) {
-    throw new Error("Appointment not found");
-  }
-
-  // Authorization Check
-  if (user.role === "PATIENT" && appointment.patientId !== user.userId) {
-    throw new Error("Appointment not found or access denied");
-  }
-  if (user.role === "DOCTOR" && appointment.doctorId !== user.userId) {
     throw new Error("Appointment not found or access denied");
   }
 
-  if (appointment.status !== "CONFIRMED" && appointment.status !== "PENDING_ADMIN_APPROVAL" && appointment.status !== "BOOKED") {
+  if (appointment.status !== "BOOKED") {
     throw new Error(`Cannot cancel — appointment status is ${appointment.status}`);
   }
 
@@ -444,11 +423,12 @@ const cancelAppointment = async (appointmentId, user, ipAddress) => {
   await appointment.save();
 
   await auditService.logAuditEvent({
-    userId: user.userId,
+    userId: patientId,
     action: "APPOINTMENT_CANCELLED",
     resource: `/api/appointments/${appointmentId}`,
     method: "PUT",
     outcome: "SUCCESS",
+    details: { appointmentId },
     ipAddress,
     complianceCategory: "HIPAA"
   });
@@ -457,12 +437,11 @@ const cancelAppointment = async (appointmentId, user, ipAddress) => {
 };
 
 module.exports = {
-  requestAppointment,
-  approveAppointment,
-  rejectAppointment,
+  bookAppointment,
   getAvailableSlots,
   getAppointmentById,
   listAppointments,
-  verifyEntryByNurse,
-  cancelAppointment
+  verifyEntry,
+  cancelAppointment,
+  VALID_TIME_SLOTS
 };

@@ -4,7 +4,6 @@ import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, Clipboard
 import Sidebar from '../../components/Sidebar';
 import Modal from '../../components/Modal';
 import IdentityCard from '../../components/IdentityCard';
-import NotificationsPopover from '../../components/NotificationsPopover';
 import DoctorAppointmentsTab from '../../components/doctor/DoctorAppointmentsTab';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
@@ -261,12 +260,9 @@ const DoctorDashboard = () => {
                             ))}
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <NotificationsPopover />
-                            <button onClick={() => navigate('/doctor/dashboard?tab=create')} className="btn-glow text-sm py-2.5 px-5 flex items-center gap-2 hidden xl:flex">
-                                <Plus className="w-4 h-4" /> New Report
-                            </button>
-                        </div>
+                        <button onClick={() => navigate('/doctor/dashboard?tab=create')} className="btn-glow text-sm py-2.5 px-5 flex items-center gap-2 hidden xl:flex">
+                            <Plus className="w-4 h-4" /> New Report
+                        </button>
                     </div>
                 </div>
 
