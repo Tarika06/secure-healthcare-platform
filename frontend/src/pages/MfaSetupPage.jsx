@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
@@ -13,7 +13,6 @@ const MfaSetupPage = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [mfaEnabled, setMfaEnabled] = useState(false);
     const [mounted, setMounted] = useState(false);
     const inputRefs = useRef([]);
     const disableInputRefs = useRef([]);
@@ -21,20 +20,20 @@ const MfaSetupPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
+    const checkMfaStatus = useCallback(async () => {
+        try {
+            const response = await apiClient.post('/mfa/status');
+            setStep(response.data.mfaEnabled ? 'manage' : 'setup');
+        } catch (err) {
+            console.error('MFA status check failed:', err);
+            setStep('setup');
+        }
+    }, []);
+
     useEffect(() => {
         setMounted(true);
         checkMfaStatus();
-    }, []);
-
-    const checkMfaStatus = async () => {
-        try {
-            const response = await apiClient.post('/mfa/status');
-            setMfaEnabled(response.data.mfaEnabled);
-            setStep(response.data.mfaEnabled ? 'manage' : 'setup');
-        } catch (err) {
-            setStep('setup');
-        }
-    };
+    }, [checkMfaStatus]);
 
     const initiateSetup = async () => {
         setIsLoading(true);
@@ -45,6 +44,7 @@ const MfaSetupPage = () => {
             setManualKey(response.data.manualKey);
             setStep('verify');
         } catch (err) {
+            console.error('MFA initiate failed:', err);
             setError('Failed to initiate MFA setup. Please try again.');
         } finally {
             setIsLoading(false);
@@ -89,9 +89,9 @@ const MfaSetupPage = () => {
         setError('');
         try {
             await apiClient.post('/mfa/verify-setup', { code: fullCode });
-            setMfaEnabled(true);
             setStep('success');
         } catch (err) {
+            console.error('MFA verify setup failed:', err);
             setError(err.response?.data?.message || 'Invalid code. Please try again.');
             setCode(['', '', '', '', '', '']);
             inputRefs.current[0]?.focus();
@@ -112,10 +112,10 @@ const MfaSetupPage = () => {
         setError('');
         try {
             await apiClient.post('/mfa/disable', { code: fullCode });
-            setMfaEnabled(false);
             setStep('setup');
             setDisableCode(['', '', '', '', '', '']);
         } catch (err) {
+            console.error('MFA disable failed:', err);
             setError(err.response?.data?.message || 'Invalid code. Please try again.');
             setDisableCode(['', '', '', '', '', '']);
             disableInputRefs.current[0]?.focus();

@@ -3,9 +3,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Shield, Lock, FileCheck, Users, Activity, ArrowRight,
-    Heart, Stethoscope, Pill, Clock, CheckCircle,
-    Server, Database, Key, UserCheck, Zap, Globe, FileText,
-    Moon, Menu, X, ChevronLeft, ChevronRight, Phone, Mail
+    Heart, CheckCircle,
+    Server, Key, Zap,
+    Moon, Menu, X, Phone, Mail
 } from 'lucide-react';
 import PolicyModal from '../components/PolicyModal';
 import TeamModal from '../components/TeamModal';
@@ -51,6 +51,7 @@ const RevealGroup = ({ children, className = "", staggerDelay = 100 }) => {
 // -------------------------------------------------------------------
 // COMPONENT: Feature Card
 // -------------------------------------------------------------------
+// eslint-disable-next-line no-unused-vars
 const FeatureCard = ({ icon: Icon, title, description, color }) => (
     <div className="group relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm p-8 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
         <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${color} rounded-l-2xl opacity-0 group-hover:opacity-100 transition-opacity`}></div>

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, Stethoscope, Calendar, Heart, TrendingUp, MailCheck } from 'lucide-react';
+import { FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle, ClipboardList, TrendingUp, MailCheck } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Modal from '../../components/Modal';
 import MedicalCard from '../../components/MedicalCard';
@@ -9,7 +9,7 @@ import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
 
 const DoctorDashboard = () => {
-    const { user, logout } = useAuth();
+    const { logout } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const activeTab = searchParams.get('tab') || 'overview';
@@ -20,8 +20,6 @@ const DoctorDashboard = () => {
     const [myCreatedRecords, setMyCreatedRecords] = useState([]);
     const [dashboardStats, setDashboardStats] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [showAccessModal, setShowAccessModal] = useState(false);
-    const [accessError, setAccessError] = useState(null);
     const [accessInfo, setAccessInfo] = useState(null);
     const [mounted, setMounted] = useState(false);
     const [showConsentSentModal, setShowConsentSentModal] = useState(false);
@@ -30,20 +28,18 @@ const DoctorDashboard = () => {
     const [pendingConsentIds, setPendingConsentIds] = useState([]);
     const [loadingPatientId, setLoadingPatientId] = useState(null);
 
-    const handleConfirmRequest = async () => {
+    const handleConfirmRequest = useCallback(async () => {
         if (!consentSentPatient) return;
         setConfirmConsentModal(false);
         try {
             await consentApi.requestConsent(consentSentPatient.userId);
             setPendingConsentIds(ids => [...ids, consentSentPatient.userId]);
-            /* Update local patient state to reflect pending immediately */
             setPatients(prev => prev.map(p =>
                 p.userId === consentSentPatient.userId ? { ...p, consentPending: true } : p
             ));
             setShowConsentSentModal(true);
         } catch (e) {
             const msg = e?.response?.data?.message || 'Failed to send consent request';
-            // If it says "already pending", we should still update UI
             if (msg.includes("pending")) {
                 setPendingConsentIds(ids => [...ids, consentSentPatient.userId]);
                 setPatients(prev => prev.map(p =>
@@ -52,7 +48,7 @@ const DoctorDashboard = () => {
             }
             alert(msg);
         }
-    };
+    }, [consentSentPatient]);
 
     const [reportForm, setReportForm] = useState({
         patientId: '', title: '', diagnosis: '', details: '', prescription: '', recordType: 'GENERAL'
@@ -62,35 +58,24 @@ const DoctorDashboard = () => {
         setMounted(true);
     }, []);
 
-    useEffect(() => {
-        if (activeTab === 'patients' || activeTab === 'create') fetchPatients();
-        if (activeTab === 'myrecords') fetchMyCreatedRecords();
-        if (activeTab === 'overview') fetchDashboardStats();
-    }, [activeTab]);
-
-    const fetchDashboardStats = async () => {
+    const fetchDashboardStats = useCallback(async () => {
         try {
             const response = await apiClient.get('/doctor/dashboard');
             setDashboardStats(response.data.stats);
         } catch (error) { console.error('Error fetching dashboard stats:', error); }
-    };
+    }, []);
 
-    // Fetch patients and their consent status
-    const fetchPatients = async () => {
+    const fetchPatients = useCallback(async () => {
         setLoading(true);
         try {
             const response = await apiClient.get('/records/patients/list');
             const basePatients = response.data.patients || [];
-            // For each patient, check consent status and pending status
             const patientsWithConsent = await Promise.all(
                 basePatients.map(async (patient) => {
                     try {
-                        // Check if doctor has consent
                         const consentRes = await consentApi.checkConsent(patient.userId);
-                        // Check if there is a pending consent request
                         let pending = false;
                         if (!consentRes.hasConsent) {
-                            // Check for pending consent
                             const pendingRes = await apiClient.get(`/consent/pending-status/${patient.userId}`);
                             pending = pendingRes.data.pending;
                         }
@@ -100,7 +85,7 @@ const DoctorDashboard = () => {
                             consent: consentRes.consent,
                             consentPending: pending
                         };
-                    } catch (e) {
+                    } catch {
                         return { ...patient, hasConsent: false, consent: null, consentPending: false };
                     }
                 })
@@ -108,16 +93,22 @@ const DoctorDashboard = () => {
             setPatients(patientsWithConsent);
         } catch (error) { console.error('Error fetching patients:', error); }
         finally { setLoading(false); }
-    };
+    }, []);
 
-    const fetchMyCreatedRecords = async () => {
+    const fetchMyCreatedRecords = useCallback(async () => {
         setLoading(true);
         try {
             const response = await apiClient.get('/records/my-created-records');
             setMyCreatedRecords(response.data.records || []);
         } catch (error) { console.error('Error fetching my records:', error); }
         finally { setLoading(false); }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === 'patients' || activeTab === 'create') fetchPatients();
+        if (activeTab === 'myrecords') fetchMyCreatedRecords();
+        if (activeTab === 'overview') fetchDashboardStats();
+    }, [activeTab, fetchPatients, fetchMyCreatedRecords, fetchDashboardStats]);
 
     const handleCreateReport = async (e) => {
         e.preventDefault();
@@ -131,19 +122,10 @@ const DoctorDashboard = () => {
     };
 
     const handleViewPatientRecords = async (patient) => {
-        // Toggle: If clicking data for the already selected patient, verify if we should just close it.
-        if (selectedPatient?.userId === patient.userId) {
-            // Optional: Toggle close functionality if user wants to close by clicking again
-            // setSelectedPatient(null); 
-            // return;
-            // For now, we will just refresh the data
-        }
-
         setSelectedPatient(patient);
         setLoadingPatientId(patient.userId);
-        setAccessError(null);
         setAccessInfo(null);
-        setPatientRecords([]); // Clear previous records to avoid showing old data
+        setPatientRecords([]);
 
         try {
             const response = await apiClient.get(`/records/patient/${patient.userId}`);
@@ -151,32 +133,20 @@ const DoctorDashboard = () => {
             setAccessInfo(response.data.accessInfo);
         } catch (error) {
             if (error.response?.status === 403) {
-                setAccessError({ type: 'CONSENT_REQUIRED', message: error.response.data.message, patientId: patient.userId });
-                setShowAccessModal(true);
+                alert(error.response.data.message);
             } else { alert('Failed to fetch patient records'); }
         } finally { setLoadingPatientId(null); }
     };
 
-    const handleRequestConsent = async () => {
-        try {
-            await consentApi.requestConsent(accessError.patientId);
-            setShowAccessModal(false);
-            alert('Consent request sent successfully!');
-        } catch (error) { alert(error.response?.data?.message || 'Failed to send consent request'); }
-    };
-
     const handleLogout = () => { logout(); navigate('/login'); };
 
+    // eslint-disable-next-line no-unused-vars
     const StatCard = ({ icon: Icon, label, value, colorClass, delay }) => {
-        const isConsent = label?.toLowerCase().includes('consent');
-        const isPending = label?.toLowerCase().includes('pending') || label?.toLowerCase().includes('request');
-
         return (
             <div
                 className={`card-stat group transition-all duration-700 relative overflow-hidden ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                 style={{ transitionDelay: `${delay}ms` }}
             >
-
                 <div className="relative z-10 flex items-center gap-4">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${colorClass}`}>
                         <Icon className="w-7 h-7" />
@@ -189,25 +159,6 @@ const DoctorDashboard = () => {
             </div>
         );
     };
-
-    const getRecordTypeBadge = (type) => {
-        const styles = {
-            PRESCRIPTION: 'bg-purple-100 text-purple-700 ring-1 ring-purple-200',
-            LAB_RESULT: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200',
-            DIAGNOSIS: 'bg-red-100 text-red-700 ring-1 ring-red-200',
-            IMAGING: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',
-            VITALS: 'bg-green-100 text-green-700 ring-1 ring-green-200',
-            GENERAL: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200'
-        };
-        return styles[type] || styles.GENERAL;
-    };
-
-    const tabs = [
-        { id: 'overview', label: 'Dashboard', icon: TrendingUp },
-        { id: 'myrecords', label: 'My Records', icon: ClipboardList },
-        { id: 'create', label: 'Create Report', icon: Plus },
-        { id: 'patients', label: 'Patients', icon: Users }
-    ];
 
     return (
         <div className="flex h-screen overflow-hidden dashboard-bg-doctor bg-dots">

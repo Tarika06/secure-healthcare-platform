@@ -2,7 +2,8 @@
 import React from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 
-const Modal = ({ isOpen, onClose, title, icon: Icon = AlertTriangle, children, size = 'md', maxWidth }) => {
+// eslint-disable-next-line no-unused-vars
+const Modal = ({ isOpen, onClose, title, icon: ModalIcon = AlertTriangle, children, size = 'md', maxWidth }) => {
     if (!isOpen) return null;
 
     const sizeClasses = {
@@ -27,7 +28,7 @@ const Modal = ({ isOpen, onClose, title, icon: Icon = AlertTriangle, children, s
                 {/* Header */}
                 <div className="flex items-center gap-4 p-6 border-b border-slate-100 dark:border-slate-800">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                        <ModalIcon className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white flex-1">{title}</h3>
                     <button

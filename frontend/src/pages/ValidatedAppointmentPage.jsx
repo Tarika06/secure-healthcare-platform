@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Clock, CalendarDays, User, ArrowLeft, ScanLine } from 'lucide-react';
 import appointmentApi from '../api/appointmentApi';
@@ -12,47 +12,25 @@ const ValidatedAppointmentPage = () => {
     const { user, isAuthenticated } = useAuth();
 
     const [loading, setLoading] = useState(true);
-    const [appointment, setAppointment] = useState(null);
     const [error, setError] = useState(null);
     const [verifiedResult, setVerifiedResult] = useState(null);
 
-    useEffect(() => {
-        if (!id) {
-            setError("Invalid appointment link.");
-            setLoading(false);
-            return;
-        }
-
-        fetchAppointmentDetails();
-    }, [id]);
-
-    const fetchAppointmentDetails = async () => {
+    const fetchAppointmentDetails = useCallback(async () => {
         try {
             setLoading(true);
-            // Public or semi-public endpoint to get basic details OR use the verify endpoint
-            // If the user scanning is a NURSE/ADMIN, we can auto-verify using the token if they click a button
-
-            // To just display info first, we need an endpoint, but since the QR has the token
-            // We can actually just attempt to verify if the current user is a nurse/admin
-            // Otherwise, we shouldn't expose PII publicly.
-
-            // For now, if there's no token, show error.
             if (!token) {
                 setError("No valid QR token found in the URL.");
                 setLoading(false);
                 return;
             }
 
-            // Since only nurses/admins should verify, if the user isn't logged in, prompt login
             if (!isAuthenticated) {
                 navigate(`/login?redirect=/appointment/${id}?token=${token}`);
                 return;
             }
 
-            // If logged in, fetch details or attempt verify
             if (user.role === 'NURSE' || user.role === 'ADMIN') {
                 // Nurse is viewing, show verification button
-                setAppointment({ appointmentId: id, token });
             } else {
                 setError("You do not have permission to verify this QR code.");
             }
@@ -62,7 +40,17 @@ const ValidatedAppointmentPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [id, token, isAuthenticated, navigate, user]);
+
+    useEffect(() => {
+        if (!id) {
+            setError("Invalid appointment link.");
+            setLoading(false);
+            return;
+        }
+
+        fetchAppointmentDetails();
+    }, [id, fetchAppointmentDetails]);
 
     const handleVerify = async () => {
         try {

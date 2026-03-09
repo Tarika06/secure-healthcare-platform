@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, Clock, User, FileText, CheckCircle, XCircle, Printer } from 'lucide-react';
 import appointmentApi from '../../api/appointmentApi';
@@ -13,11 +13,7 @@ const DoctorAppointmentsTab = () => {
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    useEffect(() => {
-        fetchAppointments();
-    }, [filterDate]);
-
-    const fetchAppointments = async () => {
+    const fetchAppointments = useCallback(async () => {
         try {
             setLoading(true);
             const data = await appointmentApi.listAppointments({ date: filterDate });
@@ -27,7 +23,11 @@ const DoctorAppointmentsTab = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filterDate]);
+
+    useEffect(() => {
+        fetchAppointments();
+    }, [fetchAppointments]);
 
     const getStatusColor = (status) => {
         switch (status) {

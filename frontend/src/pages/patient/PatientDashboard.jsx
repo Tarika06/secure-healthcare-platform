@@ -1,33 +1,13 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect */
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Shield, Bell, CheckCircle, XCircle, LayoutDashboard, Eye, Heart, Clock, TrendingUp, Activity, User, Plus } from 'lucide-react';
+import { FileText, Shield, Bell, LayoutDashboard, Eye, Activity, TrendingUp } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import MedicalCard from '../../components/MedicalCard';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
 import gdprApi from '../../api/gdprApi';
-
-const StatCounter = ({ end, duration = 2000 }) => {
-    const [count, setCount] = useState(0);
-    useEffect(() => {
-        let start = 0;
-        const totalSteps = duration / 16;
-        const increment = end / totalSteps;
-        const timer = setInterval(() => {
-            start += increment;
-            if (start >= end) {
-                setCount(end);
-                clearInterval(timer);
-            } else {
-                setCount(Math.floor(start));
-            }
-        }, 16);
-        return () => clearInterval(timer);
-    }, [end, duration]);
-    return <span>{count}</span>;
-};
-
 
 const PatientDashboard = () => {
     const { user, logout } = useAuth();
@@ -40,58 +20,56 @@ const PatientDashboard = () => {
     const [activeConsents, setActiveConsents] = useState([]);
     const [accessHistory, setAccessHistory] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [downloading, setDownloading] = useState(false);
-    const [deleting, setDeleting] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    const fetchRecords = async () => {
+    const fetchRecords = useCallback(async () => {
         try {
             const response = await apiClient.get('/records/my-records');
             setRecords(response.data.records || []);
         } catch (error) { console.error('Error fetching records:', error); }
-    };
+    }, []);
 
-    const fetchConsents = async () => {
+    const fetchConsents = useCallback(async () => {
         try {
             const [pending, active] = await Promise.all([consentApi.getPendingConsents(), consentApi.getActiveConsents()]);
             setPendingConsents(pending.consents || []);
             setActiveConsents(active.consents || []);
         } catch (error) { console.error('Error fetching consents:', error); }
-    };
+    }, []);
 
-    const fetchAccessHistory = async () => {
+    const fetchAccessHistory = useCallback(async () => {
         try {
             const response = await apiClient.get('/patient/access-history');
             setAccessHistory(response.data.accessHistory || []);
         } catch (error) { console.error('Error fetching access history:', error); }
-    };
-
-    useEffect(() => {
-        Promise.all([fetchRecords(), fetchConsents()]).finally(() => setLoading(false));
     }, []);
 
     useEffect(() => {
+        Promise.all([fetchRecords(), fetchConsents()]).finally(() => setLoading(false));
+    }, [fetchRecords, fetchConsents]);
+
+    useEffect(() => {
         if (activeTab === 'history') fetchAccessHistory();
-    }, [activeTab]);
+    }, [activeTab, fetchAccessHistory]);
 
     const handleGrantConsent = async (consentId) => {
         try { await consentApi.grantConsent(consentId); await fetchConsents(); }
-        catch (error) { alert('Failed to grant consent'); }
+        catch { alert('Failed to grant consent'); }
     };
 
     const handleDenyConsent = async (consentId) => {
         try { await consentApi.denyConsent(consentId); await fetchConsents(); }
-        catch (error) { alert('Failed to deny consent'); }
+        catch { alert('Failed to deny consent'); }
     };
 
     const handleRevokeConsent = async (consentId) => {
         if (!confirm('Revoke this consent? Doctor will lose access.')) return;
         try { await consentApi.revokeConsent(consentId); await fetchConsents(); }
-        catch (error) { alert('Failed to revoke consent'); }
+        catch { alert('Failed to revoke consent'); }
     };
 
     const handleLogout = async () => {
@@ -101,7 +79,6 @@ const PatientDashboard = () => {
 
     const handleDownloadData = async (format) => {
         try {
-            setDownloading(true);
             if (format === 'json') {
                 const data = await gdprApi.getPersonalData();
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -126,8 +103,6 @@ const PatientDashboard = () => {
         } catch (error) {
             console.error('Download error:', error);
             alert('Failed to download data. Please try again.');
-        } finally {
-            setDownloading(false);
         }
     };
 
@@ -141,7 +116,6 @@ const PatientDashboard = () => {
             const doubleCheck = window.prompt("Type 'DELETE' to confirm account deletion:");
             if (doubleCheck === 'DELETE') {
                 try {
-                    setDeleting(true);
                     await gdprApi.requestErasure();
                     alert('Your account deletion request has been processed. You will now be logged out.');
                     await logout();
@@ -149,20 +123,10 @@ const PatientDashboard = () => {
                 } catch (error) {
                     console.error('Deletion error:', error);
                     alert('Failed to process deletion request: ' + (error.response?.data?.error || error.message));
-                } finally {
-                    setDeleting(false);
                 }
             }
         }
     };
-
-    const tabs = [
-        { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'records', label: 'My Records', icon: FileText },
-        { id: 'consent', label: 'Consent Manager', icon: Shield, badge: pendingConsents.length },
-        { id: 'history', label: 'Access History', icon: Eye },
-        { id: 'privacy', label: 'Privacy & GDPR', icon: Shield }
-    ];
 
     const isHealthFlowTheme = user?.userId === 'P001';
 

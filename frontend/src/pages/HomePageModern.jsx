@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Lock, Activity, ArrowRight, CheckCircle, Smartphone, Globe, FileCheck, Key, Eye } from 'lucide-react';
+import { Shield, Lock, Activity, ArrowRight, CheckCircle, Smartphone, FileCheck, Key, Eye } from 'lucide-react';
 import HeroSlideshow from '../components/HeroSlideshow';
 
 // -------------------------------------------------------------------
@@ -71,6 +71,7 @@ const RevealSection = ({ children, className = "", direction = "up" }) => {
 // -------------------------------------------------------------------
 // COMPONENT: Feature Card (Hover Effect)
 // -------------------------------------------------------------------
+// eslint-disable-next-line no-unused-vars
 const SecurityFeatureCard = ({ icon: Icon, title, description, delay }) => {
     return (
         <div

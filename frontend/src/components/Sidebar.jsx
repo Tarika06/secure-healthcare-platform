@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/static-components */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -58,7 +59,8 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
         }
     };
 
-    const RoleIcon = getRoleIcon();
+    const roleIconClass = "w-3 h-3";
+    const RoleIconComponent = getRoleIcon();
 
     const renderMenuItem = (item, isActive) => {
         const Icon = item.icon;
@@ -99,7 +101,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                             <div className="animate-fade-in whitespace-nowrap overflow-hidden">
                                 <h1 className="text-xl font-bold text-gradient">SecureCare<span className="text-primary-400">+</span></h1>
                                 <p className="text-xs text-slate-500 flex items-center gap-1">
-                                    <RoleIcon className="w-3 h-3" />
+                                    <RoleIconComponent className={roleIconClass} />
                                     {getRoleLabel()}
                                 </p>
                             </div>
@@ -228,7 +230,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                         <div className="animate-fade-in whitespace-nowrap overflow-hidden">
                             <h1 className="text-xl font-bold text-gradient">SecureCare<span className="text-primary-400">+</span></h1>
                             <p className="text-xs text-slate-500 flex items-center gap-1">
-                                <RoleIcon className="w-3 h-3" />
+                                <RoleIconComponent className={roleIconClass} />
                                 {getRoleLabel()}
                             </p>
                         </div>

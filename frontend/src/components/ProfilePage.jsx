@@ -95,7 +95,7 @@ const ProfilePage = ({ role, dashboardPath }) => {
         setSuccess('');
 
         try {
-            const response = await apiClient.put('/user/profile', editForm);
+            await apiClient.put('/user/profile', editForm);
             setSuccess('Profile updated successfully!');
             if (refreshUser) await refreshUser();
             setTimeout(() => {

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, FileText, BarChart3, Search, AlertTriangle, TrendingUp, Activity, Database, Clock, CheckCircle, XCircle, Cpu, AlertCircle, Ban } from 'lucide-react';
+import { Shield, Users, FileText, BarChart3, AlertTriangle, TrendingUp, Activity } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
@@ -14,7 +14,7 @@ const AdminDashboard = () => {
     const [auditLogs, setAuditLogs] = useState([]);
     const [alerts, setAlerts] = useState([]);
     const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [mounted, setMounted] = useState(false);
@@ -23,14 +23,7 @@ const AdminDashboard = () => {
         setMounted(true);
     }, []);
 
-    useEffect(() => {
-        if (activeTab === 'users') fetchUsers();
-        else if (activeTab === 'audit') fetchAuditLogs();
-        else if (activeTab === 'alerts') fetchAlerts();
-        else if (activeTab === 'overview') fetchStats();
-    }, [activeTab]);
-
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
             const response = await apiClient.get('/admin/users');
@@ -40,9 +33,9 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const fetchAuditLogs = async () => {
+    const fetchAuditLogs = useCallback(async () => {
         setLoading(true);
         try {
             const response = await apiClient.get('/admin/audit-logs?limit=100');
@@ -52,9 +45,9 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         setLoading(true);
         try {
             const response = await apiClient.get('/mgmt/analysis/trends');
@@ -64,9 +57,9 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const fetchAlerts = async () => {
+    const fetchAlerts = useCallback(async () => {
         setLoading(true);
         try {
             const data = await AlertService.getAlerts();
@@ -76,7 +69,14 @@ const AdminDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === 'users') fetchUsers();
+        else if (activeTab === 'audit') fetchAuditLogs();
+        else if (activeTab === 'alerts') fetchAlerts();
+        else if (activeTab === 'overview') fetchStats();
+    }, [activeTab, fetchUsers, fetchAuditLogs, fetchAlerts, fetchStats]);
 
     const handleAIAnalyze = async () => {
         setIsAnalyzing(true);
@@ -92,16 +92,16 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleUpdateAlertStatus = async (id, status) => {
+    const handleUpdateAlertStatus = useCallback(async (id, status) => {
         try {
             await AlertService.updateAlertStatus(id, status);
             fetchAlerts();
         } catch (error) {
             console.error('Status update failed:', error);
         }
-    };
+    }, [fetchAlerts]);
 
-    const handleBlockIP = async (ip, alertId) => {
+    const handleBlockIP = useCallback(async (ip, alertId) => {
         if (!window.confirm(`Are you sure you want to block IP: ${ip}? This will immediately stop all access from this address.`)) return;
         try {
             const result = await AlertService.blockIP(ip, alertId);
@@ -111,15 +111,15 @@ const AdminDashboard = () => {
             console.error('IP Block failed:', error);
             alert('Failed to block IP.');
         }
-    };
+    }, [fetchAlerts]);
 
-    const extractIP = (text) => {
+    const extractIP = useCallback((text) => {
         const ipRegex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
         const match = text.match(ipRegex);
         return match ? match[0] : null;
-    };
+    }, []);
 
-    const handleExportCSV = () => {
+    const handleExportCSV = useCallback(() => {
         if (!auditLogs.length) return;
 
         const headers = ['Timestamp', 'User ID', 'Action', 'Resource', 'Outcome', 'IP Address'];
@@ -142,9 +142,9 @@ const AdminDashboard = () => {
         a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         window.URL.revokeObjectURL(url);
-    };
+    }, [auditLogs]);
 
-    const handleLogout = () => { logout(); navigate('/login'); };
+    const handleLogout = useCallback(() => { logout(); navigate('/login'); }, [logout, navigate]);
 
     const filteredUsers = users.filter(u =>
         `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -169,29 +169,6 @@ const AdminDashboard = () => {
         };
         return colors[role] || 'bg-slate-100 text-slate-700';
     };
-
-    const StatCard = ({ icon: Icon, label, value, color, delay }) => (
-        <div
-            className={`stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-            style={{ transitionDelay: `${delay}ms` }}
-        >
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
-                    <p className={`text-4xl font-bold mt-2 bg-gradient-to-r ${color} bg-clip-text text-transparent`}>
-                        {value ?? '—'}
-                    </p>
-                </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color.includes('primary') ? 'icon-container-primary' :
-                    color.includes('blue') ? 'icon-container-blue' :
-                        color.includes('green') ? 'icon-container-green' :
-                            'icon-container-amber'
-                    }`}>
-                    <Icon className="w-7 h-7" />
-                </div>
-            </div>
-        </div>
-    );
 
     return (
         <div className="flex h-screen overflow-hidden dashboard-glass-bg">
