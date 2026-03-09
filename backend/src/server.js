@@ -55,8 +55,8 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Handle preflight OPTIONS for all routes
-app.options('*', cors(corsOptions));
+// Handle preflight OPTIONS for all routes (Express v5 wildcard syntax)
+app.options('/{*path}', cors(corsOptions));
 
 
 
