@@ -31,37 +31,34 @@ const activeConnections = new promClient.Gauge({
 const app = express();
 // connectDB() called in startServer
 
-// CORS configuration - allow localhost, Vercel, Render, and explicit origins
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
+// CORS — must be applied BEFORE all routes, including preflight
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow no-origin requests (curl, Postman, server-to-server)
     if (!origin) return callback(null, true);
-
-    // Allow any localhost port (development)
-    if (origin.match(/^http:\/\/localhost:\d+$/)) {
-      return callback(null, true);
-    }
-
-    // Allow all Vercel deployment URLs (production + preview)
-    if (origin.match(/^https:\/\/.*\.vercel\.app$/)) {
-      return callback(null, true);
-    }
-
-    // Allow all Render deployment URLs
-    if (origin.match(/^https:\/\/.*\.onrender\.com$/)) {
-      return callback(null, true);
-    }
-
-    // Allow explicitly configured origins (comma-separated env var)
-    const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map(o => o.trim()).filter(Boolean);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    callback(new Error(`CORS: Origin ${origin} not allowed`));
+    // Allow localhost (any port)
+    if (origin.includes('localhost')) return callback(null, true);
+    // Allow all Vercel deployments (production + preview)
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    // Allow all Render deployments
+    if (origin.endsWith('.onrender.com')) return callback(null, true);
+    // Allow explicitly listed origins
+    const extra = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+    if (extra.includes(origin)) return callback(null, true);
+    // Deny everything else
+    return callback(new Error(`CORS: ${origin} not allowed`));
   },
-  credentials: true
-}));
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight OPTIONS for all routes
+app.options('*', cors(corsOptions));
+
+
 
 app.use(express.json());
 
