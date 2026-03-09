@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, FileText, BarChart3, Search, AlertTriangle, TrendingUp, Activity, Database, Clock, CheckCircle, XCircle, Cpu, AlertCircle, Ban, Download } from 'lucide-react';
+import { Shield, Users, FileText, BarChart3, Search, AlertTriangle, TrendingUp, Activity, Database, Clock, CheckCircle, XCircle, Cpu, AlertCircle, Ban, Download, Calendar } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import IdentityCard from '../../components/IdentityCard';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
+import appointmentApi from '../../api/appointmentApi';
 import AlertService from '../../api/AlertService';
+import AdminAppointmentRequests from './AdminAppointmentRequests';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -15,6 +17,7 @@ const AdminDashboard = () => {
     const [auditLogs, setAuditLogs] = useState([]);
     const [alerts, setAlerts] = useState([]);
     const [stats, setStats] = useState(null);
+    const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +29,7 @@ const AdminDashboard = () => {
         else if (activeTab === 'audit') fetchAuditLogs();
         else if (activeTab === 'alerts') fetchAlerts();
         else if (activeTab === 'overview') fetchStats();
+        else if (activeTab === 'appointments') fetchAppointments();
     }, [activeTab]);
 
     const fetchUsers = async () => {
@@ -39,6 +43,16 @@ const AdminDashboard = () => {
         setLoading(true);
         try { const r = await apiClient.get('/admin/audit-logs?limit=100'); setAuditLogs(r.data.logs || []); }
         catch (e) { console.error('Error fetching audit logs:', e); }
+        finally { setLoading(false); }
+    };
+
+    const fetchAppointments = async () => {
+        setLoading(true);
+        try {
+            const data = await appointmentApi.listAppointments();
+            setAppointments(data.appointments || []);
+        }
+        catch (e) { console.error('Error fetching appointments:', e); }
         finally { setLoading(false); }
     };
 
@@ -106,6 +120,7 @@ const AdminDashboard = () => {
     const sidebarItems = [
         { id: 'overview', label: 'Overview', icon: BarChart3 },
         { id: 'users', label: 'User Management', icon: Users },
+        { id: 'appointments', label: 'Appointment Requests', icon: Calendar },
         { id: 'alerts', label: 'Security Alerts', icon: Shield },
         { id: 'audit', label: 'Audit Logs', icon: FileText }
     ];
@@ -229,6 +244,15 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
                         </div>
+                    )}
+
+                    {/* ═══ Appointments Tab ═══ */}
+                    {activeTab === 'appointments' && (
+                        <AdminAppointmentRequests
+                            appointments={appointments}
+                            loading={loading}
+                            refreshAppointments={fetchAppointments}
+                        />
                     )}
 
                     {/* ═══ Users Tab ═══ */}

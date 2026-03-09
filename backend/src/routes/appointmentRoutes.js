@@ -1,27 +1,14 @@
 const express = require("express");
 const router = express.Router();
+const appointmentService = require("../services/appointmentService");
 const authenticate = require("../middleware/authenticate");
 const authorize = require("../middleware/authorize");
-const appointmentService = require("../services/appointmentService");
-
-/**
- * Appointment Routes
- * 
- * All routes require authentication (JWT).
- * RBAC is enforced via the authorize middleware.
- * 
- * POST   /                       → Book appointment (PATIENT)
- * GET    /                       → List own appointments (PATIENT, DOCTOR, ADMIN)
- * GET    /slots/:doctorId/:date  → Get available slots (PATIENT)
- * GET    /:id                    → Get appointment by ID (PATIENT, DOCTOR, ADMIN)
- * POST   /verify-entry           → Verify QR code at reception (NURSE, ADMIN)
- * PUT    /:id/cancel             → Cancel appointment (PATIENT)
- */
+const auditService = require("../services/auditService");
 
 // All routes require authentication
 router.use(authenticate);
 
-// ─── Book Appointment ────────────────────────────────────────────────
+// ─── Request Appointment ────────────────────────────────────────────────
 // POST /api/appointments
 // Role: PATIENT only
 router.post(
@@ -31,27 +18,20 @@ router.post(
     try {
       const { doctorId, date, timeSlot, reason } = req.body;
 
-      if (!doctorId || !date || !timeSlot || !reason) {
+      if (!date || !reason) {
         return res.status(400).json({
-          message: "All fields required: doctorId, date, timeSlot, reason"
+          message: "Date and reason are required"
         });
       }
 
-      // Date format validation (YYYY-MM-DD)
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return res.status(400).json({
-          message: "Date must be in YYYY-MM-DD format"
-        });
-      }
-
-      const appointment = await appointmentService.bookAppointment(
+      const appointment = await appointmentService.requestAppointment(
         req.user.userId,
         { doctorId, date, timeSlot, reason },
         req.ip
       );
 
       res.status(201).json({
-        message: "Appointment booked successfully",
+        message: "Appointment requested successfully and is pending admin approval",
         appointment: {
           appointmentId: appointment.appointmentId,
           patientId: appointment.patientId,
@@ -60,98 +40,132 @@ router.post(
           timeSlot: appointment.timeSlot,
           reason: appointment.reason,
           status: appointment.status,
-          qrCode: appointment.qrCode,
           createdAt: appointment.createdAt
         }
       });
     } catch (err) {
-      console.error("Book appointment error:", err.message);
+      console.error("Request appointment error:", err.message);
       const status = err.message.includes("not found") ? 404
-        : err.message.includes("already booked") ? 409
-        : err.message.includes("past") ? 400
-        : err.message.includes("Invalid time") ? 400
-        : 500;
+        : err.message.includes("already confirmed") ? 409
+          : err.message.includes("past") ? 400
+            : 400; // Default to 400 for validation errors
       res.status(status).json({ message: err.message });
     }
   }
 );
 
-// ─── Get Available Slots ─────────────────────────────────────────────
+// ─── Get Available Time Slots ─────────────────────────────────────────────
 // GET /api/appointments/slots/:doctorId/:date
-// Role: PATIENT (to see open slots before booking)
+// Role: PATIENT, NURSE, ADMIN
 router.get(
   "/slots/:doctorId/:date",
-  authorize(["PATIENT"]),
+  authorize(["PATIENT", "NURSE", "ADMIN"]),
   async (req, res) => {
     try {
       const { doctorId, date } = req.params;
 
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return res.status(400).json({
-          message: "Date must be in YYYY-MM-DD format"
-        });
+      if (!doctorId || !date) {
+        return res.status(400).json({ message: "doctorId and date are required" });
       }
 
       const availableSlots = await appointmentService.getAvailableSlots(doctorId, date);
-
-      res.json({
-        doctorId,
-        date,
-        availableSlots,
-        totalSlots: appointmentService.VALID_TIME_SLOTS.length,
-        bookedSlots: appointmentService.VALID_TIME_SLOTS.length - availableSlots.length
-      });
+      res.json({ availableSlots });
     } catch (err) {
-      console.error("Get slots error:", err.message);
-      const status = err.message.includes("not found") ? 404 : 500;
+      console.error("Get available slots error:", err.message);
+      const status = err.message.includes("Doctor not found") ? 404 : 500;
       res.status(status).json({ message: err.message });
     }
   }
 );
 
-// ─── List Appointments ───────────────────────────────────────────────
+// ─── List Appointments ────────────────────────────────────────────────────
 // GET /api/appointments
-// Role: PATIENT (own), DOCTOR (own schedule), ADMIN (all)
-// Query params: ?status=BOOKED&date=2026-03-01
-router.get(
-  "/",
-  authorize(["PATIENT", "DOCTOR", "ADMIN"]),
+// Role: PATIENT (view own), DOCTOR (view own), ADMIN/NURSE (view all, sort/filter)
+router.get("/", async (req, res) => {
+  try {
+    const filters = {
+      status: req.query.status,
+      date: req.query.date,
+      patientId: req.query.patientId,
+      doctorId: req.query.doctorId
+    };
+
+    const appointments = await appointmentService.listAppointments(req.user, filters);
+
+    res.json({ appointments });
+  } catch (err) {
+    console.error("List appointments error:", err.message);
+    res.status(403).json({ message: err.message }); // Assuming mostly auth/access errors
+  }
+});
+
+// ─── Get Appointment Details ──────────────────────────────────────────────
+// GET /api/appointments/:id
+// Role: Participant (Patient/Doctor), NURSE, ADMIN
+router.get("/:id", async (req, res) => {
+  try {
+    const appointment = await appointmentService.getAppointmentById(req.params.id, req.user);
+    res.json({ appointment });
+  } catch (err) {
+    console.error("Get appointment error:", err.message);
+    const status = err.message === "Appointment not found" ? 404
+      : err.message === "Access denied" ? 403 : 500;
+    res.status(status).json({ message: err.message });
+  }
+});
+
+// ─── Approve Appointment ───────────────────────────────────────────
+// PUT /api/appointments/:id/approve
+// Role: ADMIN only
+router.put(
+  "/:id/approve",
+  authorize(["ADMIN"]),
   async (req, res) => {
     try {
-      const { status, date } = req.query;
-      const appointments = await appointmentService.listAppointments(
-        req.user,
-        { status, date }
+      const { doctorId, date, timeSlot } = req.body;
+
+      if (!doctorId || !date || !timeSlot) {
+        return res.status(400).json({
+          message: "All fields required for approval: doctorId, date, timeSlot"
+        });
+      }
+
+      const appointment = await appointmentService.approveAppointment(
+        req.params.id,
+        { doctorId, date, timeSlot },
+        req.user.userId,
+        req.ip
       );
 
-      res.json({ count: appointments.length, appointments });
+      res.json({ message: "Appointment approved", appointment });
     } catch (err) {
-      console.error("List appointments error:", err.message);
-      res.status(500).json({ message: err.message });
+      console.error("Approve appointment error:", err.message);
+      res.status(400).json({ message: err.message });
     }
   }
 );
 
-// ─── Get Appointment By ID ───────────────────────────────────────────
-// GET /api/appointments/:id
-// Role: PATIENT (own), DOCTOR (own), ADMIN (all)
-router.get(
-  "/:id",
-  authorize(["PATIENT", "DOCTOR", "ADMIN"]),
+// ─── Reject Appointment ───────────────────────────────────────────
+// PUT /api/appointments/:id/reject
+// Role: ADMIN only
+router.put(
+  "/:id/reject",
+  authorize(["ADMIN"]),
   async (req, res) => {
     try {
-      const appointment = await appointmentService.getAppointmentById(
+      const { reason } = req.body;
+
+      const appointment = await appointmentService.rejectAppointment(
         req.params.id,
-        req.user
+        reason,
+        req.user.userId,
+        req.ip
       );
 
-      res.json({ appointment });
+      res.json({ message: "Appointment rejected", appointment });
     } catch (err) {
-      console.error("Get appointment error:", err.message);
-      const status = err.message.includes("not found") ? 404
-        : err.message.includes("Access denied") ? 403
-        : 500;
-      res.status(status).json({ message: err.message });
+      console.error("Reject appointment error:", err.message);
+      res.status(400).json({ message: err.message });
     }
   }
 );
@@ -159,52 +173,59 @@ router.get(
 // ─── Verify Hospital Entry (QR Scan) ────────────────────────────────
 // POST /api/appointments/verify-entry
 // Role: NURSE, ADMIN only
-// Body: { qrToken: "<JWT string from QR code>" }
 router.post(
   "/verify-entry",
   authorize(["NURSE", "ADMIN"]),
   async (req, res) => {
     try {
-      const { qrToken } = req.body;
+      const { appointmentId, token } = req.body;
 
-      if (!qrToken) {
-        return res.status(400).json({
-          message: "qrToken is required — scan the patient's QR code"
-        });
+      if (!appointmentId || !token) {
+        return res.status(400).json({ message: "appointmentId and token are required" });
       }
 
-      const result = await appointmentService.verifyEntry(
-        qrToken,
-        req.user,
+      const appointment = await appointmentService.verifyEntryByNurse(
+        appointmentId,
+        token,
+        req.user.userId,
         req.ip
       );
 
-      res.json(result);
+      res.json({
+        message: "Entry verified successfully",
+        appointment: {
+          appointmentId: appointment.appointmentId,
+          status: appointment.status,
+          patientId: appointment.patientId,
+          doctorId: appointment.doctorId,
+          date: appointment.date,
+          timeSlot: appointment.timeSlot
+        }
+      });
     } catch (err) {
       console.error("Verify entry error:", err.message);
-      const status = err.message.includes("expired") ? 410
-        : err.message.includes("already been used") ? 409
+      const status = err.message.includes("Token") ? 401
         : err.message.includes("not found") ? 404
-        : err.message.includes("cancelled") ? 410
-        : err.message.includes("not valid today") ? 403
-        : err.message.includes("Invalid") ? 401
-        : 500;
+          : err.message.includes("status") ? 400
+            : 400; // Catch all for date/logic errors
       res.status(status).json({ message: err.message });
     }
   }
 );
 
-// ─── Cancel Appointment ──────────────────────────────────────────────
+// ─── Cancel Appointment ───────────────────────────────────────────────────
 // PUT /api/appointments/:id/cancel
-// Role: PATIENT only (own appointments)
+// Role: PATIENT (own), DOCTOR (own)
 router.put(
   "/:id/cancel",
-  authorize(["PATIENT"]),
+  authorize(["PATIENT", "DOCTOR", "ADMIN", "NURSE"]), // Ensure broad access first, filter in service
   async (req, res) => {
     try {
+      // Admins/Nurses shouldn't cancel directly via this endpoint typically (or maybe they can),
+      // we'll let the service layer handle exact rules.
       const appointment = await appointmentService.cancelAppointment(
         req.params.id,
-        req.user.userId,
+        req.user,
         req.ip
       );
 
@@ -217,12 +238,13 @@ router.put(
       });
     } catch (err) {
       console.error("Cancel appointment error:", err.message);
-      const status = err.message.includes("not found") ? 404
+      const status = err.message.includes("not found") || err.message.includes("denied") ? 404
         : err.message.includes("Cannot cancel") ? 400
-        : 500;
+          : 500;
       res.status(status).json({ message: err.message });
     }
   }
 );
+
 
 module.exports = router;
