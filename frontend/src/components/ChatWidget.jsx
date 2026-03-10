@@ -68,9 +68,9 @@ const ChatWidget = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-16 h-16 bg-blue-600 rounded-full shadow-2xl flex items-center justify-center text-white hover:scale-110 hover:rotate-6 transition-all duration-300 group relative overflow-hidden"
+          className="w-16 h-16 bg-[#e2f6f3] rounded-full shadow-2xl flex items-center justify-center text-teal-900 hover:scale-110 hover:rotate-6 transition-all duration-300 group relative overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/40 to-transparent"></div>
           <MessageCircle className="w-8 h-8 relative z-10" />
           <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
         </button>
@@ -78,40 +78,40 @@ const ChatWidget = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="w-[420px] h-[650px] bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-slate-100 flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div className="w-[420px] max-w-[calc(100vw-48px)] h-[650px] max-h-[calc(100vh-120px)] bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-slate-100 flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white relative">
+          <div className="bg-[#e2f6f3] p-6 text-teal-950 relative">
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-white/20 rounded-2xl backdrop-blur-md flex items-center justify-center border border-white/30">
+                <div className="w-12 h-12 bg-white/60 rounded-2xl backdrop-blur-md flex items-center justify-center border border-teal-200/50">
                   <Bot className="w-7 h-7" />
                 </div>
                 <div>
                   <h3 className="font-bold text-lg leading-none">SecureCare Assistant</h3>
                   <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-blue-100">Live Concierge</span>
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-teal-700">Live Concierge</span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button 
                   onClick={resetChat} 
-                  className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                  className="p-2 hover:bg-teal-900/10 text-teal-700 rounded-xl transition-colors"
                   title="Reset Chat"
                 >
                   <Sparkles className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={() => setIsOpen(false)} 
-                  className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                  className="p-2 hover:bg-teal-900/10 text-teal-700 rounded-xl transition-colors"
                 >
                   <X className="w-6 h-6" />
                 </button>
               </div>
             </div>
             {/* Decorative background circle */}
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/40 rounded-full blur-3xl"></div>
           </div>
 
           {/* Messages Area */}
@@ -120,13 +120,13 @@ const ChatWidget = () => {
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-500`}>
                 <div className={`max-w-[85%] flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${
-                    msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-100 text-blue-600'
+                    msg.role === 'user' ? 'bg-teal-700 text-white' : 'bg-white border border-slate-100 text-teal-700'
                   }`}>
                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </div>
                   <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
                     msg.role === 'user' 
-                      ? 'bg-blue-600 text-white rounded-tr-none' 
+                      ? 'bg-teal-700 text-white rounded-tr-none' 
                       : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
                   }`}>
                     {msg.content}
@@ -137,11 +137,11 @@ const ChatWidget = () => {
             {isLoading && (
               <div className="flex justify-start animate-pulse">
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-blue-600">
+                  <div className="w-8 h-8 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-teal-700">
                     <Bot className="w-4 h-4" />
                   </div>
                   <div className="bg-white border border-slate-100 p-4 rounded-2xl rounded-tl-none flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                    <Loader2 className="w-4 h-4 animate-spin text-teal-700" />
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">ARIA is thinking...</span>
                   </div>
                 </div>
@@ -158,7 +158,7 @@ const ChatWidget = () => {
                 <button
                   key={i}
                   onClick={() => handleQuickAction(action.message)}
-                  className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-bold text-slate-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-all text-left"
+                  className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-bold text-slate-600 hover:bg-teal-50 hover:border-teal-200 hover:text-teal-700 transition-all text-left"
                 >
                   {action.icon}
                   {action.label}
@@ -186,7 +186,7 @@ const ChatWidget = () => {
                 className={`p-3 rounded-xl transition-all ${
                   !input.trim() || isLoading 
                     ? 'bg-slate-300 text-slate-400 cursor-not-allowed' 
-                    : 'bg-blue-600 text-white shadow-lg hover:bg-blue-700 hover:scale-105 active:scale-95'
+                    : 'bg-teal-700 text-white shadow-lg hover:bg-teal-800 hover:scale-105 active:scale-95'
                 }`}
               >
                 <Send className="w-5 h-5" />
