@@ -94,7 +94,7 @@ const requestAppointment = async (patientId, { doctorId, date, timeSlot, reason 
   const day = String(now.getDate()).padStart(2, '0');
   const todayStr = `${year}-${month}-${day}`;
 
-  if (date === todayStr) {
+  if (date === todayStr && timeSlot) {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const [slotH, slotM] = timeSlot.split(":").map(Number);
     if (slotH * 60 + slotM <= currentMinutes) {
