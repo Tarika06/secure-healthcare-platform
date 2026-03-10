@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
  * - Stores booking details (patient, doctor, date, time slot, reason)
  * - Holds the purpose-scoped QR JWT token (single-use, expires end-of-day)
  * - Tracks appointment status and entry verification state
- * - Compound index on (doctorId, date, timeSlot) prevents double-booking
+ * - partial compound index on (doctorId, date, timeSlot) prevents double-booking for confirmed slots
  */
 const AppointmentSchema = new mongoose.Schema({
   // Unique appointment identifier (e.g., APT-1708012345678-a1b2)
@@ -26,10 +26,9 @@ const AppointmentSchema = new mongoose.Schema({
     index: true
   },
 
-  // Doctor assigned
+  // Doctor assigned (optional during request)
   doctorId: {
     type: String,
-    required: true,
     ref: "User",
     index: true
   },
@@ -40,8 +39,7 @@ const AppointmentSchema = new mongoose.Schema({
     required: true
   },
   timeSlot: {
-    type: String,       // e.g., "09:00", "09:30", "10:00"
-    required: true
+    type: String,       // e.g., "09:00", "09:30", "10:00" (optional during request)
   },
   reason: {
     type: String,
@@ -52,9 +50,15 @@ const AppointmentSchema = new mongoose.Schema({
   // Appointment lifecycle status
   status: {
     type: String,
-    enum: ["BOOKED", "VERIFIED", "CANCELLED", "NO_SHOW", "COMPLETED"],
-    default: "BOOKED",
+    enum: ["PENDING_ADMIN_APPROVAL", "CONFIRMED", "REJECTED", "VERIFIED", "CANCELLED", "NO_SHOW", "COMPLETED", "BOOKED"],
+    default: "PENDING_ADMIN_APPROVAL",
     index: true
+  },
+
+  // Rejection details if applicable
+  rejectionReason: {
+    type: String,
+    default: null
   },
 
   // QR code data (base64 data URL)
@@ -81,9 +85,17 @@ const AppointmentSchema = new mongoose.Schema({
 });
 
 // Prevent double-booking: one doctor, one date, one time slot
+// ONLY if the appointment is CONFIRMED or BOOKED. This allows multiple pending requests for the same slot.
 AppointmentSchema.index(
   { doctorId: 1, date: 1, timeSlot: 1 },
-  { unique: true }
+  {
+    unique: true,
+    partialFilterExpression: {
+      doctorId: { $exists: true, $ne: null },
+      timeSlot: { $exists: true, $ne: null },
+      status: { $in: ["CONFIRMED", "BOOKED"] }
+    }
+  }
 );
 
 module.exports = mongoose.model("Appointment", AppointmentSchema);

@@ -128,7 +128,7 @@ router.get(
 router.get(
   "/list",
   authenticate,
-  authorizeByUserId(["D", "P"]), // Allowed for patients too to request consent/see doctors
+  authorizeByUserId(["D", "P", "A", "N"]), // Allowed for patients, admins, and nurses too
   async (req, res) => {
     try {
       const User = require("../models/User");

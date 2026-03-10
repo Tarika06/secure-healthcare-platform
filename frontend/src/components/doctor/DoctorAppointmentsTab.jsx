@@ -16,7 +16,7 @@ const DoctorAppointmentsTab = () => {
     const fetchAppointments = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await appointmentApi.listAppointments({ date: filterDate });
+            const data = await appointmentApi.getAppointments({ date: filterDate });
             setAppointments(data.appointments || []);
         } catch (err) {
             console.error('Failed to load appointments', err);
@@ -31,6 +31,7 @@ const DoctorAppointmentsTab = () => {
 
     const getStatusColor = (status) => {
         switch (status) {
+            case 'CONFIRMED':
             case 'BOOKED': return 'badge-prescription'; // Teal
             case 'VERIFIED': return 'badge-lab'; // Blue (Arrived/Verified at reception)
             case 'COMPLETED': return 'badge-general'; // Slate
@@ -70,10 +71,10 @@ const DoctorAppointmentsTab = () => {
 
     // Sort by time
     const sortedAppointments = [...appointments].sort((a, b) => {
-        return a.timeSlot.localeCompare(b.timeSlot);
+        return (a.timeSlot || '').localeCompare(b.timeSlot || '');
     });
 
-    const activeAppointments = sortedAppointments.filter(a => ['BOOKED', 'VERIFIED'].includes(a.status));
+    const activeAppointments = sortedAppointments.filter(a => ['CONFIRMED', 'BOOKED', 'VERIFIED'].includes(a.status));
     const pastAppointments = sortedAppointments.filter(a => ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(a.status));
 
     return (

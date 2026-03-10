@@ -13,6 +13,8 @@ import AlertService from '../../api/AlertService';
 import gdprApi from '../../api/gdprApi';
 import AdminAppointmentsTab from '../../components/admin/AdminAppointmentsTab';
 import VideoConsultationLogsTab from '../../components/admin/VideoConsultationLogsTab';
+import AdminAppointmentRequests from '../../pages/admin/AdminAppointmentRequests';
+import NotificationsPopover from '../../components/NotificationsPopover';
 
 // Helper Components
 const StatCard = ({ icon: Icon, label, value, gradient, delay }) => {
@@ -264,7 +266,8 @@ const AdminDashboard = () => {
     const sidebarItems = [
         { id: 'overview', label: 'Overview', icon: BarChart3 },
         { id: 'summary', label: 'Access Summary', icon: PieChart },
-        { id: 'appointments', label: 'Global Schedule', icon: Calendar },
+        { id: 'requests', label: 'Appointment Requests', icon: Calendar },
+        { id: 'appointments', label: 'Global Schedule', icon: Clock },
         { id: 'hot-storage', label: 'Hot Storage', icon: Activity },
         { id: 'users', label: 'User Management', icon: Users },
         { id: 'collaboration', label: 'Consultations', icon: MailCheck },
@@ -328,7 +331,7 @@ const AdminDashboard = () => {
 
             <main className="flex-1 p-8 overflow-y-auto">
                 <div className="max-w-[1600px] mx-auto w-full">
-                    
+
                     {/* Header */}
                     <div className="bg-gradient-to-r from-teal-900 to-emerald-900 rounded-3xl p-8 mb-10 shadow-2xl relative overflow-hidden flex items-center justify-between animate-fade-in border border-teal-800/50">
                         {/* Decorative background blurs */}
@@ -344,7 +347,8 @@ const AdminDashboard = () => {
                                 Welcome, <span className="text-teal-300">{user?.firstName || 'Admin'}</span>
                             </h1>
                         </div>
-                        <div className="flex items-center gap-4 group cursor-default relative z-10">
+                        <div className="flex items-center gap-4 group relative z-10">
+                            <NotificationsPopover />
                             <div className="text-right hidden sm:block">
                                 <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest leading-none mb-1.5">Admin ID</p>
                                 <p className="text-sm font-bold text-teal-50 leading-none shadow-sm">{user?.userId || 'SYS-ADMIN'}</p>
@@ -599,6 +603,12 @@ const AdminDashboard = () => {
                                     <p className="text-slate-500">No data available for the selected time range.</p>
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {activeTab === 'requests' && (
+                        <div className="animate-fade-in">
+                            <AdminAppointmentRequests />
                         </div>
                     )}
 

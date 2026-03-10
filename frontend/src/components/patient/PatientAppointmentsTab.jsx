@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { Calendar, Clock, FileText, CheckCircle, XCircle, AlertCircle, CalendarDays, Download, Printer } from 'lucide-react';
 import appointmentApi from '../../api/appointmentApi';
 import apiClient from '../../api/client';
-import html2pdf from 'html2pdf.js';
 
 const PatientAppointmentsTab = () => {
     const [appointments, setAppointments] = useState([]);
@@ -43,9 +42,14 @@ const PatientAppointmentsTab = () => {
         const timer = setInterval(() => {
             setCurrentTime(new Date());
             // If today is selected, auto-deselect a slot that just became past
-            if (selectedDate === new Date().toISOString().split('T')[0] && selectedSlot) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
+
+            if (selectedDate === todayStr && selectedSlot) {
                 const [h, m] = selectedSlot.split(':').map(Number);
-                const now = new Date();
                 if (h * 60 + m <= now.getHours() * 60 + now.getMinutes()) {
                     setSelectedSlot('');
                 }
@@ -57,8 +61,16 @@ const PatientAppointmentsTab = () => {
     // Helper: check if a slot is in the past for the selected date
     const isSlotPast = (slot) => {
         if (!selectedDate) return false;
-        const todayStr = currentTime.toISOString().split('T')[0];
-        if (selectedDate !== todayStr) return false;
+        
+        const year = currentTime.getFullYear();
+        const month = String(currentTime.getMonth() + 1).padStart(2, '0');
+        const day = String(currentTime.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        
+        if (selectedDate < todayStr) return true; // Past dates are completely disabled
+        if (selectedDate > todayStr) return false; // Future dates are completely available
+        
+        // If it's today, check the exact time
         const [h, m] = slot.split(':').map(Number);
         return h * 60 + m <= currentTime.getHours() * 60 + currentTime.getMinutes();
     };
@@ -66,7 +78,7 @@ const PatientAppointmentsTab = () => {
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            const data = await appointmentApi.listAppointments();
+            const data = await appointmentApi.getAppointments();
             setAppointments(data.appointments || []);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to load appointments');
@@ -77,7 +89,7 @@ const PatientAppointmentsTab = () => {
 
     const fetchDoctors = async () => {
         try {
-            const response = await apiClient.get('/records/doctors/list');
+            const response = await apiClient.get('/doctor/list');
             setDoctors(response.data.doctors || []);
         } catch (err) {
             console.error('Error fetching doctors:', err);
@@ -99,13 +111,13 @@ const PatientAppointmentsTab = () => {
         setBookingLoading(true);
         setError(null);
         try {
-            await appointmentApi.bookAppointment({
-                doctorId: selectedDoctor,
+            await appointmentApi.requestAppointment({
+                doctorId: selectedDoctor || undefined,
                 date: selectedDate,
-                timeSlot: selectedSlot,
+                timeSlot: selectedSlot || undefined,
                 reason
             });
-            alert('Appointment booked successfully!');
+            alert('Appointment requested successfully! Waiting for admin approval.');
             // Reset form
             setSelectedDoctor('');
             setSelectedDate('');
@@ -113,7 +125,7 @@ const PatientAppointmentsTab = () => {
             setReason('');
             fetchAppointments(); // Refresh list
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to book appointment');
+            setError(err.response?.data?.message || 'Failed to request appointment');
         } finally {
             setBookingLoading(false);
         }
@@ -151,29 +163,19 @@ const PatientAppointmentsTab = () => {
     };
 
     const handleDownloadPDF = () => {
-        const element = document.getElementById('appointment-pdf-content');
-        if (!element) return;
-
-        const opt = {
-            margin: 0.5,
-            filename: `Appointment-Order-${selectedAppointment?.appointmentId}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-        };
-
-        // Add a temporary class to hide buttons during export
-        element.classList.add('exporting-pdf');
-        html2pdf().from(element).set(opt).save().then(() => {
-            element.classList.remove('exporting-pdf');
-        });
+        // Trigger the native browser print dialog, which supports "Save as PDF" natively
+        // and guarantees 100% accurate image and CSS rendering across browsers
+        window.print();
     };
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'BOOKED': return 'badge-prescription'; // Teal/Emerald
+            case 'PENDING_ADMIN_APPROVAL': return 'badge-prescription'; // Maybe change style
+            case 'CONFIRMED': return 'badge-prescription'; // Teal/Emerald
+            case 'BOOKED': return 'badge-prescription'; // Legacy
             case 'VERIFIED': return 'badge-lab'; // Blue
             case 'COMPLETED': return 'badge-general'; // Slate
+            case 'REJECTED':
             case 'CANCELLED':
             case 'NO_SHOW': return 'badge-vitals'; // Rose/Red
             default: return 'badge-general';
@@ -182,30 +184,33 @@ const PatientAppointmentsTab = () => {
 
     // Sort appointments: upcoming first, then past
     const sortedAppointments = [...appointments].sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.timeSlot}`);
-        const dateB = new Date(`${b.date}T${b.timeSlot}`);
-        return dateB - dateA; // Descending for full list, typically you'd split them
+        const dateA = new Date(`${a.date}T${a.timeSlot || '00:00'}`);
+        const dateB = new Date(`${b.date}T${b.timeSlot || '00:00'}`);
+        return dateB - dateA;
     });
 
-    const upcomingAppointments = sortedAppointments.filter(a => a.status === 'BOOKED' || a.status === 'VERIFIED');
-    const pastAppointments = sortedAppointments.filter(a => ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(a.status));
+    const upcomingAppointments = sortedAppointments.filter(a => ['PENDING_ADMIN_APPROVAL', 'CONFIRMED', 'VERIFIED'].includes(a.status));
+    const pastAppointments = sortedAppointments.filter(a => ['COMPLETED', 'CANCELLED', 'NO_SHOW', 'REJECTED'].includes(a.status));
 
     return (
         <div className="tab-content">
             <div className="mb-6">
                 <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">Hospital Appointments</h2>
-                <p className="text-slate-500 dark:text-slate-400 mt-1">Book consultations and get your Hospital Entry QR Code</p>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">Request a consultation with our medical staff.</p>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">
                 {/* Left Column: Booking Form */}
                 <div className="lg:col-span-1">
-                    <div className="glass-card mb-6">
+                    <div className="glass-card mb-6 border-t-4 border-t-teal-500">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center shadow-md">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-md">
                                 <CalendarDays className="w-5 h-5 text-white" />
                             </div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Book New Appointment</h3>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Request Appointment</h3>
+                                <span className="text-xs text-slate-500">Requires admin approval</span>
+                            </div>
                         </div>
 
                         {error && (
@@ -217,14 +222,13 @@ const PatientAppointmentsTab = () => {
 
                         <form onSubmit={handleBookAppointment} className="space-y-4">
                             <div>
-                                <label className="label">Select Doctor</label>
+                                <label className="label">Preferred Doctor <span className="text-xs font-normal text-slate-400">(Optional)</span></label>
                                 <select
                                     className="input-field"
-                                    required
                                     value={selectedDoctor}
                                     onChange={(e) => setSelectedDoctor(e.target.value)}
                                 >
-                                    <option value="">-- Choose a Doctor --</option>
+                                    <option value="">-- Any Available Doctor --</option>
                                     {doctors.map(doc => (
                                         <option key={doc.userId} value={doc.userId}>
                                             Dr. {doc.firstName} {doc.lastName} - {doc.specialty || 'General'}
@@ -234,12 +238,12 @@ const PatientAppointmentsTab = () => {
                             </div>
 
                             <div>
-                                <label className="label">Date</label>
+                                <label className="label">Preferred Date</label>
                                 <input
                                     type="date"
                                     className="input-field"
                                     required
-                                    min={new Date().toISOString().split('T')[0]} // Cannot book in the past
+                                    min={`${currentTime.getFullYear()}-${String(currentTime.getMonth() + 1).padStart(2, '0')}-${String(currentTime.getDate()).padStart(2, '0')}`}
                                     value={selectedDate}
                                     onChange={(e) => setSelectedDate(e.target.value)}
                                 />
@@ -248,17 +252,18 @@ const PatientAppointmentsTab = () => {
                             {selectedDoctor && selectedDate && (
                                 <div>
                                     <label className="label flex justify-between">
-                                        Time Slot
+                                        Preferred Time Slot <span className="text-xs font-normal text-slate-400 dark:text-slate-500">(Optional)</span>
                                         {availableSlots && <span className="text-xs font-normal text-slate-500">{availableSlots.filter(s => !isSlotPast(s)).length} available</span>}
                                     </label>
 
                                     {!availableSlots ? (
-                                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm text-slate-500 dark:text-slate-400">
+                                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center text-sm text-slate-500">
                                             Loading slots...
                                         </div>
                                     ) : availableSlots.filter(s => !isSlotPast(s)).length === 0 ? (
-                                        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/50 text-center text-sm text-rose-600 dark:text-rose-400 font-medium">
+                                        <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-center text-sm text-amber-600 dark:text-amber-400 font-medium">
                                             No slots available for this date.
+                                            <button type="button" onClick={() => setSelectedDoctor('')} className="block mt-1 font-bold underline w-full">Choose Any Doctor</button>
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-3 gap-2">
@@ -275,7 +280,7 @@ const PatientAppointmentsTab = () => {
                                                             : selectedSlot === slot
                                                                 ? 'bg-teal-50 dark:bg-teal-900/40 border-teal-500 text-teal-700 dark:text-teal-300 font-bold shadow-sm'
                                                                 : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-teal-300 dark:hover:border-teal-600'
-                                                        }`}
+                                                        } hover:shadow-md`}
                                                     >
                                                         {slot}
                                                     </button>
@@ -300,13 +305,13 @@ const PatientAppointmentsTab = () => {
 
                             <button
                                 type="submit"
-                                disabled={bookingLoading || !selectedDoctor || !selectedDate || !selectedSlot || !reason}
-                                className="btn-primary w-full flex items-center justify-center gap-2 mt-4"
+                                disabled={bookingLoading || !selectedDate || !reason}
+                                className="w-full flex items-center justify-center gap-2 mt-4 py-3 px-4 bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-teal-500/30 hover:shadow-emerald-500/40 transform hover:-translate-y-0.5 transition-all"
                             >
                                 {bookingLoading ? (
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                 ) : (
-                                    <><Calendar className="w-4 h-4" /> Confirm Booking</>
+                                    <><Calendar className="w-5 h-5" /> Request Appointment</>
                                 )}
                             </button>
                         </form>
@@ -325,33 +330,37 @@ const PatientAppointmentsTab = () => {
                             {/* Upcoming Appointments */}
                             <div>
                                 <h3 className="font-heading font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                    <Clock className="w-5 h-5 text-teal-600" /> Upcoming Appointments
+                                    <Clock className="w-5 h-5 text-teal-600" /> Upcoming & Pending Requests
                                 </h3>
 
                                 {upcomingAppointments.length === 0 ? (
                                     <div className="glass-card text-center py-8 opacity-80">
-                                        <p className="text-slate-500 dark:text-slate-400 text-sm">You have no upcoming appointments.</p>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm">You have no active appointment requests.</p>
                                     </div>
                                 ) : (
                                     <div className="grid gap-4">
                                         {upcomingAppointments.map((apt) => (
-                                            <div key={apt.appointmentId} className="glass-card border-l-4 border-teal-400 relative overflow-hidden group">
+                                            <div key={apt.appointmentId} className={`glass-card relative overflow-hidden group ${apt.status === 'PENDING_ADMIN_APPROVAL' ? 'border-l-4 border-emerald-400 bg-emerald-50/10' : 'border-l-4 border-teal-400'}`}>
                                                 <div className="flex flex-col sm:flex-row gap-4 justify-between">
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-3 mb-2">
-                                                            <span className={`badge ${getStatusColor(apt.status)}`}>{apt.status}</span>
+                                                            <span className={`badge ${getStatusColor(apt.status)}`}>{apt.status === 'PENDING_ADMIN_APPROVAL' ? 'PENDING APPROVAL' : apt.status}</span>
                                                             <span className="text-xs font-mono text-slate-500">ID: {apt.appointmentId.split('-').pop()}</span>
                                                         </div>
-                                                        <h4 className="text-lg font-bold text-slate-900 dark:text-white">Dr. {apt.doctor?.firstName} {apt.doctor?.lastName}</h4>
-                                                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{apt.doctor?.specialty || 'General Practitioner'}</p>
+                                                        <h4 className="text-lg font-bold text-slate-900 dark:text-white">
+                                                            {apt.doctor ? `Dr. ${apt.doctor.firstName} ${apt.doctor.lastName}` : 'Unassigned (Waiting for admin)'}
+                                                        </h4>
+                                                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                                                            {apt.doctor?.specialty || (apt.doctor ? 'General Practitioner' : 'Any Available Doctor')}
+                                                        </p>
 
-                                                        <div className="flex flex-wrap gap-4 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 inline-flex p-2 rounded-lg border border-slate-100 dark:border-slate-700/50">
+                                                        <div className="flex flex-wrap gap-4 text-sm font-medium text-slate-700 bg-slate-50 inline-flex p-2 rounded-lg border border-slate-100">
                                                             <div className="flex items-center gap-1.5 px-2">
                                                                 <Calendar className="w-4 h-4 text-teal-600" /> {new Date(apt.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                                                             </div>
                                                             <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 self-center"></div>
                                                             <div className="flex items-center gap-1.5 px-2">
-                                                                <Clock className="w-4 h-4 text-teal-600" /> {apt.timeSlot}
+                                                                <Clock className="w-4 h-4 text-teal-600" /> {apt.timeSlot || 'TBD'}
                                                             </div>
                                                         </div>
                                                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-3 flex items-start gap-2">
@@ -362,13 +371,13 @@ const PatientAppointmentsTab = () => {
 
                                                     {/* QR Code and Actions */}
                                                     <div className="flex flex-col items-center justify-center gap-3 border-t sm:border-t-0 sm:border-l border-slate-100 pt-4 sm:pt-0 sm:pl-4 min-w-[140px]">
-                                                        {apt.qrCode ? (
+                                                        {apt.status === 'CONFIRMED' && apt.qrCode ? (
                                                             <div className="text-center">
                                                                 <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm inline-block mb-2 group-hover:scale-105 transition-transform duration-300 cursor-pointer" onClick={() => handleDownloadQR(apt.qrCode, apt.appointmentId)}>
                                                                     <img src={apt.qrCode} alt="Entry QR" className="w-24 h-24 object-contain" />
                                                                 </div>
-                                                                <p className="text-[10px] font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wide">Hospital Entry QR</p>
-                                                                <button onClick={() => handleDownloadQR(apt.qrCode, apt.appointmentId)} className="text-xs text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 mt-1 flex items-center justify-center gap-1 w-full">
+                                                                <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wide">Hospital Entry QR</p>
+                                                                <button onClick={() => handleDownloadQR(apt.qrCode, apt.appointmentId)} className="text-xs text-slate-500 hover:text-teal-600 mt-1 flex items-center justify-center gap-1 w-full">
                                                                     <Download className="w-3 h-3" /> Download
                                                                 </button>
                                                                 {apt.qrToken && (
@@ -377,31 +386,36 @@ const PatientAppointmentsTab = () => {
                                                                             navigator.clipboard.writeText(apt.qrToken);
                                                                             alert('Token copied to clipboard! Switch to the Nurse Dashboard to paste and verify it.');
                                                                         }}
-                                                                        className="mt-2 w-full text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-700/50 px-2 py-1.5 rounded-lg transition-colors"
+                                                                        className="mt-2 w-full text-[10px] font-bold text-teal-600 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2 py-1.5 rounded-lg transition-colors"
                                                                     >
                                                                         Copy Test Token
                                                                     </button>
                                                                 )}
                                                             </div>
+                                                        ) : apt.status === 'PENDING_ADMIN_APPROVAL' ? (
+                                                            <div className="text-center p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 w-full mb-2">
+                                                                <Clock className="w-8 h-8 text-emerald-300 mx-auto mb-2" />
+                                                                <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Awaiting Confirmation</p>
+                                                            </div>
                                                         ) : (
-                                                            <div className="text-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 w-full mb-2">
-                                                                <p className="text-xs text-slate-400 font-medium">QR not generated</p>
+                                                            <div className="text-center p-4 bg-slate-50 rounded-xl border border-slate-200 w-full mb-2">
+                                                                <p className="text-xs text-slate-400 font-medium">QR not active</p>
                                                             </div>
                                                         )}
 
                                                         <button
                                                             onClick={() => handleOpenModal(apt)}
-                                                            className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/40 px-3 py-2 rounded-lg transition-colors border border-teal-200 dark:border-teal-800/50 w-full flex items-center justify-center gap-1 mb-2"
+                                                            className="text-xs font-semibold text-teal-600 bg-teal-50 hover:bg-teal-100 px-3 py-2 rounded-lg transition-colors border border-teal-200 w-full flex items-center justify-center gap-1 mb-2"
                                                         >
                                                             <FileText className="w-3 h-3" /> View Details
                                                         </button>
 
-                                                        {apt.status === 'BOOKED' && (
+                                                        {(apt.status === 'CONFIRMED' || apt.status === 'PENDING_ADMIN_APPROVAL') && (
                                                             <button
-                                                                onClick={() => handleCancelAppointment(apt._id)}
-                                                                className="text-xs font-semibold text-rose-500 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20 px-3 py-1.5 rounded-lg transition-colors border border-transparent hover:border-rose-200 dark:hover:border-rose-800/50 mt-auto w-full"
+                                                                onClick={() => handleCancelAppointment(apt.appointmentId)}
+                                                                className="text-xs font-semibold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-2 rounded-lg transition-colors border border-transparent hover:border-rose-200 w-full mt-auto"
                                                             >
-                                                                Cancel Appointment
+                                                                Cancel Request
                                                             </button>
                                                         )}
                                                     </div>
@@ -422,13 +436,20 @@ const PatientAppointmentsTab = () => {
                                         {pastAppointments.map((apt) => (
                                             <div key={apt.appointmentId} className="glass-card-l3 p-4 opacity-75 hover:opacity-100 transition-opacity">
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <h4 className="font-bold text-slate-900 dark:text-white">Dr. {apt.doctor?.firstName}</h4>
+                                                    <h4 className="font-bold text-slate-900 dark:text-white">
+                                                        {apt.doctor ? `Dr. ${apt.doctor.firstName}` : 'Unassigned'}
+                                                    </h4>
                                                     <span className={`badge text-[10px] py-0.5 ${getStatusColor(apt.status)}`}>{apt.status}</span>
                                                 </div>
-                                                <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium mb-1.5">
-                                                    <Calendar className="w-3.5 h-3.5" /> {apt.date} • {apt.timeSlot}
+                                                <p className="text-sm text-slate-600 flex items-center gap-2 font-medium mb-1.5">
+                                                    <Calendar className="w-3.5 h-3.5" /> {apt.date} • {apt.timeSlot || 'N/A'}
                                                 </p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-500 truncate">{apt.reason}</p>
+                                                {apt.status === 'REJECTED' && apt.rejectionReason && (
+                                                    <p className="text-xs text-rose-600 font-medium mb-1 line-clamp-2">
+                                                        <strong className="text-rose-800">Reason:</strong> {apt.rejectionReason}
+                                                    </p>
+                                                )}
+                                                <p className="text-xs text-slate-500 truncate">{apt.reason}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -441,10 +462,10 @@ const PatientAppointmentsTab = () => {
 
             {/* Appointment Details Modal */}
             {isModalOpen && selectedAppointment && createPortal(
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in print:bg-white print:p-0" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] print:shadow-none print:max-h-none print:-mt-10">
                         {/* Modal Header */}
-                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800 dark:border-slate-700 print:hidden">
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <FileText className="w-5 h-5 text-teal-600" /> Appointment Order
                             </h3>
@@ -457,20 +478,29 @@ const PatientAppointmentsTab = () => {
                         <div id="appointment-pdf-content" className="p-8 overflow-y-auto flex-1 bg-[#094b46] text-white">
                             <div className="text-center mb-6 pb-6 border-b border-teal-800">
                                 <h2 className="text-2xl font-bold tracking-tight text-white">SecureCare+ Hospital</h2>
-                                <p className="text-teal-200 text-sm mt-1">Official Appointment Confirmation</p>
+                                <p className="text-teal-200 text-sm mt-1">
+                                    {selectedAppointment.status === 'PENDING_ADMIN_APPROVAL' ? 'Appointment Request slip' : 'Official Appointment Confirmation'}
+                                </p>
                             </div>
 
                             <div className="space-y-4">
                                 {/* Doctor Card (Top Section) */}
-                                <div className="bg-[#125c56] p-5 rounded-2xl border border-teal-700/50 flex items-center gap-4">
-                                    <div className="w-14 h-14 rounded-2xl bg-teal-400/20 flex items-center justify-center text-xl font-bold text-teal-100">
-                                        {selectedAppointment.doctor?.firstName?.[0]}
+                                {selectedAppointment.doctor ? (
+                                    <div className="bg-[#125c56] p-5 rounded-2xl border border-teal-700/50 flex items-center gap-4">
+                                        <div className="w-14 h-14 rounded-2xl bg-teal-400/20 flex items-center justify-center text-xl font-bold text-teal-100">
+                                            {selectedAppointment.doctor?.firstName?.[0]}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-lg text-white">Dr. {selectedAppointment.doctor?.firstName} {selectedAppointment.doctor?.lastName}</p>
+                                            <p className="text-sm text-teal-200">{selectedAppointment.doctor?.specialty || 'General Practitioner'}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="font-bold text-lg text-white">Dr. {selectedAppointment.doctor?.firstName} {selectedAppointment.doctor?.lastName}</p>
-                                        <p className="text-sm text-teal-200">{selectedAppointment.doctor?.specialty || 'General Practitioner'}</p>
+                                ) : (
+                                    <div className="bg-[#125c56]/50 p-5 rounded-2xl border border-dashed border-teal-700/50 text-center">
+                                        <p className="text-teal-200 font-medium">Doctor Unassigned</p>
+                                        <p className="text-xs text-teal-400 mt-1">Waiting for admin assignment</p>
                                     </div>
-                                </div>
+                                )}
 
                                 {/* Details Grid */}
                                 <div className="grid grid-cols-2 gap-4">
@@ -479,22 +509,23 @@ const PatientAppointmentsTab = () => {
                                         <p className="font-mono text-sm font-bold text-white break-all">{selectedAppointment.appointmentId}</p>
 
                                         <p className="text-[10px] uppercase font-bold text-teal-300 tracking-wider mt-4 mb-1">Status</p>
-                                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${selectedAppointment.status === 'BOOKED' ? 'bg-teal-400/20 text-teal-100' :
-                                            selectedAppointment.status === 'VERIFIED' ? 'bg-blue-400/20 text-blue-100' :
-                                                'bg-slate-400/20 text-slate-100'
+                                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${selectedAppointment.status === 'CONFIRMED' ? 'bg-teal-400/20 text-teal-100' :
+                                                selectedAppointment.status === 'PENDING_ADMIN_APPROVAL' ? 'bg-amber-400/20 text-amber-200' :
+                                                    selectedAppointment.status === 'VERIFIED' ? 'bg-blue-400/20 text-blue-100' :
+                                                        'bg-slate-400/20 text-slate-100'
                                             }`}>
-                                            {selectedAppointment.status}
+                                            {selectedAppointment.status === 'PENDING_ADMIN_APPROVAL' ? 'PENDING APPROVAL' : selectedAppointment.status}
                                         </span>
                                     </div>
 
                                     <div className="bg-[#125c56] p-4 rounded-2xl border border-teal-700/50">
-                                        <p className="text-[10px] uppercase font-bold text-teal-300 tracking-wider mb-1">Date</p>
+                                        <p className="text-[10px] uppercase font-bold text-teal-300 tracking-wider mb-1">Requested Date</p>
                                         <p className="text-lg font-bold text-white flex items-center gap-2">
                                             {selectedAppointment.date}
                                         </p>
                                         <p className="text-[10px] uppercase font-bold text-teal-300 tracking-wider mt-4 mb-1">Time Slot</p>
                                         <p className="text-sm font-bold text-white flex items-center gap-2">
-                                            {selectedAppointment.timeSlot}
+                                            {selectedAppointment.timeSlot || 'To be determined'}
                                         </p>
                                     </div>
                                 </div>
@@ -507,12 +538,21 @@ const PatientAppointmentsTab = () => {
                                     </p>
                                 </div>
 
+                                {selectedAppointment.rejectionReason && (
+                                    <div className="bg-rose-900/30 p-4 rounded-2xl border border-rose-500/50">
+                                        <p className="text-[10px] uppercase font-bold text-rose-300 tracking-wider mb-2">Rejection Reason</p>
+                                        <p className="text-sm font-medium text-rose-100">
+                                            {selectedAppointment.rejectionReason}
+                                        </p>
+                                    </div>
+                                )}
+
                                 {/* QR Code (only visible if exists) */}
-                                {selectedAppointment.qrCode && (
+                                {selectedAppointment.status === 'CONFIRMED' && selectedAppointment.qrCode && (
                                     <div className="bg-[#125c56] p-5 rounded-2xl border border-teal-700/50 text-center mt-2">
                                         <p className="text-[10px] uppercase font-bold text-teal-300 tracking-wider mb-3">Hospital Entry QR Code</p>
                                         <div className="bg-white p-2 rounded-xl inline-block shadow-lg">
-                                            <img src={selectedAppointment.qrCode} alt="QR Code" className="w-32 h-32 object-contain" />
+                                            <img src={selectedAppointment.qrCode} alt="Hospital Entry QR Code" className="w-32 h-32 object-contain print-exact" />
                                         </div>
                                         <p className="text-xs text-teal-200 mt-3 max-w-xs mx-auto">Please present this QR code at the reception desk upon arrival.</p>
                                     </div>
@@ -521,7 +561,7 @@ const PatientAppointmentsTab = () => {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-end gap-3 rounded-b-2xl">
+                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-end gap-3 rounded-b-2xl print:hidden">
                             <button onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
                                 Close
                             </button>

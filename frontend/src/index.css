@@ -599,7 +599,48 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-300 dark:bg-slate-600;
+    @apply bg-slate-400;
+  }
+}
+
+/* ========================================
+   PRINT STYLES FOR PDF DOWNLOAD
+   ======================================== */
+@media print {
+  /* Force browsers to print all tailwind background colors and gradients */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* When printing the modal, hide the main app content behind it completely */
+  body > #root {
+    display: none !important;
+  }
+
+  /* Remove default margins/padding inside the printable modal */
+  @page {
+    margin: 0;
+    size: auto;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  
+  /* Reset modal positioning for a clean print */
+  #appointment-pdf-content {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 2rem !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 }
 
