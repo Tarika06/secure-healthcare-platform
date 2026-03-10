@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ScanLine, CheckCircle, XCircle, Search, ClipboardCheck, ArrowRight, User, Calendar, Clock } from 'lucide-react';
+import { ScanLine, CheckCircle, XCircle, ClipboardCheck, ArrowRight, User, Calendar, Clock } from 'lucide-react';
 import appointmentApi from '../../api/appointmentApi';
 
 const NurseAppointmentsTab = () => {
-    const navigate = useNavigate();
     const [qrToken, setQrToken] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -29,10 +27,7 @@ const NurseAppointmentsTab = () => {
         }
     };
 
-    const handleDemoManualScan = (demoToken) => {
-        setQrToken(demoToken);
-        // We don't auto-verify to allow the nurse to "click scan"
-    };
+
 
     return (
         <div className="tab-content max-w-4xl mx-auto">

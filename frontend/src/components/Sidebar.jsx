@@ -5,7 +5,7 @@ import {
     LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3,
     ClipboardList, Activity, Plus, Eye, Stethoscope,
     FlaskConical, Settings, Sun, Moon, ChevronLeft, ChevronRight,
-    Calendar, MailCheck, ScanLine
+    Calendar, MailCheck, ScanLine, PieChart
 } from 'lucide-react';
 import logo from '../assets/logo.png';
 import { useTheme } from '../context/ThemeContext';
@@ -19,6 +19,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
         { icon: LayoutDashboard, label: 'Dashboard', path: '/patient/dashboard', tab: 'overview' },
         { icon: Calendar, label: 'Appointments', path: '/patient/dashboard', tab: 'appointments' },
         { icon: FileText, label: 'My Records', path: '/patient/dashboard', tab: 'records' },
+        { icon: ClipboardList, label: 'My Report', path: '/patient/dashboard', tab: 'report' },
         { icon: Shield, label: 'Consent Manager', path: '/patient/dashboard', tab: 'consent', badge: pendingConsents },
         { icon: Eye, label: 'Access History', path: '/patient/dashboard', tab: 'history' },
         { icon: Shield, label: 'Privacy & GDPR', path: '/patient/dashboard', tab: 'privacy' }
@@ -35,6 +36,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
 
     const adminMenuItems = [
         { icon: BarChart3, label: 'Overview', id: 'overview' },
+        { icon: PieChart, label: 'Access Summary', id: 'summary' },
         { icon: Calendar, label: 'Appointments', id: 'appointments' },
         { icon: Users, label: 'User Management', id: 'users' },
         { icon: ClipboardList, label: 'Audit Logs', id: 'audit' }

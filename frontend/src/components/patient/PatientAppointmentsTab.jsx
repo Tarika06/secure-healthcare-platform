@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Calendar, Clock, User, FileText, CheckCircle, XCircle, AlertCircle, CalendarDays, Download, Printer } from 'lucide-react';
+import { Calendar, Clock, FileText, CheckCircle, XCircle, AlertCircle, CalendarDays, Download, Printer } from 'lucide-react';
 import appointmentApi from '../../api/appointmentApi';
 import apiClient from '../../api/client';
 import html2pdf from 'html2pdf.js';

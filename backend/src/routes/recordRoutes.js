@@ -21,6 +21,7 @@ const auditService = require("../services/auditService");
 const ArchivedRecord = require("../models/ArchivedRecord");
 const archivalService = require("../services/archivalService");
 const { decryptRecord, encryptRecordFields } = require("../services/encryptionService");
+const { filterRecordsByPurpose, PURPOSE_LABELS } = require("../middleware/validatePurpose");
 
 /**
  * POST /api/records/create
@@ -32,7 +33,7 @@ router.post(
     authorizeByUserId(["D", "L"]),
     async (req, res) => {
         try {
-            const { patientId, title, diagnosis, details, prescription, recordType } = req.body;
+            const { patientId, title, diagnosis, details, prescription, recordType, purpose } = req.body;
             const doctorId = req.user.userId;
 
             const patient = await User.findOne({ userId: patientId });
@@ -50,6 +51,7 @@ router.post(
                 details: encryptedData.details,
                 prescription: encryptedData.prescription,
                 recordType: recordType || "GENERAL",
+                purpose: purpose || "TREATMENT",
                 createdBy: doctorId
             });
 
@@ -230,23 +232,52 @@ router.get(
             const patient = await User.findOne({ userId: patientId });
             if (!patient) return res.status(404).json({ message: "Patient not found" });
 
-            const consent = await Consent.findOne({ patientId, doctorId, status: "ACTIVE" });
-            const hasConsent = !!consent;
+            // Find ALL active consents for this doctor-patient pair (may have multiple purposes)
+            const consents = await Consent.find({ patientId, doctorId, status: "ACTIVE" });
+            const hasConsent = consents.length > 0;
+
             const allRecords = await MedicalRecord.find({ patientId }).sort({ createdAt: -1 }).lean();
+
+            const ownRecords = allRecords.filter(r => r.createdBy === doctorId);
 
             let accessibleRecords;
             let accessInfo;
 
             if (hasConsent) {
-                accessibleRecords = allRecords.map(record => decryptRecord(record));
-                accessInfo = { consentStatus: "ACTIVE", fullAccess: true, message: "Full access granted via patient consent" };
+                // PURPOSE-BASED FILTERING (GDPR Art. 5(1)(b))
+                // Only show records whose purpose matches the consented purpose(s)
+                const consentedPurposes = consents.map(c => c.purpose);
+                const purposeFiltered = allRecords.filter(record => {
+                    const recordPurpose = record.purpose || "TREATMENT";
+                    return consentedPurposes.includes(recordPurpose);
+                });
+                const deniedByPurpose = allRecords.filter(record => {
+                    const recordPurpose = record.purpose || "TREATMENT";
+                    return !consentedPurposes.includes(recordPurpose);
+                });
+
+                accessibleRecords = purposeFiltered.map(record => decryptRecord(record));
+                accessInfo = {
+                    consentStatus: "ACTIVE",
+                    fullAccess: deniedByPurpose.length === 0,
+                    purposeFiltered: true,
+                    consentedPurposes: consentedPurposes.map(p => ({ code: p, label: PURPOSE_LABELS[p] })),
+                    message: deniedByPurpose.length === 0
+                        ? `Full access granted for purpose(s): ${consentedPurposes.map(p => PURPOSE_LABELS[p]).join(", ")}`
+                        : `Showing records for consented purpose(s): ${consentedPurposes.map(p => PURPOSE_LABELS[p]).join(", ")}`,
+                    hiddenRecordCount: deniedByPurpose.length,
+                    hiddenPurposes: [...new Set(deniedByPurpose.map(r => r.purpose || "TREATMENT"))]
+                        .map(p => ({ code: p, label: PURPOSE_LABELS[p] }))
+                };
             } else {
-                accessibleRecords = allRecords.filter(r => r.createdBy === doctorId).map(record => decryptRecord(record));
+                // No consent: show only own records
+                accessibleRecords = ownRecords.map(record => decryptRecord(record));
                 accessInfo = {
                     consentStatus: "NONE",
                     fullAccess: false,
-                    message: "Showing only records you created.",
-                    hiddenRecordCount: allRecords.length - accessibleRecords.length
+                    purposeFiltered: false,
+                    message: "Showing only records you created. Request consent for full access.",
+                    hiddenRecordCount: allRecords.length - ownRecords.length
                 };
             }
 
@@ -257,7 +288,15 @@ router.get(
                 method: "GET",
                 outcome: "SUCCESS",
                 targetUserId: patientId,
-                details: { hasConsent, totalRecords: allRecords.length, accessibleRecords: accessibleRecords.length }
+                details: {
+                    hasConsent,
+                    consentedPurposes: hasConsent ? consents.map(c => c.purpose) : [],
+                    totalRecords: allRecords.length,
+                    accessibleRecords: accessibleRecords.length,
+                    accessType: hasConsent ? "PURPOSE_FILTERED" : "OWN_RECORDS_ONLY",
+                    purposeFilterApplied: hasConsent
+                },
+                complianceCategory: "HIPAA"
             });
 
             res.json({ records: accessibleRecords, accessInfo, patientInfo: { userId: patient.userId, name: `${patient.firstName} ${patient.lastName}` } });

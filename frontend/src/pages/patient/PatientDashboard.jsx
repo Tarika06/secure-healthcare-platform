@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     FileText, Shield, Bell, CheckCircle, XCircle, LayoutDashboard,
-    Eye, Heart, Clock, Activity, User, Download, Trash2,
-    ArrowRight, Sun, Moon, Sparkles, KeyRound, AlertTriangle,
-    ShieldAlert, Smartphone, Lock, Unlock, X, TrendingUp, Calendar, ScanLine, XCircle as XCircleIcon
+    Eye, Heart, Clock, Activity, Download, Trash2,
+    ArrowRight, Sparkles, KeyRound, AlertTriangle,
+    ShieldAlert, Smartphone, Lock, X, Calendar, ScanLine,
+    Target, ClipboardList, Stethoscope
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import MedicalCard from '../../components/MedicalCard';
@@ -13,6 +14,30 @@ import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
 import gdprApi from '../../api/gdprApi';
 import PatientAppointmentsTab from '../../components/patient/PatientAppointmentsTab';
+
+// Helper Components
+const StatCard = ({ icon: Icon, label, value, gradient, delay }) => {
+    return (
+        <div className={`glass-card group transition-all duration-700 animate-fade-in`} style={{ animationDelay: `${delay}ms` }}>
+            <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-500`}>
+                    {React.createElement(Icon, { className: "w-6 h-6" })}
+                </div>
+                <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">{value}</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+};
 
 const PatientDashboard = () => {
     const { user, logout } = useAuth();
@@ -25,22 +50,27 @@ const PatientDashboard = () => {
     const [activeConsents, setActiveConsents] = useState([]);
     const [accessHistory, setAccessHistory] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [mounted, setMounted] = useState(false);
+    const [downloading, setDownloading] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [deletionStep, setDeletionStep] = useState(null);
+    const [cancelling, setCancelling] = useState(false);
 
-    // Deletion workflow state
+    // Reports Branch State
+    const [healthReport, setHealthReport] = useState(null);
+    const [reportLoading, setReportLoading] = useState(false);
+
+    // Deletion workflow state (Main Branch)
     const [deletionStatus, setDeletionStatus] = useState(null);
     const [showMfaModal, setShowMfaModal] = useState(false);
     const [mfaCode, setMfaCode] = useState('');
     const [mfaError, setMfaError] = useState('');
     const [mfaVerifying, setMfaVerifying] = useState(false);
-    const [deletionStep, setDeletionStep] = useState(null);
     const [notifications, setNotifications] = useState([]);
     const [authNotifications, setAuthNotifications] = useState([]);
-    const [cancelling, setCancelling] = useState(false);
     const [showMobileSim, setShowMobileSim] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
-    const isDark = document.documentElement.classList.contains('dark');
+    const isHealthFlowTheme = user?.userId === 'P001';
 
     useEffect(() => {
         setMounted(true);
@@ -86,9 +116,18 @@ const PatientDashboard = () => {
         } catch (e) { console.error('Notifications error:', e); }
     }, []);
 
+    const fetchHealthReport = useCallback(async () => {
+        setReportLoading(true);
+        try {
+            const response = await apiClient.get('/patient/health-report');
+            setHealthReport(response.data.report);
+        } catch (error) { console.error('Error fetching health report:', error); }
+        finally { setReportLoading(false); }
+    }, []);
+
     useEffect(() => {
-        Promise.all([fetchRecords(), fetchConsents()]).finally(() => setLoading(false));
-    }, [fetchRecords, fetchConsents]);
+        Promise.all([fetchRecords(), fetchConsents(), fetchNotifications()]).finally(() => setLoading(false));
+    }, [fetchRecords, fetchConsents, fetchNotifications]);
 
     useEffect(() => {
         if (activeTab === 'history') fetchAccessHistory();
@@ -96,7 +135,8 @@ const PatientDashboard = () => {
             fetchDeletionStatus();
             fetchNotifications();
         }
-    }, [activeTab, fetchAccessHistory, fetchDeletionStatus, fetchNotifications]);
+        if (activeTab === 'report' && !healthReport) fetchHealthReport();
+    }, [activeTab, fetchAccessHistory, fetchDeletionStatus, fetchNotifications, healthReport, fetchHealthReport]);
 
     const handleGrantConsent = async (consentId) => {
         try { await consentApi.grantConsent(consentId); await fetchConsents(); }
@@ -120,6 +160,7 @@ const PatientDashboard = () => {
     };
 
     const handleDownloadData = async (format) => {
+        setDownloading(true);
         try {
             if (format === 'json') {
                 const data = await gdprApi.getPersonalData();
@@ -145,7 +186,7 @@ const PatientDashboard = () => {
         } catch (error) {
             console.error('Download error:', error);
             alert('Failed to download data.');
-        }
+        } finally { setDownloading(false); }
     };
 
     const handleDeleteAccount = async () => {
@@ -206,17 +247,6 @@ const PatientDashboard = () => {
             fetchNotifications();
         } catch (e) { console.error('Acknowledge failed:', e); }
     };
-
-    const isHealthFlowTheme = user?.userId === 'P001';
-
-    const tabs = [
-        { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-        { id: 'appointments', label: 'Appointments', icon: Calendar },
-        { id: 'records', label: 'Records', icon: FileText },
-        { id: 'consent', label: 'Consent', icon: Shield, badge: pendingConsents.length },
-        { id: 'history', label: 'Access Log', icon: Eye },
-        { id: 'privacy', label: 'Privacy', icon: Shield }
-    ];
 
     const MobileAppSimulator = () => {
         const [showVault, setShowVault] = useState(false);
@@ -279,44 +309,93 @@ const PatientDashboard = () => {
     );
 
     return (
-        <div className={`flex min-h-screen ${isHealthFlowTheme ? 'health-flow-bg' : 'bg-slate-50 dark:bg-slate-950'} transition-colors duration-500`}>
-            <Sidebar role="PATIENT" onLogout={handleLogout} pendingConsents={pendingConsents.length} user={user} />
+        <div className={`flex h-screen overflow-hidden ${isHealthFlowTheme ? 'health-flow-bg' : 'dashboard-glass-bg'} transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+            <Sidebar
+                role="PATIENT"
+                onLogout={handleLogout}
+                pendingConsents={pendingConsents.length}
+                user={user}
+                activeItem={activeTab}
+                onItemClick={(id) => navigate(`/patient/dashboard?tab=${id}`)}
+                items={[
+                    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+                    { id: 'appointments', label: 'Appointments', icon: Calendar },
+                    { id: 'records', label: 'Records', icon: FileText },
+                    { id: 'report', label: 'My Report', icon: ClipboardList },
+                    { id: 'consent', label: 'Consent', icon: Shield, badge: pendingConsents.length },
+                    { id: 'history', label: 'Access Log', icon: Eye },
+                    { id: 'privacy', label: 'Privacy', icon: Shield }
+                ]}
+            />
 
-            <div className="flex-1 overflow-y-auto relative">
-                <div className="max-w-7xl mx-auto px-6 py-8">
+            <main className="flex-1 overflow-y-auto relative">
+                <div className="max-w-[1600px] mx-auto w-full p-8">
                     {/* Header */}
-                    <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center justify-between mb-8 animate-fade-in">
                         <div>
-                            <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Patient Portal</h1>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium">Hello, {user.firstName}. Welcome back.</p>
+                            <div className="flex items-center gap-2 mb-1">
+                                <Sparkles className="w-5 h-5 text-teal-500" />
+                                <span className="text-sm font-medium text-teal-600 uppercase tracking-widest">{getGreeting()}</span>
+                            </div>
+                            <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+                                Welcome back, <span className="text-gradient">{user.firstName}</span>
+                            </h1>
                         </div>
-                        <div className="flex items-center gap-3 p-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
-                            <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white font-bold">{user.firstName?.[0]}{user.lastName?.[0]}</div>
-                            <div className="hidden sm:block"><p className="text-xs font-black text-slate-400 uppercase leading-none mb-1">Authenticated</p><p className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-none">{user.userId}</p></div>
+                        <div className="flex items-center gap-4 group">
+                            <div className="text-right hidden sm:block">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Authenticated</p>
+                                <p className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-none">{user.userId}</p>
+                            </div>
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white font-black text-xl shadow-lg group-hover:rotate-6 transition-transform">
+                                {user.firstName?.[0]}{user.lastName?.[0]}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Stats Summary (Overview Tab Only) */}
-                    {activeTab === 'overview' && (
-                        <div className="grid md:grid-cols-3 gap-6 mb-8">
-                            <div className="glass-card flex items-center gap-4 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10"><div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20"><FileText className="w-6 h-6" /></div><div><p className="text-xs font-bold text-slate-500 uppercase">Records</p><p className="text-2xl font-black text-slate-900 dark:text-white">{records.length}</p></div></div>
-                            <div className="glass-card flex items-center gap-4 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-900/10 dark:to-teal-900/10"><div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20"><Shield className="w-6 h-6" /></div><div><p className="text-xs font-bold text-slate-500 uppercase">Consents</p><p className="text-2xl font-black text-slate-900 dark:text-white">{activeConsents.length}</p></div></div>
-                            <div className="glass-card flex items-center gap-4 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/10 dark:to-orange-900/10"><div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/20"><Clock className="w-6 h-6" /></div><div><p className="text-xs font-bold text-slate-500 uppercase">Pending</p><p className="text-2xl font-black text-slate-900 dark:text-white">{pendingConsents.length}</p></div></div>
-                        </div>
-                    )}
-
                     {/* Content Logic */}
                     {activeTab === 'overview' && (
-                        <div className="animate-fade-in space-y-8">
+                        <div className="space-y-8">
+                            {/* Stats Summary */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <StatCard icon={FileText} label="Total Records" value={records.length} gradient="from-blue-500 to-indigo-600" delay={100} />
+                                <StatCard icon={Shield} label="Active Consents" value={activeConsents.length} gradient="from-emerald-500 to-green-600" delay={200} />
+                                <StatCard icon={Bell} label="Pending Requests" value={pendingConsents.length} gradient="from-amber-500 to-orange-600" delay={300} />
+                                <StatCard icon={Activity} label="Access Events" value={accessHistory.length} gradient="from-violet-500 to-purple-600" delay={400} />
+                            </div>
+
+                            {/* Pending Consent Alert */}
                             {pendingConsents.length > 0 && (
-                                <div className="p-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-3xl flex items-center justify-between">
-                                    <div className="flex items-center gap-4"><div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-800 flex items-center justify-center"><Bell className="w-7 h-7 text-amber-600" /></div><div><p className="font-bold text-amber-900 dark:text-amber-200">Pending Consent Requests</p><p className="text-sm text-amber-700">Healthcare providers are requesting access to your records.</p></div></div>
-                                    <button onClick={() => navigate('/patient/dashboard?tab=consent')} className="btn-primary py-2.5 px-6">Review</button>
+                                <div className="glass-card border-l-4 border-amber-400 bg-gradient-to-r from-amber-50/80 to-orange-50/50 animate-fade-in">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20">
+                                                <Bell className="w-6 h-6 text-white" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-amber-900">{pendingConsents.length} pending consent request{pendingConsents.length > 1 ? 's' : ''}</p>
+                                                <p className="text-amber-700 text-sm">Healthcare providers are waiting for your approval to access your records.</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => navigate('/patient/dashboard?tab=consent')} className="btn-primary py-2.5 px-6 flex items-center gap-2">
+                                            Review <ArrowRight className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             )}
-                            <div>
-                                <div className="flex items-center justify-between mb-6"><h3 className="text-2xl font-black text-slate-900 dark:text-white">Recent Activity</h3><button onClick={() => navigate('/patient/dashboard?tab=records')} className="text-blue-600 font-bold hover:underline">View All</button></div>
-                                <div className="grid gap-4">{records.length === 0 ? <div className="glass-card text-center py-16"><FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500">No medical records on file.</p></div> : records.slice(0, 3).map(r => <MedicalCard key={r._id} record={r} />)}</div>
+
+                            <div className="grid grid-cols-12 gap-8">
+                                <div className="col-span-12 lg:col-span-8 space-y-6">
+                                    <div className="flex items-center justify-between"><h3 className="text-2xl font-black text-slate-900 dark:text-white">Recent Records</h3><button onClick={() => navigate('/patient/dashboard?tab=records')} className="text-primary-600 font-bold hover:underline flex items-center gap-1 group">View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></button></div>
+                                    <div className="grid gap-4">{records.length === 0 ? <div className="glass-card text-center py-24"><FileText className="w-16 h-16 text-slate-200 mx-auto mb-4" /><p className="text-slate-500 font-medium">Your health timeline is empty.</p></div> : records.slice(0, 3).map(r => <MedicalCard key={r._id} record={r} />)}</div>
+                                </div>
+                                <div className="col-span-12 lg:col-span-4 space-y-6">
+                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">Security Snapshot</h3>
+                                    <div className="glass-card bg-indigo-50/50 border-indigo-100">
+                                        <div className="flex items-center gap-3 mb-4"><div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white"><Shield className="w-5 h-5" /></div><p className="font-bold text-indigo-900">Device Protection</p></div>
+                                        <p className="text-indigo-700 text-sm leading-relaxed mb-4">Your account is protected by hardware-bound MFA and end-to-end encryption. Only you and authorized providers can decrypt your records.</p>
+                                        <button onClick={() => setShowMobileSim(true)} className="w-full py-3 bg-white border border-indigo-200 rounded-xl text-indigo-600 font-bold text-sm hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"><Smartphone className="w-4 h-4" /> Open Authenticator</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -329,23 +408,33 @@ const PatientDashboard = () => {
 
                     {activeTab === 'records' && (
                         <div className="animate-fade-in space-y-6">
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white">My Medical Records</h2>
-                            <div className="grid gap-4">{records.map(r => <MedicalCard key={r._id} record={r} />)}</div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white">My Medical Records</h2>
+                                    <p className="text-slate-500 font-medium">Chronological view of your clinical documentation.</p>
+                                </div>
+                                <div className="p-2 bg-slate-100 rounded-xl flex items-center gap-2"><ScanLine className="w-5 h-5 text-slate-400" /><span className="text-xs font-bold text-slate-500 mr-2">HIPAA COMPLIANT</span></div>
+                            </div>
+                            <div className="grid gap-4">{records.length === 0 ? <div className="glass-card text-center py-32 text-slate-400">No medical records found.</div> : records.map(r => <MedicalCard key={r._id} record={r} />)}</div>
                         </div>
                     )}
 
                     {activeTab === 'consent' && (
-                        <div className="animate-fade-in space-y-10">
+                        <div className="animate-fade-in space-y-12">
                             <div>
-                                <h2 className="text-2xl font-black mb-6 flex items-center gap-3"><Bell className="w-6 h-6 text-amber-500" /> Pending Approval</h2>
-                                {pendingConsents.length === 0 ? <div className="glass-card text-center py-12 text-slate-500">No pending access requests</div> : <div className="grid gap-4">{pendingConsents.map(c => (
-                                    <div key={c._id} className="glass-card flex items-center justify-between p-6"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-2xl bg-blue-500 flex items-center justify-center text-white font-bold text-2xl">{c.doctor?.firstName?.[0]}</div><div><p className="text-lg font-black text-slate-900 dark:text-white">Dr. {c.doctor?.firstName} {c.doctor?.lastName}</p><p className="text-sm text-slate-500 font-bold uppercase">{c.doctor?.specialty}</p></div></div><div className="flex gap-2"><button onClick={() => handleGrantConsent(c._id)} className="btn-primary py-2.5 px-6">Approve</button><button onClick={() => handleDenyConsent(c._id)} className="btn-danger py-2.5 px-6">Deny</button></div></div>
+                                <h2 className="text-2xl font-black mb-8 flex items-center gap-3"><Bell className="w-7 h-7 text-amber-500" /> Pending Approval</h2>
+                                {pendingConsents.length === 0 ? <div className="glass-card text-center py-16 text-slate-400">No pending access requests</div> : <div className="grid gap-6">{pendingConsents.map(c => (
+                                    <div key={c._id} className="glass-card flex items-center justify-between p-6 border-l-4 border-amber-400"><div className="flex items-center gap-5"><div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-white font-black text-2xl shadow-lg">{c.doctor?.firstName?.[0]}</div><div><p className="text-xl font-black text-slate-900 dark:text-white">Dr. {c.doctor?.firstName} {c.doctor?.lastName}</p><div className="flex items-center gap-2 mt-1"><span className="text-xs font-black text-primary-600 bg-primary-50 px-2 py-0.5 rounded-md uppercase">{c.doctor?.specialty}</span><span className="text-xs text-slate-500">• Requested {new Date(c.requestedAt).toLocaleDateString()}</span></div>
+                                        {c.purpose && <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-violet-600 bg-violet-50 w-fit px-2.5 py-1 rounded-full"><Target className="w-3.5 h-3.5" /> Purpose: {c.purpose}</div>}
+                                    </div></div><div className="flex gap-4"><button onClick={() => handleGrantConsent(c._id)} className="btn-primary py-3 px-8 shadow-lg shadow-primary-500/20">Grant Access</button><button onClick={() => handleDenyConsent(c._id)} className="btn-danger-outline py-3 px-8">Deny</button></div></div>
                                 ))}</div>}
                             </div>
-                            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-                                <h2 className="text-2xl font-black mb-6 flex items-center gap-3"><CheckCircle className="w-6 h-6 text-emerald-500" /> Authorized Doctors</h2>
-                                {activeConsents.length === 0 ? <div className="glass-card text-center py-12 text-slate-500">No active authorizations</div> : <div className="grid gap-4">{activeConsents.map(c => (
-                                    <div key={c._id} className="glass-card flex items-center justify-between p-6"><div className="flex items-center gap-4"><div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center text-white font-bold text-2xl">{c.doctor?.firstName?.[0]}</div><div><p className="text-lg font-black text-slate-900 dark:text-white">Dr. {c.doctor?.firstName} {c.doctor?.lastName}</p><p className="text-sm text-slate-500">Authorized since {new Date(c.respondedAt).toLocaleDateString()}</p></div></div><button onClick={() => handleRevokeConsent(c._id)} className="text-red-500 font-bold hover:underline">Revoke Access</button></div>
+                            <div className="pt-10 border-t border-slate-100 dark:border-slate-800">
+                                <h2 className="text-2xl font-black mb-8 flex items-center gap-3"><CheckCircle className="w-7 h-7 text-emerald-500" /> Authorized Doctors</h2>
+                                {activeConsents.length === 0 ? <div className="glass-card text-center py-16 text-slate-400">No active authorizations</div> : <div className="grid gap-6">{activeConsents.map(c => (
+                                    <div key={c._id} className="glass-card flex items-center justify-between p-6 border-l-4 border-emerald-400"><div className="flex items-center gap-5"><div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-2xl shadow-lg">{c.doctor?.firstName?.[0]}</div><div><p className="text-xl font-black text-slate-900 dark:text-white">Dr. {c.doctor?.firstName} {c.doctor?.lastName}</p><p className="text-sm text-slate-500 mt-1 font-medium">Access granted on {new Date(c.respondedAt).toLocaleDateString()}</p>
+                                        {c.purpose && <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-violet-600 bg-violet-50 w-fit px-2.5 py-1 rounded-full"><Target className="w-3.5 h-3.5" /> Purpose: {c.purpose}</div>}
+                                    </div></div><button onClick={() => handleRevokeConsent(c._id)} className="text-red-500 font-black hover:underline px-4 py-2 hover:bg-red-50 rounded-xl transition-colors">Revoke Access</button></div>
                                 ))}</div>}
                             </div>
                         </div>
@@ -353,41 +442,211 @@ const PatientDashboard = () => {
 
                     {activeTab === 'history' && (
                         <div className="animate-fade-in space-y-6">
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Data Access History</h2>
-                            <div className="grid gap-4">{accessHistory.length === 0 ? <div className="glass-card text-center py-20 text-slate-400">No one has accessed your data recently.</div> : accessHistory.map((log, i) => (
-                                <div key={i} className="glass-card flex items-center justify-between p-6"><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500"><Eye className="w-6 h-6" /></div><div><p className="font-black text-slate-900 dark:text-white">{log.accessedBy?.userId} ({log.accessedBy?.role})</p><p className="text-sm text-slate-500">Audit logged via HIPAA compliance engine</p></div></div><div className="text-right font-mono text-sm"><p className="font-bold text-slate-700 dark:text-slate-300">{new Date(log.accessedAt).toLocaleDateString()}</p><p className="text-xs text-slate-500">{new Date(log.accessedAt).toLocaleTimeString()}</p></div></div>
+                            <div className="mb-8">
+                                <h2 className="text-3xl font-black text-slate-900 dark:text-white">Data Access History</h2>
+                                <p className="text-slate-500 font-medium">HIPAA required audit trail of all clinical record access.</p>
+                            </div>
+                            <div className="grid gap-4">{accessHistory.length === 0 ? <div className="glass-card text-center py-32 text-slate-200"><Eye className="w-20 h-20 mx-auto mb-4" /><p className="text-slate-500 font-medium">No one has accessed your records yet.</p></div> : accessHistory.map((log, i) => (
+                                <div key={i} className="glass-card flex items-center justify-between p-6 hover:translate-x-1 transition-transform cursor-pointer"><div className="flex items-center gap-5"><div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400"><Eye className="w-7 h-7" /></div><div><p className="font-black text-slate-900 dark:text-white text-lg">{log.accessedBy?.name || log.accessedBy?.userId}</p><p className="text-xs font-black text-slate-400 uppercase tracking-widest">{log.accessedBy?.role} • AUDIT VERIFIED</p></div></div><div className="text-right font-mono text-sm"><p className="font-black text-slate-700 dark:text-slate-300">{new Date(log.accessedAt).toLocaleDateString()}</p><p className="text-xs text-slate-500 font-bold">{new Date(log.accessedAt).toLocaleTimeString()}</p></div></div>
                             ))}</div>
                         </div>
                     )}
 
-                    {activeTab === 'privacy' && (
-                        <div className="animate-fade-in space-y-8">
-                            <div className="mb-4">
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Privacy Control Center</h2>
-                                <p className="text-slate-500 font-medium">Manage your right to access and erasure (GDPR/HIPAA Compliance)</p>
+                    {activeTab === 'report' && (
+                        <div className="space-y-8 animate-fade-in">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white">Personal Health Report</h2>
+                                    <p className="text-slate-500 font-medium">Data-driven insights from across your clinical records.</p>
+                                </div>
+                                <button onClick={fetchHealthReport} disabled={reportLoading} className="btn-secondary flex items-center gap-2 py-3 px-6 shadow-sm">
+                                    {reportLoading ? <div className="w-5 h-5 border-3 border-primary-400 border-t-transparent rounded-full animate-spin" /> : <Activity className="w-5 h-5" />}
+                                    Refresh Intel
+                                </button>
                             </div>
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="glass-card border-l-4 border-blue-500"><div className="flex items-start gap-4"><div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0 animate-pulse"><Download className="w-8 h-8" /></div><div><h3 className="text-lg font-black text-slate-900 dark:text-white">Data Portability</h3><p className="text-sm text-slate-500 mt-1 mb-6">Request a complete copy of all your medical data and personal information in PDF or JSON format.</p><div className="flex gap-4"><button onClick={() => handleDownloadData('pdf')} className="btn-primary py-2.5 px-6">Export PDF</button><button onClick={() => handleDownloadData('json')} className="btn-secondary py-2.5 px-6">JSON Archive</button></div></div></div></div>
-                                <div className="glass-card border-l-4 border-red-500"><div className="flex items-start gap-4"><div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center text-red-600 flex-shrink-0"><Trash2 className="w-8 h-8" /></div><div><h3 className="text-lg font-black text-slate-900 dark:text-white">Right to Erasure</h3><p className="text-sm text-slate-500 mt-1 mb-6">Permanently delete your account and associated records. This process follows a 7-day security cooling period.</p><button onClick={handleDeleteAccount} className="btn-danger py-2.5 px-6">Initiate Deletion</button></div></div></div>
-                            </div>
-                            {deletionStatus?.hasPendingDeletion && (
-                                <div className="p-6 bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-900 rounded-3xl animate-pulse"><div className="flex items-center justify-between"><div className="flex items-center gap-4"><AlertTriangle className="w-8 h-8 text-red-600" /><div><p className="font-black text-red-900 dark:text-red-200">Account Scheduled for Deletion</p><p className="text-sm text-red-700">{deletionStatus.daysRemaining} days remaining in cooling period.</p></div></div><button onClick={handleCancelDeletion} className="btn-primary py-2 px-6">Cancel Deletion</button></div></div>
+
+                            {reportLoading ? (
+                                <div className="flex items-center justify-center py-40">
+                                    <div className="w-16 h-16 border-4 border-violet-100 border-t-violet-600 rounded-full animate-spin" />
+                                </div>
+                            ) : healthReport ? (
+                                <>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                        <StatCard icon={FileText} label="Total Records" value={healthReport.summary.totalRecords} gradient="from-blue-500 to-indigo-600" delay={100} />
+                                        <StatCard icon={Stethoscope} label="Providers" value={healthReport.summary.totalDoctors} gradient="from-teal-500 to-emerald-600" delay={200} />
+                                        <StatCard icon={Shield} label="Active Consents" value={healthReport.summary.activeConsents} gradient="from-emerald-500 to-green-600" delay={300} />
+                                        <StatCard icon={Heart} label="Care Notes" value={healthReport.summary.totalCareNotes} gradient="from-rose-500 to-pink-600" delay={400} />
+                                    </div>
+
+                                    <div className="grid grid-cols-12 gap-8">
+                                        <div className="col-span-12 lg:col-span-6 space-y-6">
+                                            <div className="glass-card">
+                                                <div className="flex items-center gap-3 mb-8"><div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white shadow-lg"><FileText className="w-5 h-5" /></div><h3 className="text-xl font-black text-slate-900">Records by Type</h3></div>
+                                                <div className="space-y-6">
+                                                    {Object.entries(healthReport.recordsByType).map(([type, count]) => {
+                                                        const maxCount = Math.max(...Object.values(healthReport.recordsByType), 1);
+                                                        const pct = (count / maxCount) * 100;
+                                                        const colors = {
+                                                            LAB_RESULT: 'from-amber-400 to-orange-500',
+                                                            PRESCRIPTION: 'from-blue-400 to-indigo-500',
+                                                            DIAGNOSIS: 'from-red-400 to-rose-500',
+                                                            IMAGING: 'from-purple-400 to-violet-500',
+                                                            VITALS: 'from-green-400 to-emerald-500',
+                                                            GENERAL: 'from-slate-400 to-gray-500'
+                                                        };
+                                                        return (
+                                                            <div key={type}>
+                                                                <div className="flex justify-between mb-2"><span className="text-sm font-black text-slate-700 uppercase tracking-widest">{type.replace(/_/g, ' ')}</span><span className="text-sm font-black text-slate-400">{count}</span></div>
+                                                                <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden"><div className={`h-full rounded-full bg-gradient-to-r ${colors[type] || 'from-slate-400 to-gray-500'} transition-all duration-1000 ease-out`} style={{ width: `${pct}%` }} /></div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="col-span-12 lg:col-span-6 space-y-6">
+                                            <div className="glass-card">
+                                                <div className="flex items-center gap-3 mb-8"><div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center text-white shadow-lg"><Target className="w-5 h-5" /></div><h3 className="text-xl font-black text-slate-900">Records by Purpose</h3></div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    {Object.entries(healthReport.recordsByPurpose).map(([purpose, count]) => (
+                                                        <div key={purpose} className="p-5 rounded-2xl bg-violet-50 border border-violet-100 group hover:bg-violet-100 transition-colors">
+                                                            <p className="text-[10px] font-black text-violet-500 uppercase tracking-widest mb-1">{purpose}</p>
+                                                            <p className="text-3xl font-black text-violet-900">{count}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="glass-card border-l-4 border-teal-500 bg-teal-50/30">
+                                        <div className="flex items-start gap-4">
+                                            <Shield className="w-8 h-8 text-teal-600 flex-shrink-0" />
+                                            <div>
+                                                <p className="font-black text-teal-900 text-lg">Privacy & Compliance Intel</p>
+                                                <p className="text-teal-700 text-sm mt-1 leading-relaxed">{healthReport.complianceNote}</p>
+                                                {healthReport.summary.dateRange.oldest && (
+                                                    <p className="text-teal-600 text-xs font-bold mt-3 uppercase tracking-widest">
+                                                        Analyzed: {new Date(healthReport.summary.dateRange.oldest).toLocaleDateString()} — {new Date(healthReport.summary.dateRange.newest).toLocaleDateString()}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="glass-card text-center py-32">
+                                    <ClipboardList className="w-20 h-20 text-slate-100 mx-auto mb-6" />
+                                    <h3 className="text-2xl font-black text-slate-800 mb-2">No Intel Available</h3>
+                                    <p className="text-slate-500 font-medium max-w-md mx-auto">Your personal health report will populate automatically as clinicians add records and data to your secure profile.</p>
+                                </div>
                             )}
                         </div>
                     )}
+
+                    {activeTab === 'privacy' && (
+                        <div className="animate-fade-in space-y-10">
+                            <div className="mb-4">
+                                <h2 className="text-3xl font-black text-slate-900 dark:text-white">Privacy Control Center</h2>
+                                <p className="text-slate-500 font-medium">Exercise your rights under GDPR Articles 15, 17, and 20.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div className="glass-card border-l-4 border-primary-500 group relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Download className="w-32 h-32 text-primary-900" /></div>
+                                    <div className="relative z-10 flex flex-col h-full">
+                                        <div className="w-16 h-16 rounded-2xl bg-primary-100 text-primary-600 flex items-center justify-center mb-6 shadow-sm"><Download className="w-8 h-8" /></div>
+                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Data Portability</h3>
+                                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">Request a complete copy of all your medical data and personal information in a structured, machine-readable JSON or a readable PDF report.</p>
+                                        <div className="mt-auto flex flex-wrap gap-4">
+                                            <button onClick={() => handleDownloadData('pdf')} disabled={downloading} className="btn-primary py-3 px-8 shadow-lg shadow-primary-500/20 flex items-center gap-2">
+                                                {downloading ? <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" /> : <FileText className="w-5 h-5" />}
+                                                Export PDF
+                                            </button>
+                                            <button onClick={() => handleDownloadData('json')} disabled={downloading} className="btn-secondary py-3 px-8 flex items-center gap-2">
+                                                {downloading ? <div className="w-5 h-5 border-3 border-primary-400 border-t-transparent rounded-full animate-spin" /> : <ScanLine className="w-5 h-5" />}
+                                                JSON Archive
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="glass-card border-l-4 border-red-500 group relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Trash2 className="w-32 h-32 text-red-900" /></div>
+                                    <div className="relative z-10 flex flex-col h-full">
+                                        <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-6 shadow-sm"><Trash2 className="w-8 h-8" /></div>
+                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Right to Erasure</h3>
+                                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">Permanently delete your account and all associated health records. This process includes a 7-day security cooling period to prevent accidental loss.</p>
+                                        <div className="mt-auto">
+                                            <button onClick={handleDeleteAccount} disabled={deleting} className="btn-danger py-3 px-8 shadow-lg shadow-red-500/20">
+                                                {deleting ? 'Initiating...' : 'Initiate Deletion'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {deletionStatus?.hasPendingDeletion && (
+                                <div className="p-8 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-2 border-red-200 dark:border-red-900 rounded-[2.5rem] animate-pulse relative overflow-hidden">
+                                    <div className="absolute -right-10 -bottom-10 opacity-10"><AlertTriangle className="w-48 h-48 text-red-900" /></div>
+                                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                                        <div className="flex items-center gap-6 text-center md:text-left">
+                                            <div className="w-16 h-16 rounded-3xl bg-red-500 flex items-center justify-center text-white shadow-xl flex-shrink-0 animate-bounce"><AlertTriangle className="w-10 h-10" /></div>
+                                            <div>
+                                                <p className="text-2xl font-black text-red-900 dark:text-red-200 leading-tight">Account Scheduled for Purge</p>
+                                                <p className="text-red-700 font-bold mt-1 uppercase tracking-widest text-xs">
+                                                    {deletionStatus.daysRemaining} days remaining in cooling period (GDPR Safeload)
+                                                    {deletionStep && ` • Stage: ${deletionStep}`}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button onClick={handleCancelDeletion} disabled={cancelling} className="btn-primary py-4 px-10 whitespace-nowrap shadow-xl">
+                                            {cancelling ? 'Stopping...' : 'Stop Deletion Request'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="glass-card bg-slate-50 border-slate-200">
+                                <h4 className="text-lg font-black text-slate-800 mb-4 flex items-center gap-2"><Lock className="w-5 h-5 text-primary-600" /> Security Log Notifications</h4>
+                                <div className="space-y-3">
+                                    {notifications.length === 0 ? <p className="text-sm text-slate-400 italic">No recent privacy notifications.</p> : notifications.map((n, i) => (
+                                        <div key={i} className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm"><div className={`w-2 h-2 rounded-full mt-2 ${n.severity === 'critical' ? 'bg-red-500 animate-pulse' : 'bg-primary-500'}`} /><div><p className="text-sm font-bold text-slate-800">{n.message}</p><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{new Date(n.timestamp).toLocaleString()}</p></div></div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            </div>
+            </main>
 
             <MobileAppSimulator />
 
             {/* MFA Verification Modal */}
             {showMfaModal && (
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
-                    <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl p-8 border border-white/20">
-                        <div className="text-center mb-8"><div className="w-16 h-16 rounded-3xl bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center mx-auto mb-4"><ShieldAlert className="w-10 h-10 text-indigo-600" /></div><h3 className="text-2xl font-black text-slate-900 dark:text-white">Identity Verification</h3><p className="text-slate-500 text-sm mt-2">Enter the code from your Authenticator app to confirm this sensitive action.</p></div>
-                        <input type="text" value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="000 000" className="w-full text-center text-4xl font-black tracking-[0.2em] py-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-[1.5rem] mb-8 focus:border-blue-500 outline-none transition-all" />
-                        {mfaError && <p className="text-red-500 text-center text-sm font-bold mb-6 flex items-center justify-center gap-2"><XCircleIcon className="w-4 h-4" /> {mfaError}</p>}
-                        <div className="flex gap-4"><button onClick={() => setShowMfaModal(false)} className="flex-1 py-4 font-bold text-slate-500 hover:bg-slate-100 rounded-3xl transition-all">Cancel</button><button onClick={handleMfaVerify} disabled={mfaVerifying || mfaCode.length < 6} className="btn-primary flex-1 py-4">{mfaVerifying ? 'Verifying...' : 'Verify & Continue'}</button></div>
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in">
+                    <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl p-10 border border-white/20 transform transition-all">
+                        <div className="text-center mb-8">
+                            <div className="w-20 h-20 rounded-3xl bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center mx-auto mb-6 shadow-sm"><ShieldAlert className="w-12 h-12 text-indigo-600" /></div>
+                            <h3 className="text-3xl font-black text-slate-900 dark:text-white">Verify Identity</h3>
+                            <p className="text-slate-500 font-medium text-sm mt-3">Confirm this sensitive action by entering the 6-digit code from your linked authenticator device.</p>
+                        </div>
+                        <div className="relative mb-8">
+                            <input
+                                type="text"
+                                value={mfaCode}
+                                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                placeholder="000 000"
+                                className="w-full text-center text-5xl font-black tracking-[0.2em] py-6 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-[1.5rem] focus:border-indigo-500 outline-none transition-all"
+                            />
+                        </div>
+                        {mfaError && <div className="mb-8 p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-2 justify-center font-bold text-sm border border-red-100"><XCircle className="w-5 h-5" /> {mfaError}</div>}
+                        <div className="flex gap-4">
+                            <button onClick={() => setShowMfaModal(false)} className="flex-1 py-4 font-black text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-2xl transition-all">Cancel</button>
+                            <button onClick={handleMfaVerify} disabled={mfaVerifying || mfaCode.length < 6} className="btn-primary flex-1 py-4 text-lg shadow-xl shadow-primary-500/20">
+                                {mfaVerifying ? 'Verifying...' : 'Confirm'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

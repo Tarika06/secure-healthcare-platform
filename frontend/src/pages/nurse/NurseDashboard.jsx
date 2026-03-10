@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, FileText, Plus, Search, User, Heart, Clock, TrendingUp, X } from 'lucide-react';
+import { Activity, FileText, Plus, Search, User, X } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
