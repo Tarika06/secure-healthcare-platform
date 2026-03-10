@@ -64,7 +64,7 @@ const AdminAppointmentRequests = () => {
         try {
             const res = await appointmentApi.getAvailableSlots(doctorId, date);
             setAvailableSlots(res.availableSlots || []);
-        } catch (err) {
+        } catch {
             setAvailableSlots([]);
         }
     };

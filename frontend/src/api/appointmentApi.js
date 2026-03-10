@@ -34,7 +34,7 @@ const appointmentApi = {
         try {
             const decoded = jwtDecode(qrToken);
             appointmentId = decoded.appointmentId;
-        } catch (e) {
+        } catch {
             throw new Error("Invalid Token Format");
         }
 
