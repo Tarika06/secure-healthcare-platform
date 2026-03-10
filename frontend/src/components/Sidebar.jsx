@@ -91,7 +91,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
                     </div>
                     {!isCollapsed && <span className={isActive ? 'font-medium' : 'font-normal'}>{item.label}</span>}
                     {item.badge > 0 && (
-                        <span className={`${isCollapsed ? 'absolute -top-1 -right-1' : 'ml-auto'} notification-badge`}>
+                        <span className={`${isCollapsed ? 'absolute -top-1 -right-1 ' : 'ml-auto '} notification-badge`}>
                             {item.badge}
                         </span>
                     )}
@@ -221,7 +221,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
     }
 
     return (
-        <div className={`sidebar-glass ${isCollapsed ? 'w-20' : 'w-72'} h-screen flex flex-col sticky top-0 transition-all duration-300 relative`}>
+        <div className={`sidebar-glass border-r border-slate-200 dark:border-slate-800 ${isCollapsed ? 'w-20' : 'w-72'} h-screen flex flex-col sticky top-0 transition-all duration-300 relative`}>
             {/* Toggle Button */}
             <button
                 onClick={() => setIsCollapsed(!isCollapsed)}

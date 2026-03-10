@@ -21,6 +21,8 @@ const UserSchema = new mongoose.Schema({
     }
   },
   specialty: { type: String, default: "" }, // For doctors
+  bloodType: { type: String, default: "" }, // e.g. "O-Positive", "A+", etc.
+  height: { type: Number, default: null }, // Height in cm
   status: {
     type: String,
     enum: ["ACTIVE", "SUSPENDED", "PENDING_DELETION", "DELETED"],

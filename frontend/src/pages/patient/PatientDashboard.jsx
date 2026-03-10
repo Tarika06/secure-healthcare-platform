@@ -5,7 +5,7 @@ import {
     Eye, Heart, Clock, Activity, Download, Trash2,
     ArrowRight, Sparkles, KeyRound, AlertTriangle,
     ShieldAlert, Smartphone, Lock, X, Calendar, ScanLine,
-    Target, ClipboardList, Stethoscope
+    Target, ClipboardList, Stethoscope, Droplet, Ruler, Pencil, Check
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import MedicalCard from '../../components/MedicalCard';
@@ -70,6 +70,15 @@ const PatientDashboard = () => {
     const [showMobileSim, setShowMobileSim] = useState(false);
     const [mounted, setMounted] = useState(false);
 
+    // Patient Profile Card state
+    const [profileFirstName, setProfileFirstName] = useState(user?.firstName || '');
+    const [profileLastName, setProfileLastName] = useState(user?.lastName || '');
+    const [profileEmail, setProfileEmail] = useState(user?.email || '');
+    const [profileBloodType, setProfileBloodType] = useState('');
+    const [profileHeight, setProfileHeight] = useState('');
+    const [editingProfile, setEditingProfile] = useState(false);
+    const [savingProfile, setSavingProfile] = useState(false);
+
     const isHealthFlowTheme = user?.userId === 'P001';
 
     useEffect(() => {
@@ -125,9 +134,40 @@ const PatientDashboard = () => {
         finally { setReportLoading(false); }
     }, []);
 
+    // Fetch profile for blood type & height
+    const fetchProfile = useCallback(async () => {
+        try {
+            const response = await apiClient.get('/user/profile');
+            setProfileBloodType(response.data.bloodType || '');
+            setProfileHeight(response.data.height || '');
+            setProfileFirstName(response.data.firstName || user?.firstName || '');
+            setProfileLastName(response.data.lastName || user?.lastName || '');
+            setProfileEmail(response.data.email || user?.email || '');
+        } catch (error) { console.error('Error fetching profile:', error); }
+    }, [user]);
+
+    // Save profile (blood type & height + basic info)
+    const saveProfile = async () => {
+        setSavingProfile(true);
+        try {
+            await apiClient.put('/user/profile', {
+                firstName: profileFirstName,
+                lastName: profileLastName,
+                email: profileEmail,
+                bloodType: profileBloodType,
+                height: profileHeight ? Number(profileHeight) : null
+            });
+            setEditingProfile(false);
+            window.location.reload(); // Refresh the page to reload the auth token/context with new name
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            alert('Failed to update profile');
+        } finally { setSavingProfile(false); }
+    };
+
     useEffect(() => {
-        Promise.all([fetchRecords(), fetchConsents(), fetchNotifications()]).finally(() => setLoading(false));
-    }, [fetchRecords, fetchConsents, fetchNotifications]);
+        Promise.all([fetchRecords(), fetchConsents(), fetchNotifications(), fetchProfile()]).finally(() => setLoading(false));
+    }, [fetchRecords, fetchConsents, fetchNotifications, fetchProfile]);
 
     useEffect(() => {
         if (activeTab === 'history') fetchAccessHistory();
@@ -393,6 +433,112 @@ const PatientDashboard = () => {
                                     <div className="grid gap-4">{records.length === 0 ? <div className="glass-card text-center py-24"><FileText className="w-16 h-16 text-slate-200 mx-auto mb-4" /><p className="text-slate-500 font-medium">Your health timeline is empty.</p></div> : records.slice(0, 3).map(r => <MedicalCard key={r._id} record={r} />)}</div>
                                 </div>
                                 <div className="col-span-12 lg:col-span-4 space-y-6">
+                                    {/* Patient Profile Card */}
+                                    <div className="rounded-2xl overflow-hidden shadow-xl border border-teal-700/30 animate-fade-in" style={{ background: 'linear-gradient(145deg, #0d4f4a 0%, #0f766e 40%, #14b8a6 100%)', animationDelay: '150ms' }}>
+                                        {/* Top Section: Avatar + Name */}
+                                        <div className="flex items-center gap-4 px-6 pt-6 pb-4">
+                                            <div className="w-14 h-14 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-white font-black text-2xl shadow-lg border border-white/20">
+                                                {user.firstName?.[0]}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                {editingProfile ? (
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="flex gap-1">
+                                                            <input
+                                                                type="text"
+                                                                value={profileFirstName}
+                                                                onChange={(e) => setProfileFirstName(e.target.value)}
+                                                                className="w-full bg-white/10 text-white text-sm font-bold rounded border border-white/20 py-0.5 px-1 outline-none focus:border-white/40"
+                                                                placeholder="First Name"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={profileLastName}
+                                                                onChange={(e) => setProfileLastName(e.target.value)}
+                                                                className="w-full bg-white/10 text-white text-sm font-bold rounded border border-white/20 py-0.5 px-1 outline-none focus:border-white/40"
+                                                                placeholder="Last Name"
+                                                            />
+                                                        </div>
+                                                        <input
+                                                            type="email"
+                                                            value={profileEmail}
+                                                            onChange={(e) => setProfileEmail(e.target.value)}
+                                                            className="w-full bg-white/10 text-white text-xs font-medium rounded border border-white/20 py-0.5 px-1 outline-none focus:border-white/40"
+                                                            placeholder="Email"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <h3 className="text-lg font-bold text-white truncate">{user.firstName} {user.lastName}</h3>
+                                                        <p className="text-teal-200/80 text-xs font-medium truncate">{user.email || `${user.userId.toLowerCase()}@hospital.com`}</p>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    if (editingProfile) { saveProfile(); }
+                                                    else { setEditingProfile(true); }
+                                                }}
+                                                disabled={savingProfile}
+                                                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all border border-white/10"
+                                                title={editingProfile ? 'Save' : 'Edit'}
+                                            >
+                                                {savingProfile ? (
+                                                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                                ) : editingProfile ? (
+                                                    <Check className="w-4 h-4" />
+                                                ) : (
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                )}
+                                            </button>
+                                        </div>
+                                        {/* Bottom Section: Blood Type + Height */}
+                                        <div className="grid grid-cols-2 gap-3 px-6 pb-6 pt-2">
+                                            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                                                <p className="text-[9px] font-bold text-teal-200/60 uppercase tracking-widest mb-1 flex items-center gap-1">
+                                                    <Droplet className="w-3 h-3" /> Blood Type
+                                                </p>
+                                                {editingProfile ? (
+                                                    <select
+                                                        value={profileBloodType}
+                                                        onChange={(e) => setProfileBloodType(e.target.value)}
+                                                        className="w-full bg-white/10 text-white text-lg font-bold rounded-lg border border-white/20 py-1 px-1 outline-none focus:border-white/40 appearance-none cursor-pointer"
+                                                    >
+                                                        <option value="" className="bg-teal-800">Select</option>
+                                                        {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bt => (
+                                                            <option key={bt} value={bt} className="bg-teal-800">{bt}</option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    <p className="text-xl font-black text-white leading-tight">
+                                                        {profileBloodType || '—'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                                                <p className="text-[9px] font-bold text-teal-200/60 uppercase tracking-widest mb-1 flex items-center gap-1">
+                                                    <Ruler className="w-3 h-3" /> Height
+                                                </p>
+                                                {editingProfile ? (
+                                                    <div className="flex items-baseline gap-1">
+                                                        <input
+                                                            type="number"
+                                                            value={profileHeight}
+                                                            onChange={(e) => setProfileHeight(e.target.value)}
+                                                            placeholder="0"
+                                                            className="w-full bg-white/10 text-white text-lg font-bold rounded-lg border border-white/20 py-1 px-2 outline-none focus:border-white/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                        />
+                                                        <span className="text-sm font-bold text-teal-200/60">cm</span>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xl font-black text-white leading-tight">
+                                                        {profileHeight ? <>{profileHeight} <span className="text-sm font-bold text-teal-200/60">cm</span></> : '—'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <h3 className="text-2xl font-black text-slate-900 dark:text-white">Security Snapshot</h3>
                                     <div className="glass-card bg-indigo-50/50 border-indigo-100">
                                         <div className="flex items-center gap-3 mb-4"><div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white"><Shield className="w-5 h-5" /></div><p className="font-bold text-indigo-900">Device Protection</p></div>

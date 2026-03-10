@@ -29,6 +29,8 @@ router.get("/profile", authenticate, async (req, res) => {
             role: user.role,
             specialty: user.specialty,
             phone: decryptedPhone,
+            bloodType: user.bloodType || "",
+            height: user.height || null,
             status: user.status,
             mfaEnabled: user.mfaEnabled,
             createdAt: user.createdAt
@@ -42,7 +44,7 @@ router.get("/profile", authenticate, async (req, res) => {
 // Update user profile
 router.put("/profile", authenticate, async (req, res) => {
     try {
-        const { firstName, lastName, phone, specialty } = req.body;
+        const { firstName, lastName, phone, specialty, bloodType, height, email } = req.body;
 
         const user = await User.findOne({ userId: req.user.userId });
         if (!user) {
@@ -52,6 +54,7 @@ router.put("/profile", authenticate, async (req, res) => {
         // Update allowed fields
         if (firstName !== undefined) user.firstName = firstName;
         if (lastName !== undefined) user.lastName = lastName;
+        if (email !== undefined) user.email = email;
 
         // HIPAA/GDPR: Encrypt PII (phone number) before storage
         if (phone !== undefined) {
@@ -61,6 +64,10 @@ router.put("/profile", authenticate, async (req, res) => {
         if (specialty !== undefined && user.role === "DOCTOR") {
             user.specialty = specialty;
         }
+
+        // Patient-specific fields
+        if (bloodType !== undefined) user.bloodType = bloodType;
+        if (height !== undefined) user.height = height;
 
         await user.save();
 
@@ -89,6 +96,8 @@ router.put("/profile", authenticate, async (req, res) => {
                 role: user.role,
                 specialty: user.specialty,
                 phone: phone || "",
+                bloodType: user.bloodType || "",
+                height: user.height || null,
                 status: user.status
             }
         });
