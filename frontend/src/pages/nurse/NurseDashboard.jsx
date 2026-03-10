@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, FileText, Plus, Search, User, X } from 'lucide-react';
+import { Activity, FileText, Plus, Search, User, X, Sparkles } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
@@ -129,6 +129,33 @@ const NurseDashboard = () => {
 
                 <main className="flex-1 p-8 overflow-y-auto">
                     <div className="max-w-full mx-auto">
+                        
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-teal-900 to-emerald-900 rounded-3xl p-8 mb-10 shadow-2xl relative overflow-hidden flex items-center justify-between animate-fade-in border border-teal-800/50">
+                            {/* Decorative background blurs */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500 rounded-full mix-blend-screen filter blur-[80px] opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
+                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 rounded-full mix-blend-screen filter blur-[60px] opacity-20 transform -translate-x-1/2 translate-y-1/2"></div>
+
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-2 text-teal-200">
+                                    <Sparkles className="w-5 h-5" />
+                                    <span className="text-sm font-bold uppercase tracking-widest">Nursing Station</span>
+                                </div>
+                                <h1 className="text-4xl font-black tracking-tight text-white">
+                                    Welcome, <span className="text-teal-300">{user?.firstName || 'Nurse'}</span>
+                                </h1>
+                            </div>
+                            <div className="flex items-center gap-4 group cursor-default relative z-10">
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest leading-none mb-1.5">Nurse ID</p>
+                                    <p className="text-sm font-bold text-teal-50 leading-none shadow-sm">{user?.userId || 'NURSE'}</p>
+                                </div>
+                                <div className="w-14 h-14 rounded-2xl bg-teal-800/50 border border-teal-700/50 flex items-center justify-center text-teal-50 font-black text-xl shadow-inner backdrop-blur-sm group-hover:rotate-6 group-hover:scale-105 transition-all duration-300">
+                                    {user?.firstName?.[0] || 'N'}{user?.lastName?.[0] || 'U'}
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div className={`card transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                                 <h3 className="font-bold mb-4 flex items-center gap-2"><User className="w-5 h-5" /> Select Patient</h3>
@@ -163,7 +190,10 @@ const NurseDashboard = () => {
                                         <p className="text-slate-500">Choose a patient to view their {activeTab === 'vitals' ? 'vitals' : 'care notes'}</p>
                                     </div>
                                 ) : loading ? (
-                                    <p className="text-center py-16">Loading...</p>
+                                    <div className="flex flex-col items-center justify-center py-24">
+                                        <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+                                        <p className="text-slate-500 mt-4">Loading secure data...</p>
+                                    </div>
                                 ) : activeTab === 'vitals' ? (
                                     <div>
                                         <div className="flex items-center justify-between mb-6">

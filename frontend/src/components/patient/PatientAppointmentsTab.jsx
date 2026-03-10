@@ -167,8 +167,8 @@ const PatientAppointmentsTab = () => {
     return (
         <div className="tab-content">
             <div className="mb-6">
-                <h2 className="text-2xl font-heading font-bold text-slate-900">Hospital Appointments</h2>
-                <p className="text-slate-500 mt-1">Book consultations and get your Hospital Entry QR Code</p>
+                <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">Hospital Appointments</h2>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">Book consultations and get your Hospital Entry QR Code</p>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">
@@ -179,7 +179,7 @@ const PatientAppointmentsTab = () => {
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center shadow-md">
                                 <CalendarDays className="w-5 h-5 text-white" />
                             </div>
-                            <h3 className="text-lg font-bold text-slate-900">Book New Appointment</h3>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Book New Appointment</h3>
                         </div>
 
                         {error && (
@@ -227,11 +227,11 @@ const PatientAppointmentsTab = () => {
                                     </label>
 
                                     {!availableSlots ? (
-                                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center text-sm text-slate-500">
+                                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm text-slate-500 dark:text-slate-400">
                                             Loading slots...
                                         </div>
                                     ) : availableSlots.length === 0 ? (
-                                        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-center text-sm text-rose-600 font-medium">
+                                        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/50 text-center text-sm text-rose-600 dark:text-rose-400 font-medium">
                                             No slots available for this date.
                                         </div>
                                     ) : (
@@ -242,8 +242,8 @@ const PatientAppointmentsTab = () => {
                                                     type="button"
                                                     onClick={() => setSelectedSlot(slot)}
                                                     className={`py-2 px-1 text-sm rounded-lg border transition-all ${selectedSlot === slot
-                                                        ? 'bg-teal-50 border-teal-500 text-teal-700 font-bold shadow-sm'
-                                                        : 'bg-white border-slate-200 text-slate-600 hover:border-teal-300'
+                                                        ? 'bg-teal-50 dark:bg-teal-900/40 border-teal-500 text-teal-700 dark:text-teal-300 font-bold shadow-sm'
+                                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-teal-300 dark:hover:border-teal-600'
                                                         }`}
                                                 >
                                                     {slot}
@@ -286,19 +286,19 @@ const PatientAppointmentsTab = () => {
                     {loading ? (
                         <div className="glass-card text-center py-16">
                             <div className="w-10 h-10 border-3 border-teal-200 border-t-teal-600 rounded-full animate-spin mx-auto mb-3" />
-                            <p className="text-slate-500">Loading appointments...</p>
+                            <p className="text-slate-500 dark:text-slate-400">Loading appointments...</p>
                         </div>
                     ) : (
                         <div className="space-y-6">
                             {/* Upcoming Appointments */}
                             <div>
-                                <h3 className="font-heading font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <h3 className="font-heading font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                     <Clock className="w-5 h-5 text-teal-600" /> Upcoming Appointments
                                 </h3>
 
                                 {upcomingAppointments.length === 0 ? (
                                     <div className="glass-card text-center py-8 opacity-80">
-                                        <p className="text-slate-500 text-sm">You have no upcoming appointments.</p>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm">You have no upcoming appointments.</p>
                                     </div>
                                 ) : (
                                     <div className="grid gap-4">
@@ -310,21 +310,21 @@ const PatientAppointmentsTab = () => {
                                                             <span className={`badge ${getStatusColor(apt.status)}`}>{apt.status}</span>
                                                             <span className="text-xs font-mono text-slate-500">ID: {apt.appointmentId.split('-').pop()}</span>
                                                         </div>
-                                                        <h4 className="text-lg font-bold text-slate-900">Dr. {apt.doctor?.firstName} {apt.doctor?.lastName}</h4>
-                                                        <p className="text-sm text-slate-600 mb-2">{apt.doctor?.specialty || 'General Practitioner'}</p>
+                                                        <h4 className="text-lg font-bold text-slate-900 dark:text-white">Dr. {apt.doctor?.firstName} {apt.doctor?.lastName}</h4>
+                                                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{apt.doctor?.specialty || 'General Practitioner'}</p>
 
-                                                        <div className="flex flex-wrap gap-4 text-sm font-medium text-slate-700 bg-slate-50 inline-flex p-2 rounded-lg border border-slate-100">
+                                                        <div className="flex flex-wrap gap-4 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 inline-flex p-2 rounded-lg border border-slate-100 dark:border-slate-700/50">
                                                             <div className="flex items-center gap-1.5 px-2">
                                                                 <Calendar className="w-4 h-4 text-teal-600" /> {new Date(apt.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                                                             </div>
-                                                            <div className="w-px h-4 bg-slate-300 self-center"></div>
+                                                            <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 self-center"></div>
                                                             <div className="flex items-center gap-1.5 px-2">
                                                                 <Clock className="w-4 h-4 text-teal-600" /> {apt.timeSlot}
                                                             </div>
                                                         </div>
-                                                        <p className="text-sm text-slate-500 mt-3 flex items-start gap-2">
+                                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-3 flex items-start gap-2">
                                                             <FileText className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
-                                                            <span><strong className="text-slate-700">Reason:</strong> {apt.reason}</span>
+                                                            <span><strong className="text-slate-700 dark:text-slate-300">Reason:</strong> {apt.reason}</span>
                                                         </p>
                                                     </div>
 
@@ -335,8 +335,8 @@ const PatientAppointmentsTab = () => {
                                                                 <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm inline-block mb-2 group-hover:scale-105 transition-transform duration-300 cursor-pointer" onClick={() => handleDownloadQR(apt.qrCode, apt.appointmentId)}>
                                                                     <img src={apt.qrCode} alt="Entry QR" className="w-24 h-24 object-contain" />
                                                                 </div>
-                                                                <p className="text-[10px] font-bold text-teal-700 uppercase tracking-wide">Hospital Entry QR</p>
-                                                                <button onClick={() => handleDownloadQR(apt.qrCode, apt.appointmentId)} className="text-xs text-slate-500 hover:text-teal-600 mt-1 flex items-center justify-center gap-1 w-full">
+                                                                <p className="text-[10px] font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wide">Hospital Entry QR</p>
+                                                                <button onClick={() => handleDownloadQR(apt.qrCode, apt.appointmentId)} className="text-xs text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 mt-1 flex items-center justify-center gap-1 w-full">
                                                                     <Download className="w-3 h-3" /> Download
                                                                 </button>
                                                                 {apt.qrToken && (
@@ -345,21 +345,21 @@ const PatientAppointmentsTab = () => {
                                                                             navigator.clipboard.writeText(apt.qrToken);
                                                                             alert('Token copied to clipboard! Switch to the Nurse Dashboard to paste and verify it.');
                                                                         }}
-                                                                        className="mt-2 w-full text-[10px] font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-1.5 rounded-lg transition-colors"
+                                                                        className="mt-2 w-full text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-700/50 px-2 py-1.5 rounded-lg transition-colors"
                                                                     >
                                                                         Copy Test Token
                                                                     </button>
                                                                 )}
                                                             </div>
                                                         ) : (
-                                                            <div className="text-center p-4 bg-slate-50 rounded-xl border border-slate-200 w-full mb-2">
+                                                            <div className="text-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 w-full mb-2">
                                                                 <p className="text-xs text-slate-400 font-medium">QR not generated</p>
                                                             </div>
                                                         )}
 
                                                         <button
                                                             onClick={() => handleOpenModal(apt)}
-                                                            className="text-xs font-semibold text-teal-600 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 px-3 py-2 rounded-lg transition-colors border border-teal-200 w-full flex items-center justify-center gap-1 mb-2"
+                                                            className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/40 px-3 py-2 rounded-lg transition-colors border border-teal-200 dark:border-teal-800/50 w-full flex items-center justify-center gap-1 mb-2"
                                                         >
                                                             <FileText className="w-3 h-3" /> View Details
                                                         </button>
@@ -367,7 +367,7 @@ const PatientAppointmentsTab = () => {
                                                         {apt.status === 'BOOKED' && (
                                                             <button
                                                                 onClick={() => handleCancelAppointment(apt._id)}
-                                                                className="text-xs font-semibold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-colors border border-transparent hover:border-rose-200 mt-auto w-full"
+                                                                className="text-xs font-semibold text-rose-500 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20 px-3 py-1.5 rounded-lg transition-colors border border-transparent hover:border-rose-200 dark:hover:border-rose-800/50 mt-auto w-full"
                                                             >
                                                                 Cancel Appointment
                                                             </button>
@@ -383,20 +383,20 @@ const PatientAppointmentsTab = () => {
                             {/* Past Appointments */}
                             {pastAppointments.length > 0 && (
                                 <div className="mt-8">
-                                    <h3 className="font-heading font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                    <h3 className="font-heading font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                         <CheckCircle className="w-5 h-5 text-slate-400" /> Past Appointments
                                     </h3>
                                     <div className="grid xl:grid-cols-2 gap-4">
                                         {pastAppointments.map((apt) => (
                                             <div key={apt.appointmentId} className="glass-card-l3 p-4 opacity-75 hover:opacity-100 transition-opacity">
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <h4 className="font-bold text-slate-900">Dr. {apt.doctor?.firstName}</h4>
+                                                    <h4 className="font-bold text-slate-900 dark:text-white">Dr. {apt.doctor?.firstName}</h4>
                                                     <span className={`badge text-[10px] py-0.5 ${getStatusColor(apt.status)}`}>{apt.status}</span>
                                                 </div>
-                                                <p className="text-sm text-slate-600 flex items-center gap-2 font-medium mb-1.5">
+                                                <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 font-medium mb-1.5">
                                                     <Calendar className="w-3.5 h-3.5" /> {apt.date} • {apt.timeSlot}
                                                 </p>
-                                                <p className="text-xs text-slate-500 truncate">{apt.reason}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-500 truncate">{apt.reason}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -412,8 +412,8 @@ const PatientAppointmentsTab = () => {
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                         {/* Modal Header */}
-                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <FileText className="w-5 h-5 text-teal-600" /> Appointment Order
                             </h3>
                             <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -489,8 +489,8 @@ const PatientAppointmentsTab = () => {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl">
-                            <button onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors">
+                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-end gap-3 rounded-b-2xl">
+                            <button onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
                                 Close
                             </button>
                             <button onClick={handleDownloadPDF} className="btn-primary flex items-center gap-2 px-6 py-2">

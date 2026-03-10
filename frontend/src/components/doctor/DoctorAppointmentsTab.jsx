@@ -80,15 +80,15 @@ const DoctorAppointmentsTab = () => {
         <div className="tab-content">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                 <div>
-                    <h2 className="text-2xl font-heading font-bold text-slate-900">My Schedule</h2>
-                    <p className="text-slate-500 mt-1">Manage your daily appointments and consultations</p>
+                    <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">My Schedule</h2>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your daily appointments and consultations</p>
                 </div>
 
                 <div className="flex items-center gap-3 glass-card py-2 px-4 shadow-sm w-fit">
                     <Calendar className="w-5 h-5 text-blue-600" />
                     <input
                         type="date"
-                        className="bg-transparent border-none focus:outline-none text-slate-700 font-medium cursor-pointer"
+                        className="bg-transparent border-none focus:outline-none text-slate-700 dark:text-slate-300 font-medium cursor-pointer"
                         value={filterDate}
                         onChange={(e) => setFilterDate(e.target.value)}
                     />
@@ -98,26 +98,26 @@ const DoctorAppointmentsTab = () => {
             {loading ? (
                 <div className="glass-card text-center py-16">
                     <div className="w-10 h-10 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-slate-500">Loading schedule...</p>
+                    <p className="text-slate-500 dark:text-slate-400">Loading schedule...</p>
                 </div>
             ) : appointments.length === 0 ? (
                 <div className="glass-card text-center py-16">
-                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-blue-50 flex items-center justify-center">
-                        <Calendar className="w-10 h-10 text-blue-300 animate-float" />
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-blue-50 dark:bg-blue-900/20 shadow-inner flex items-center justify-center">
+                        <Calendar className="w-10 h-10 text-blue-300 dark:text-blue-500 animate-float" />
                     </div>
-                    <h3 className="text-xl font-semibold text-slate-800 mb-2">No Appointments</h3>
-                    <p className="text-slate-500">You have no appointments scheduled for {new Date(filterDate).toLocaleDateString()}.</p>
+                    <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-2">No Appointments</h3>
+                    <p className="text-slate-500 dark:text-slate-400">You have no appointments scheduled for {new Date(filterDate).toLocaleDateString()}.</p>
                 </div>
             ) : (
                 <div className="space-y-8">
                     {/* Active/Upcoming for the day */}
                     <div>
-                        <h3 className="font-heading font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <h3 className="font-heading font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                             <Clock className="w-5 h-5 text-blue-600" /> Today's Roster
                         </h3>
 
                         {activeAppointments.length === 0 ? (
-                            <p className="text-slate-500 italic px-2">No pending appointments for this date.</p>
+                            <p className="text-slate-500 dark:text-slate-400 italic px-2">No pending appointments for this date.</p>
                         ) : (
                             <div className="grid gap-4">
                                 {activeAppointments.map((apt, idx) => (
@@ -128,26 +128,26 @@ const DoctorAppointmentsTab = () => {
                                                     <span className={`badge ${getStatusColor(apt.status)}`}>
                                                         {apt.status === 'VERIFIED' ? 'PATIENT WAITING' : apt.status}
                                                     </span>
-                                                    <div className="flex items-center gap-1.5 text-slate-700 font-bold bg-slate-100 px-2.5 py-1 rounded-md">
+                                                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-bold bg-slate-100 dark:bg-slate-800/50 px-2.5 py-1 rounded-md">
                                                         <Clock className="w-4 h-4 text-blue-600" /> {apt.timeSlot}
                                                     </div>
                                                 </div>
-                                                <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                                <h4 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                                     <User className="w-4 h-4 text-slate-400" />
                                                     {apt.patient?.firstName} {apt.patient?.lastName}
                                                 </h4>
-                                                <p className="text-sm text-slate-500 font-mono mb-3">ID: {apt.patient?.userId}</p>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mb-3">ID: {apt.patient?.userId}</p>
 
-                                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 mb-3">
-                                                    <p className="text-sm text-slate-700 flex items-start gap-2">
+                                                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700 mb-3">
+                                                    <p className="text-sm text-slate-700 dark:text-slate-300 flex items-start gap-2">
                                                         <FileText className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
-                                                        <span><strong className="text-slate-900">Reason:</strong> {apt.reason}</span>
+                                                        <span><strong className="text-slate-900 dark:text-white">Reason:</strong> {apt.reason}</span>
                                                     </p>
                                                 </div>
 
                                                 <button
                                                     onClick={() => handleOpenModal(apt)}
-                                                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition-colors border border-blue-200 w-full flex items-center justify-center gap-1"
+                                                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 px-3 py-2 rounded-lg transition-colors border border-blue-200 dark:border-blue-800/50 w-full flex items-center justify-center gap-1"
                                                 >
                                                     <FileText className="w-3 h-3" /> View Full Details
                                                 </button>
@@ -162,7 +162,7 @@ const DoctorAppointmentsTab = () => {
                     {/* Past/Completed for the day */}
                     {pastAppointments.length > 0 && (
                         <div>
-                            <h3 className="font-heading font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <h3 className="font-heading font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                 <CheckCircle className="w-5 h-5 text-slate-400" /> Completed / Cancelled
                             </h3>
                             <div className="grid md:grid-cols-2 gap-4">
@@ -170,12 +170,12 @@ const DoctorAppointmentsTab = () => {
                                     <div key={apt.appointmentId} className="glass-card-l3 p-4 opacity-70">
                                         <div className="flex justify-between items-start mb-2">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-bold text-slate-700">{apt.timeSlot}</span>
-                                                <h4 className="font-semibold text-slate-900">{apt.patient?.firstName} {apt.patient?.lastName}</h4>
+                                                <span className="font-bold text-slate-700 dark:text-slate-300">{apt.timeSlot}</span>
+                                                <h4 className="font-semibold text-slate-900 dark:text-white">{apt.patient?.firstName} {apt.patient?.lastName}</h4>
                                             </div>
                                             <span className={`badge text-[10px] py-0.5 ${getStatusColor(apt.status)}`}>{apt.status}</span>
                                         </div>
-                                        <p className="text-xs text-slate-500 truncate">{apt.reason}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{apt.reason}</p>
                                     </div>
                                 ))}
                             </div>
@@ -189,8 +189,8 @@ const DoctorAppointmentsTab = () => {
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                         {/* Modal Header */}
-                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <FileText className="w-5 h-5 text-blue-600" /> Appointment Details
                             </h3>
                             <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -255,8 +255,8 @@ const DoctorAppointmentsTab = () => {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl">
-                            <button onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors">
+                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-end gap-3 rounded-b-2xl">
+                            <button onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
                                 Close
                             </button>
                             <button onClick={handleDownloadPDF} className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-6 py-2 rounded-xl transition-all shadow-sm">
