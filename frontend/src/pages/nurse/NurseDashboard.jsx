@@ -129,55 +129,65 @@ const NurseDashboard = () => {
 
                 <main className="flex-1 p-8 overflow-y-auto">
                     <div className="max-w-full mx-auto">
-                        
-                        {/* Header */}
-                        <div className="bg-gradient-to-r from-teal-900 to-emerald-900 rounded-3xl p-8 mb-10 shadow-2xl relative overflow-hidden flex items-center justify-between animate-fade-in border border-teal-800/50">
-                            {/* Decorative background blurs */}
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500 rounded-full mix-blend-screen filter blur-[80px] opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
-                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 rounded-full mix-blend-screen filter blur-[60px] opacity-20 transform -translate-x-1/2 translate-y-1/2"></div>
 
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-2 mb-2 text-teal-200">
-                                    <Sparkles className="w-5 h-5" />
-                                    <span className="text-sm font-bold uppercase tracking-widest">Nursing Station</span>
+                        {/* Header */}
+                        <div className="aurora-bg-teal md:rounded-[2.5rem] rounded-2xl p-10 mb-10 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between animate-fade-in border border-white/20 group">
+                            <div className="absolute top-0 left-0 w-full h-full shimmer-effect opacity-20 pointer-events-none"></div>
+
+                            <div className="relative z-10 text-center md:text-left">
+                                <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                                    <Sparkles className="w-4 h-4 text-teal-300" />
+                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-teal-100/60">Nursing Station Node</span>
                                 </div>
-                                <h1 className="text-4xl font-black tracking-tight text-white">
+                                <h1 className="text-4xl font-extrabold tracking-tight text-white m-0">
                                     Welcome, <span className="text-teal-300">{user?.firstName || 'Nurse'}</span>
                                 </h1>
+                                <p className="text-teal-100/60 text-base font-medium mt-2 max-w-lg">Monitoring active residents. Secure nodes active.</p>
                             </div>
-                            <div className="flex items-center gap-4 group cursor-default relative z-10">
-                                <div className="text-right hidden sm:block">
-                                    <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest leading-none mb-1.5">Nurse ID</p>
-                                    <p className="text-sm font-bold text-teal-50 leading-none shadow-sm">{user?.userId || 'NURSE'}</p>
+
+                            <div className="flex flex-col items-center md:items-end gap-6 mt-8 md:mt-0 relative z-10">
+                                <div className="text-right hidden md:block">
+                                    <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest mb-1.5 leading-none">Access Node</p>
+                                    <p className="text-sm font-black text-white leading-none font-mono tracking-tighter">NS-BETA-{user?.userId?.slice(-4) || 'UNIT'}</p>
                                 </div>
-                                <div className="w-14 h-14 rounded-2xl bg-teal-800/50 border border-teal-700/50 flex items-center justify-center text-teal-50 font-black text-xl shadow-inner backdrop-blur-sm group-hover:rotate-6 group-hover:scale-105 transition-all duration-300">
-                                    {user?.firstName?.[0] || 'N'}{user?.lastName?.[0] || 'U'}
+                                <div className="relative group/avatar">
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-emerald-400 rounded-3xl blur opacity-25 group-hover/avatar:opacity-60 transition duration-1000"></div>
+                                    <div className="relative w-16 h-16 rounded-[20px] bg-slate-900 border border-white/10 flex items-center justify-center text-white font-black text-2xl shadow-2xl transform group-hover/avatar:scale-105 transition-all">
+                                        {user?.firstName?.[0] || 'N'}{user?.lastName?.[0] || 'U'}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className={`card transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-                                <h3 className="font-bold mb-4 flex items-center gap-2"><User className="w-5 h-5" /> Select Patient</h3>
-                                <div className="relative mb-4">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <div className={`card-premium transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+                                <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                                    <User className="w-6 h-6 text-teal-600" />
+                                    Resident Directory
+                                </h3>
+                                <div className="relative mb-6">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                                     <input
                                         type="text"
-                                        placeholder="Search..."
+                                        placeholder="Search by name or ID..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="input-field pl-11"
+                                        className="input-field pl-12 h-12 bg-slate-50 border-slate-100 focus:bg-white transition-all shadow-inner"
                                     />
                                 </div>
-                                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                                    {filteredPatients.map((patient) => (
+                                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                                    {filteredPatients.length === 0 ? (
+                                        <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl">
+                                            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">No matching results</p>
+                                        </div>
+                                    ) : filteredPatients.map((patient) => (
                                         <button
                                             key={patient.userId}
                                             onClick={() => handleSelectPatient(patient)}
-                                            className={`w-full text-left p-4 rounded-xl transition-all border ${selectedPatient?.userId === patient.userId ? 'bg-primary-50 border-primary-200 shadow-md' : 'hover:bg-slate-50 border-slate-200'}`}
+                                            className={`w-full text-left p-5 rounded-2xl transition-all border-2 ${selectedPatient?.userId === patient.userId ? 'bg-teal-50 border-teal-400/50 shadow-lg' : 'hover:bg-slate-50 border-slate-100'}`}
                                         >
-                                            <p className="font-semibold">{patient.firstName} {patient.lastName}</p>
-                                            <p className="text-xs text-slate-500">{patient.userId}</p>
+                                            <p className="font-black text-slate-800 tracking-tight">{patient.firstName} {patient.lastName}</p>
+                                            <p className="text-[10px] text-teal-600 font-black uppercase tracking-widest mt-1">{patient.userId}</p>
                                         </button>
                                     ))}
                                 </div>

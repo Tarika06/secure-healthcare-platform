@@ -14,20 +14,50 @@ import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
 import gdprApi from '../../api/gdprApi';
 import PatientAppointmentsTab from '../../components/patient/PatientAppointmentsTab';
+import AppointmentsWidget from '../../components/patient/AppointmentsWidget';
 
 // Helper Components
-const StatCard = ({ icon: Icon, label, value, gradient, delay }) => {
+const StatCard = ({ icon: Icon, label, value, colorType, delay, mounted }) => {
+    const themes = {
+        blue: {
+            base: 'border-blue-100/50 dark:border-blue-900/20',
+            iconBg: 'bg-blue-600/10 text-blue-600',
+            accent: 'bg-blue-600'
+        },
+        teal: {
+            base: 'border-teal-100/50 dark:border-teal-900/20',
+            iconBg: 'bg-teal-600/10 text-teal-600',
+            accent: 'bg-teal-600'
+        },
+        amber: {
+            base: 'border-amber-100/50 dark:border-amber-900/20',
+            iconBg: 'bg-amber-600/10 text-amber-600',
+            accent: 'bg-amber-600'
+        },
+        violet: {
+            base: 'border-violet-100/50 dark:border-violet-900/20',
+            iconBg: 'bg-violet-600/10 text-violet-600',
+            accent: 'bg-violet-600'
+        }
+    }[colorType] || themes.blue;
+
     return (
-        <div className={`glass-card group transition-all duration-700 animate-fade-in`} style={{ animationDelay: `${delay}ms` }}>
-            <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-500`}>
-                    {React.createElement(Icon, { className: "w-6 h-6" })}
+        <div
+            className={`card-premium group ${themes.base} ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+            style={{ transitionDelay: `${delay}ms` }}
+        >
+            <div className="relative z-10 flex flex-col items-center text-center">
+                <div className={`w-12 h-12 rounded-2xl ${themes.iconBg} flex items-center justify-center mb-4 transform group-hover:scale-110 transition-transform`}>
+                    <Icon className="w-5 h-5" />
                 </div>
-                <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white">{value}</p>
-                </div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-1 tracking-tight">
+                    {value ?? '0'}
+                </h3>
+                <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                    {label}
+                </p>
             </div>
+            <div className={`absolute bottom-0 left-0 w-full h-1 ${themes.accent} opacity-20 group-hover:opacity-100 transition-opacity`}></div>
         </div>
     );
 };
@@ -79,7 +109,7 @@ const PatientDashboard = () => {
     const [editingProfile, setEditingProfile] = useState(false);
     const [savingProfile, setSavingProfile] = useState(false);
 
-    const isHealthFlowTheme = user?.userId === 'P001';
+    const isHealthFlowTheme = false; // Forced to false so everyone sees the new animated background
 
     useEffect(() => {
         setMounted(true);
@@ -349,7 +379,7 @@ const PatientDashboard = () => {
     );
 
     return (
-        <div className={`flex h-screen overflow-hidden ${isHealthFlowTheme ? 'health-flow-bg' : 'dashboard-glass-bg'} transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`flex h-screen overflow-hidden ${isHealthFlowTheme ? 'health-flow-bg bg-[#f8f9fa] text-slate-900' : 'patient-dashboard-bg font-sans text-slate-900'} transition-all duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
             <Sidebar
                 role="PATIENT"
                 onLogout={handleLogout}
@@ -370,182 +400,231 @@ const PatientDashboard = () => {
 
             <main className="flex-1 overflow-y-auto relative">
                 <div className="max-w-[1600px] mx-auto w-full p-8">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-teal-900 to-emerald-900 rounded-3xl p-8 mb-10 shadow-2xl relative overflow-hidden flex items-center justify-between animate-fade-in border border-teal-800/50">
-                        {/* Decorative background blurs */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500 rounded-full mix-blend-screen filter blur-[80px] opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
-                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 rounded-full mix-blend-screen filter blur-[60px] opacity-20 transform -translate-x-1/2 translate-y-1/2"></div>
+                    {/* Header — Compact Dashboard Hero */}
+                    <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 rounded-[2.5rem] px-10 py-10 mb-10 shadow-2xl relative overflow-hidden flex items-center justify-between animate-fade-in border border-white/10 group">
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-[100px] group-hover:scale-150 transition-transform duration-[5s]"></div>
+                        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-[80px]"></div>
 
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-2 text-teal-200">
-                                <Sparkles className="w-5 h-5" />
-                                <span className="text-sm font-bold uppercase tracking-widest">{getGreeting()}</span>
+                        <div className="relative z-10 max-w-2xl">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Sparkles className="w-4 h-4 text-indigo-300" />
+                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-200/60">{getGreeting()}</span>
                             </div>
-                            <h1 className="text-4xl font-black tracking-tight text-white">
-                                Welcome back, <span className="text-teal-300">{user.firstName}</span>
+                            <h1 className="text-4xl font-extrabold text-white tracking-tight m-0">
+                                Welcome back, <span className="text-indigo-300">{user.firstName}</span>
                             </h1>
+                            <p className="text-indigo-200/50 text-base font-medium mt-2 max-w-md">Your health journey is secured and monitored with diagnostic precision.</p>
                         </div>
-                        <div className="flex items-center gap-4 group cursor-default relative z-10">
+
+                        <div className="relative z-10 flex flex-col items-end gap-6">
                             <div className="text-right hidden sm:block">
-                                <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest leading-none mb-1.5">Authenticated ID</p>
-                                <p className="text-sm font-bold text-teal-50 leading-none shadow-sm">{user.userId}</p>
+                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 leading-none">Identity Node</p>
+                                <p className="text-sm font-black text-white leading-none font-mono tracking-tighter shadow-sm">SC-NODE-{user.userId?.slice(-6) || 'UNKNWN'}</p>
                             </div>
-                            <div className="w-14 h-14 rounded-2xl bg-teal-800/50 border border-teal-700/50 flex items-center justify-center text-teal-50 font-black text-xl shadow-inner backdrop-blur-sm group-hover:rotate-6 group-hover:scale-105 transition-all duration-300">
-                                {user.firstName?.[0]}{user.lastName?.[0]}
+                            <div className="relative group/avatar">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-3xl blur opacity-30 group-hover/avatar:opacity-60 transition duration-1000"></div>
+                                <div className="relative w-16 h-16 rounded-[20px] bg-slate-900 border border-white/10 flex items-center justify-center text-white font-black text-2xl shadow-2xl transform active:scale-95 transition-all">
+                                    {user.firstName?.[0]}{user.lastName?.[0]}
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Content Logic */}
                     {activeTab === 'overview' && (
-                        <div className="space-y-8">
-                            {/* Stats Summary */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <StatCard icon={FileText} label="Total Records" value={records.length} gradient="from-blue-500 to-indigo-600" delay={100} />
-                                <StatCard icon={Shield} label="Active Consents" value={activeConsents.length} gradient="from-emerald-500 to-green-600" delay={200} />
-                                <StatCard icon={Bell} label="Pending Requests" value={pendingConsents.length} gradient="from-amber-500 to-orange-600" delay={300} />
-                                <StatCard icon={Activity} label="Access Events" value={accessHistory.length} gradient="from-violet-500 to-purple-600" delay={400} />
+                        <div className="space-y-6">
+                            {/* Stats Summary — 4 column grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <StatCard icon={FileText} label="Total Records" value={records.length} colorType="blue" delay={100} mounted={mounted} />
+                                <StatCard icon={Shield} label="Active Consents" value={activeConsents.length} colorType="teal" delay={200} mounted={mounted} />
+                                <StatCard icon={Bell} label="Pending Requests" value={pendingConsents.length} colorType="amber" delay={300} mounted={mounted} />
+                                <StatCard icon={Activity} label="Access Events" value={accessHistory.length} colorType="violet" delay={400} mounted={mounted} />
                             </div>
 
-                            {/* Pending Consent Alert */}
+                            {/* Pending Consent — Modern Action Card */}
                             {pendingConsents.length > 0 && (
-                                <div className="glass-card border-l-4 border-amber-400 bg-gradient-to-r from-amber-50/80 to-orange-50/50 animate-fade-in">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20">
-                                                <Bell className="w-6 h-6 text-white" />
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-amber-900">{pendingConsents.length} pending consent request{pendingConsents.length > 1 ? 's' : ''}</p>
-                                                <p className="text-amber-700 text-sm">Healthcare providers are waiting for your approval to access your records.</p>
-                                            </div>
+                                <div className="bg-white dark:bg-slate-900 border border-amber-200/60 dark:border-amber-800/30 rounded-xl p-5 animate-fade-in flex items-center justify-between gap-4 shadow-sm">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-500 flex items-center justify-center shrink-0">
+                                            <AlertTriangle className="w-5 h-5" />
                                         </div>
-                                        <button onClick={() => navigate('/patient/dashboard?tab=consent')} className="btn-primary py-2.5 px-6 flex items-center gap-2">
-                                            Review <ArrowRight className="w-4 h-4" />
-                                        </button>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>Pending Consent Request</h4>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{pendingConsents.length} provider{pendingConsents.length > 1 ? 's' : ''} waiting for your approval to access records.</p>
+                                        </div>
                                     </div>
+                                    <button onClick={() => navigate('/patient/dashboard?tab=consent')} className="whitespace-nowrap px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
+                                        Review
+                                    </button>
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-12 gap-8">
-                                <div className="col-span-12 lg:col-span-8 space-y-6">
-                                    <div className="flex items-center justify-between"><h3 className="text-2xl font-black text-slate-900 dark:text-white">Recent Records</h3><button onClick={() => navigate('/patient/dashboard?tab=records')} className="text-primary-600 font-bold hover:underline flex items-center gap-1 group">View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></button></div>
-                                    <div className="grid gap-4">{records.length === 0 ? <div className="glass-card text-center py-24"><FileText className="w-16 h-16 text-slate-200 mx-auto mb-4" /><p className="text-slate-500 font-medium">Your health timeline is empty.</p></div> : records.slice(0, 3).map(r => <MedicalCard key={r._id} record={r} />)}</div>
-                                </div>
-                                <div className="col-span-12 lg:col-span-4 space-y-6">
-                                    {/* Patient Profile Card */}
-                                    <div className="rounded-2xl overflow-hidden shadow-xl border border-teal-700/30 animate-fade-in" style={{ background: 'linear-gradient(145deg, #0d4f4a 0%, #0f766e 40%, #14b8a6 100%)', animationDelay: '150ms' }}>
-                                        {/* Top Section: Avatar + Name */}
-                                        <div className="flex items-center gap-4 px-6 pt-6 pb-4">
-                                            <div className="w-14 h-14 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-white font-black text-2xl shadow-lg border border-white/20">
-                                                {user.firstName?.[0]}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                {editingProfile ? (
-                                                    <div className="flex flex-col gap-1">
-                                                        <div className="flex gap-1">
-                                                            <input
-                                                                type="text"
-                                                                value={profileFirstName}
-                                                                onChange={(e) => setProfileFirstName(e.target.value)}
-                                                                className="w-full bg-white/10 text-white text-sm font-bold rounded border border-white/20 py-0.5 px-1 outline-none focus:border-white/40"
-                                                                placeholder="First Name"
-                                                            />
-                                                            <input
-                                                                type="text"
-                                                                value={profileLastName}
-                                                                onChange={(e) => setProfileLastName(e.target.value)}
-                                                                className="w-full bg-white/10 text-white text-sm font-bold rounded border border-white/20 py-0.5 px-1 outline-none focus:border-white/40"
-                                                                placeholder="Last Name"
-                                                            />
-                                                        </div>
-                                                        <input
-                                                            type="email"
-                                                            value={profileEmail}
-                                                            onChange={(e) => setProfileEmail(e.target.value)}
-                                                            className="w-full bg-white/10 text-white text-xs font-medium rounded border border-white/20 py-0.5 px-1 outline-none focus:border-white/40"
-                                                            placeholder="Email"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <h3 className="text-lg font-bold text-white truncate">{user.firstName} {user.lastName}</h3>
-                                                        <p className="text-teal-200/80 text-xs font-medium truncate">{user.email || `${user.userId.toLowerCase()}@hospital.com`}</p>
-                                                    </>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => {
-                                                    if (editingProfile) { saveProfile(); }
-                                                    else { setEditingProfile(true); }
-                                                }}
-                                                disabled={savingProfile}
-                                                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all border border-white/10"
-                                                title={editingProfile ? 'Save' : 'Edit'}
-                                            >
-                                                {savingProfile ? (
-                                                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                                                ) : editingProfile ? (
-                                                    <Check className="w-4 h-4" />
-                                                ) : (
-                                                    <Pencil className="w-3.5 h-3.5" />
-                                                )}
+                            {/* Two-Column Dashboard Layout (8/4 split) */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                {/* LEFT COLUMN — Primary Content (8/12) */}
+                                <div className="lg:col-span-8 flex flex-col gap-6">
+                                    {/* Recent Records */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                                            <h3 className="text-sm font-bold text-slate-800 dark:text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>Recent Records</h3>
+                                            <button onClick={() => navigate('/patient/dashboard?tab=records')} className="text-teal-600 dark:text-teal-400 text-xs font-semibold hover:text-teal-700 dark:hover:text-teal-300 flex items-center gap-1 transition-colors group">
+                                                View All <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                                             </button>
                                         </div>
-                                        {/* Bottom Section: Blood Type + Height */}
-                                        <div className="grid grid-cols-2 gap-3 px-6 pb-6 pt-2">
-                                            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                                                <p className="text-[9px] font-bold text-teal-200/60 uppercase tracking-widest mb-1 flex items-center gap-1">
-                                                    <Droplet className="w-3 h-3" /> Blood Type
-                                                </p>
-                                                {editingProfile ? (
-                                                    <select
-                                                        value={profileBloodType}
-                                                        onChange={(e) => setProfileBloodType(e.target.value)}
-                                                        className="w-full bg-white/10 text-white text-lg font-bold rounded-lg border border-white/20 py-1 px-1 outline-none focus:border-white/40 appearance-none cursor-pointer"
-                                                    >
-                                                        <option value="" className="bg-teal-800">Select</option>
-                                                        {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bt => (
-                                                            <option key={bt} value={bt} className="bg-teal-800">{bt}</option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    <p className="text-xl font-black text-white leading-tight">
-                                                        {profileBloodType || '—'}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                                                <p className="text-[9px] font-bold text-teal-200/60 uppercase tracking-widest mb-1 flex items-center gap-1">
-                                                    <Ruler className="w-3 h-3" /> Height
-                                                </p>
-                                                {editingProfile ? (
-                                                    <div className="flex items-baseline gap-1">
-                                                        <input
-                                                            type="number"
-                                                            value={profileHeight}
-                                                            onChange={(e) => setProfileHeight(e.target.value)}
-                                                            placeholder="0"
-                                                            className="w-full bg-white/10 text-white text-lg font-bold rounded-lg border border-white/20 py-1 px-2 outline-none focus:border-white/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                        />
-                                                        <span className="text-sm font-bold text-teal-200/60">cm</span>
+                                        <div className="p-5">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {records.length === 0 ? (
+                                                    <div className="col-span-full border border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-center py-12 flex flex-col items-center justify-center">
+                                                        <FileText className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-3" />
+                                                        <p className="text-slate-400 dark:text-slate-500 text-xs font-medium">No medical records found</p>
                                                     </div>
                                                 ) : (
-                                                    <p className="text-xl font-black text-white leading-tight">
-                                                        {profileHeight ? <>{profileHeight} <span className="text-sm font-bold text-teal-200/60">cm</span></> : '—'}
-                                                    </p>
+                                                    records.slice(0, 4).map(r => <MedicalCard key={r._id} record={r} />)
                                                 )}
                                             </div>
                                         </div>
                                     </div>
 
-                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">Security Snapshot</h3>
-                                    <div className="glass-card bg-indigo-50/50 border-indigo-100">
-                                        <div className="flex items-center gap-3 mb-4"><div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white"><Shield className="w-5 h-5" /></div><p className="font-bold text-indigo-900">Device Protection</p></div>
-                                        <p className="text-indigo-700 text-sm leading-relaxed mb-4">Your account is protected by hardware-bound MFA and end-to-end encryption. Only you and authorized providers can decrypt your records.</p>
-                                        <button onClick={() => setShowMobileSim(true)} className="w-full py-3 bg-white border border-indigo-200 rounded-xl text-indigo-600 font-bold text-sm hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"><Smartphone className="w-4 h-4" /> Open Authenticator</button>
+                                    {/* Activity Timeline */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                                        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                                            <h3 className="text-sm font-bold text-slate-800 dark:text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>Activity Timeline</h3>
+                                        </div>
+                                        <div className="p-5">
+                                            <div className="space-y-0">
+                                                {(() => {
+                                                    const timelineItems = [
+                                                        ...records.slice(0, 3).map(r => ({
+                                                            type: 'record',
+                                                            icon: FileText,
+                                                            text: `${r.type?.replace(/_/g, ' ') || 'Record'} uploaded`,
+                                                            detail: r.diagnosis || r.reason || 'Clinical documentation',
+                                                            time: r.createdAt || r.date,
+                                                            color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                                        })),
+                                                        ...activeConsents.slice(0, 2).map(c => ({
+                                                            type: 'consent',
+                                                            icon: Shield,
+                                                            text: `Consent granted to Dr. ${c.doctor?.lastName || 'Provider'}`,
+                                                            detail: c.purpose || 'Medical records access',
+                                                            time: c.respondedAt || c.requestedAt,
+                                                            color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                                                        })),
+                                                        ...accessHistory.slice(0, 2).map(log => ({
+                                                            type: 'access',
+                                                            icon: Eye,
+                                                            text: `Records accessed by ${log.accessedBy?.name || log.accessedBy?.userId || 'Provider'}`,
+                                                            detail: `${log.accessedBy?.role || 'Healthcare'} • Audit verified`,
+                                                            time: log.accessedAt,
+                                                            color: 'text-violet-500 bg-violet-50 dark:bg-violet-900/20'
+                                                        }))
+                                                    ].filter(item => item.time)
+                                                        .sort((a, b) => new Date(b.time) - new Date(a.time))
+                                                        .slice(0, 5);
+
+                                                    if (timelineItems.length === 0) {
+                                                        return (
+                                                            <div className="text-center py-10">
+                                                                <Clock className="w-8 h-8 text-slate-300 dark:text-slate-700 mx-auto mb-2" />
+                                                                <p className="text-xs text-slate-400">No recent activity</p>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return timelineItems.map((item, i) => (
+                                                        <div key={i} className="flex gap-3 group">
+                                                            <div className="flex flex-col items-center">
+                                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.color}`}>
+                                                                    <item.icon className="w-3.5 h-3.5" />
+                                                                </div>
+                                                                {i < timelineItems.length - 1 && <div className="w-px flex-1 bg-slate-100 dark:bg-slate-800 my-1" />}
+                                                            </div>
+                                                            <div className={`flex-1 ${i < timelineItems.length - 1 ? 'pb-4' : 'pb-0'}`}>
+                                                                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-snug">{item.text}</p>
+                                                                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{item.detail}</p>
+                                                                <p className="text-[10px] text-slate-400/70 mt-1 font-medium">
+                                                                    {new Date(item.time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {new Date(item.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ));
+                                                })()}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+
+                                {/* RIGHT COLUMN — Secondary Info (4/12) */}
+                                <div className="lg:col-span-4 flex flex-col gap-6">
+                                    {/* Security Snapshot */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                                        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+                                            <h3 className="text-sm font-bold text-slate-800 dark:text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>Security Snapshot</h3>
+                                        </div>
+                                        <div className="p-5">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                                    <Lock className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-slate-800 dark:text-white text-xs">Account Protected</p>
+                                                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Secured with E2EE</p>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
+                                                Your medical history is encrypted with hardware-bound keys. Only authorized providers can access decrypted data.
+                                            </p>
+                                            <button onClick={() => setShowMobileSim(true)} className="w-full py-2 px-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 text-xs font-semibold transition-colors flex items-center justify-center gap-2">
+                                                <Smartphone className="w-3.5 h-3.5" />
+                                                MFA Authenticator
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Quick Actions */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                                        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+                                            <h3 className="text-sm font-bold text-slate-800 dark:text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>Quick Actions</h3>
+                                        </div>
+                                        <div className="p-4 space-y-1.5">
+                                            <button onClick={() => navigate('/patient/dashboard?tab=records')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left group">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center shrink-0">
+                                                    <FileText className="w-3.5 h-3.5" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">View Records</p>
+                                                    <p className="text-[10px] text-slate-400">Browse medical history</p>
+                                                </div>
+                                                <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                                            </button>
+                                            <button onClick={() => navigate('/patient/dashboard?tab=consent')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left group">
+                                                <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-500 flex items-center justify-center shrink-0">
+                                                    <Shield className="w-3.5 h-3.5" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Manage Consent</p>
+                                                    <p className="text-[10px] text-slate-400">Control data access</p>
+                                                </div>
+                                                <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                                            </button>
+                                            <button onClick={() => navigate('/patient/dashboard?tab=privacy')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left group">
+                                                <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-500 flex items-center justify-center shrink-0">
+                                                    <Lock className="w-3.5 h-3.5" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Privacy Center</p>
+                                                    <p className="text-[10px] text-slate-400">GDPR data rights</p>
+                                                </div>
+                                                <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Full Width Calendar Widget */}
+                            <div className="w-full">
+                                <AppointmentsWidget />
                             </div>
                         </div>
                     )}

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -14,10 +14,12 @@
   }
 
   body {
-    @apply antialiased transition-colors duration-500 bg-slate-50 text-slate-900;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14.5px;
-    letter-spacing: -0.01em;
+    @apply antialiased transition-colors duration-500 bg-[#f4f6f9] text-slate-900;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    letter-spacing: -0.008em;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
   h1,
@@ -26,12 +28,55 @@
   h4,
   h5,
   h6 {
-    letter-spacing: -0.025em;
+    font-family: 'DM Sans', 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.04em;
+    font-weight: 800;
+    line-height: 1.15;
+  }
+
+  /* Dashboard-wide type scale */
+  h1 {
+    font-size: 2.75rem;
+  }
+
+  /* 44px — banner headings */
+  h2 {
+    font-size: 2rem;
+  }
+
+  /* 32px — page section titles */
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  /* 20px — card / widget titles */
+  h4 {
+    font-size: 1.05rem;
+  }
+
+  /* ~17px — sub-section labels */
+
+  p {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    line-height: 1.7;
+  }
+
+  /* Utility class for consistent dashboard section labels */
+  .dash-label {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.6875rem;
+    /* 11px */
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   .dark body,
   html.dark body {
-    @apply bg-slate-900 text-slate-100;
+    background-color: transparent !important;
+    color: inherit !important;
   }
 }
 
@@ -112,6 +157,72 @@
   .btn-glass:hover {
     @apply bg-white/30 shadow-lg;
     transform: translateY(-2px);
+  }
+
+  /* ========================================
+     ULTRA PREMIUM COMPONENTS (Anti-AI Aesthetic)
+     ======================================== */
+  .card-premium {
+    @apply bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 transition-all duration-700 relative overflow-hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+
+  .dark .card-premium {
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  }
+
+  .card-premium:hover {
+    @apply -translate-y-2;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.08);
+  }
+
+  .text-premium-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-500 font-black;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .dark .text-premium-gradient {
+    @apply from-white to-slate-400;
+  }
+
+  .aurora-bg-teal {
+    background: radial-gradient(circle at 0% 0%, rgba(20, 184, 166, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, rgba(45, 212, 191, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(13, 148, 136, 0.05) 0%, transparent 50%);
+  }
+
+  .glass-depth {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+      0 10px 40px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark .glass-depth {
+    background: rgba(15, 23, 42, 0.4);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .shimmer-text {
+    background: linear-gradient(90deg, #fff, #5eead4, #fff);
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+
+  @keyframes shimmer {
+    to {
+      background-position: 200% center;
+    }
+  }
+
+  .doctor-banner-shape {
+    clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%);
   }
 
   /* ========================================
@@ -1613,5 +1724,88 @@
 
   50% {
     transform: translateY(-8px) rotate(3deg);
+  }
+}
+
+.dashboard-medical-bg {
+  background-image:
+    linear-gradient(rgba(244, 247, 250, 0.45), rgba(244, 247, 250, 0.6)),
+    url('/health_bg_custom.png') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-attachment: fixed !important;
+  background-repeat: no-repeat !important;
+  background-color: #f8f9fa !important;
+}
+
+.patient-dashboard-bg {
+  background-color: #f8fbff !important;
+  position: relative !important;
+  overflow: hidden !important;
+  z-index: 0 !important;
+}
+
+/* Layer 1: The background image (Static) */
+.patient-dashboard-bg::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background-image: url('/patient_health_bg.png') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-attachment: fixed !important;
+  background-repeat: no-repeat !important;
+  z-index: -2 !important;
+  pointer-events: none !important;
+  opacity: 0.8 !important;
+}
+
+/* Layer 2: The moving pulse scan (Animation) */
+.patient-dashboard-bg::after {
+  content: "" !important;
+  position: absolute !important;
+  top: -100% !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 200% !important;
+  background: linear-gradient(0deg,
+      transparent 0%,
+      rgba(20, 184, 166, 0.05) 48%,
+      rgba(20, 184, 166, 0.15) 50%,
+      rgba(20, 184, 166, 0.05) 52%,
+      transparent 100%) !important;
+  transform: rotate(25deg) !important;
+  animation: scan-pulse-down 12s linear infinite !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+}
+
+@keyframes scan-pulse {
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes float-bg-elements {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  100% {
+    transform: translate(10px, 20px) scale(1.05);
+  }
+}
+
+@keyframes scan-pulse-down {
+  0% {
+    top: -100%;
+  }
+
+  100% {
+    top: 100%;
   }
 }

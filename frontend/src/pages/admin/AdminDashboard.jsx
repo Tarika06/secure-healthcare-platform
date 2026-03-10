@@ -14,21 +14,48 @@ import gdprApi from '../../api/gdprApi';
 import AdminAppointmentsTab from '../../components/admin/AdminAppointmentsTab';
 
 // Helper Components
-const StatCard = ({ icon: Icon, label, value, gradient, delay }) => {
+const StatCard = ({ icon: Icon, label, value, colorType, delay, mounted }) => {
+    const themes = {
+        purple: {
+            base: 'border-purple-100/50 dark:border-purple-900/20',
+            iconBg: 'bg-purple-600/10 text-purple-600',
+            accent: 'bg-purple-600'
+        },
+        blue: {
+            base: 'border-blue-100/50 dark:border-blue-900/20',
+            iconBg: 'bg-blue-600/10 text-blue-600',
+            accent: 'bg-blue-600'
+        },
+        emerald: {
+            base: 'border-emerald-100/50 dark:border-emerald-900/20',
+            iconBg: 'bg-emerald-600/10 text-emerald-600',
+            accent: 'bg-emerald-600'
+        },
+        amber: {
+            base: 'border-amber-100/50 dark:border-amber-900/20',
+            iconBg: 'bg-amber-600/10 text-amber-600',
+            accent: 'bg-amber-600'
+        }
+    }[colorType] || themes.blue;
+
     return (
-        <div className={`glass-card group stagger-item hover:-translate-y-1 hover:shadow-glass-hover`}
-            style={{ animationDelay: `${delay}ms` }}>
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm font-medium text-slate-500">{label}</p>
-                    <p className={`text-3xl font-heading font-bold mt-2 bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
-                        {value ?? '—'}
-                    </p>
+        <div
+            className={`card-premium group ${themes.base} ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+            style={{ transitionDelay: `${delay}ms` }}
+        >
+            <div className="relative z-10">
+                <div className={`w-12 h-12 rounded-2xl ${themes.iconBg} flex items-center justify-center mb-6 transform group-hover:rotate-12 transition-transform`}>
+                    <Icon className="w-5 h-5" />
                 </div>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform`}>
-                    {React.createElement(Icon, { className: "w-6 h-6 text-white" })}
-                </div>
+                <h3 className="text-4xl font-black text-slate-900 dark:text-white mb-1 tracking-tight">
+                    {value ?? '0'}
+                </h3>
+                <p className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    {label}
+                    <span className={`w-1 h-1 rounded-full ${themes.accent}`}></span>
+                </p>
             </div>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 dark:bg-slate-800/10 rounded-bl-[4rem] -mr-12 -mt-12 group-hover:mr-0 group-hover:mt-0 transition-all duration-700"></div>
         </div>
     );
 };
@@ -324,88 +351,119 @@ const AdminDashboard = () => {
                 onLogout={handleLogout}
             />
 
-            <main className="flex-1 p-8 overflow-y-auto">
-                <div className="max-w-[1600px] mx-auto w-full">
-                    
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-teal-900 to-emerald-900 rounded-3xl p-8 mb-10 shadow-2xl relative overflow-hidden flex items-center justify-between animate-fade-in border border-teal-800/50">
-                        {/* Decorative background blurs */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500 rounded-full mix-blend-screen filter blur-[80px] opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
-                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 rounded-full mix-blend-screen filter blur-[60px] opacity-20 transform -translate-x-1/2 translate-y-1/2"></div>
+            <main className="flex-1 overflow-y-auto relative">
+                <div className="max-w-[1600px] mx-auto w-full p-8">
+
+                    {/* Header — Compact Dashboard Hero */}
+                    <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-[2.5rem] px-10 py-10 mb-10 shadow-2xl relative overflow-hidden flex items-center justify-between animate-fade-in border border-white/10 group">
+                        <div className="absolute top-0 left-0 w-full h-full shimmer-effect opacity-10 pointer-events-none"></div>
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] group-hover:scale-110 transition-transform duration-[10s]"></div>
 
                         <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-2 text-teal-200">
-                                <Sparkles className="w-5 h-5" />
-                                <span className="text-sm font-bold uppercase tracking-widest">Administrator Portal</span>
+                            <div className="flex items-center gap-2 mb-3">
+                                <Shield className="w-4 h-4 text-indigo-400" />
+                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-300/60">Administrator Station</span>
                             </div>
-                            <h1 className="text-4xl font-black tracking-tight text-white">
-                                Welcome, <span className="text-teal-300">{user?.firstName || 'Admin'}</span>
+                            <h1 className="text-4xl font-extrabold tracking-tight text-white m-0">
+                                Welcome, <span className="text-indigo-400">{user?.firstName || 'Admin'}</span>
                             </h1>
+                            <p className="text-indigo-200/50 text-base font-medium mt-2 max-w-lg">System status: Optimal security perimeter active.</p>
                         </div>
-                        <div className="flex items-center gap-4 group cursor-default relative z-10">
+
+                        <div className="flex items-center gap-8 relative z-10">
                             <div className="text-right hidden sm:block">
-                                <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest leading-none mb-1.5">Admin ID</p>
-                                <p className="text-sm font-bold text-teal-50 leading-none shadow-sm">{user?.userId || 'SYS-ADMIN'}</p>
+                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 leading-none">Security Clearance</p>
+                                <p className="text-sm font-black text-white leading-none font-mono tracking-tighter shadow-sm">LVL-4-AUTH-{user?.userId?.slice(-4) || 'SYS'}</p>
                             </div>
-                            <div className="w-14 h-14 rounded-2xl bg-teal-800/50 border border-teal-700/50 flex items-center justify-center text-teal-50 font-black text-xl shadow-inner backdrop-blur-sm group-hover:rotate-6 group-hover:scale-105 transition-all duration-300">
-                                {user?.firstName?.[0] || 'A'}{user?.lastName?.[0] || 'D'}
+                            <div className="relative group/avatar">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-3xl blur opacity-25 group-hover/avatar:opacity-60 transition duration-1000"></div>
+                                <div className="relative w-16 h-16 rounded-[20px] bg-slate-900 border border-white/10 flex items-center justify-center text-white font-black text-2xl shadow-2xl transform group-hover/avatar:scale-105 transition-all">
+                                    {user?.firstName?.[0] || 'A'}{user?.lastName?.[0] || 'D'}
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {activeTab === 'overview' && (
-                        <div className="animate-fade-in">
-                            <div className="grid grid-cols-12 gap-4 mb-5">
-                                <div className={`col-span-12 lg:col-span-7 stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '100ms' }}>
-                                    <div className="flex items-start justify-between h-full">
-                                        <div className="space-y-3">
-                                            <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Patients</p>
-                                            <p className="text-6xl font-bold bg-gradient-to-r from-primary-600 to-teal-500 bg-clip-text text-transparent">{stats?.totalPatients ?? '—'}</p>
-                                            <p className="text-sm text-slate-600">Active in system</p>
-                                        </div>
-                                        <div className="w-20 h-20 rounded-2xl icon-container-primary flex items-center justify-center"><Users className="w-10 h-10" /></div>
-                                    </div>
-                                </div>
-                                <div className="col-span-12 lg:col-span-5 grid grid-cols-1 gap-4">
-                                    <div className={`stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '200ms' }}>
-                                        <div className="flex items-center justify-between">
-                                            <div><p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Doctors</p><p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent mt-2">{stats?.totalDoctors ?? '—'}</p></div>
-                                            <div className="w-14 h-14 rounded-xl icon-container-blue flex items-center justify-center"><Activity className="w-7 h-7" /></div>
-                                        </div>
-                                    </div>
-                                    <div className={`stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '250ms' }}>
-                                        <div className="flex items-center justify-between">
-                                            <div><p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Medical Records</p><p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent mt-2">{stats?.totalRecords ?? '—'}</p></div>
-                                            <div className="w-14 h-14 rounded-xl icon-container-green flex items-center justify-center"><FileText className="w-7 h-7" /></div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div className="animate-fade-in space-y-6">
+                            {/* Stats — 4 column grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <StatCard icon={Users} label="Total Patients" value={stats?.totalPatients} colorType="purple" delay={100} mounted={mounted} />
+                                <StatCard icon={Activity} label="Total Doctors" value={stats?.totalDoctors} colorType="blue" delay={200} mounted={mounted} />
+                                <StatCard icon={FileText} label="Medical Records" value={stats?.totalRecords} colorType="emerald" delay={300} mounted={mounted} />
+                                <StatCard icon={TrendingUp} label="Records (7 days)" value={stats?.recentRecordsLast7Days} colorType="amber" delay={400} mounted={mounted} />
                             </div>
-                            <div className="grid grid-cols-12 gap-4 mb-8">
-                                <div className="col-span-12 lg:col-span-5 lg:col-start-8">
-                                    <div className={`stat-card-glass group transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '300ms' }}>
-                                        <div className="flex items-center justify-between">
-                                            <div><p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Records (7 days)</p><p className="text-3xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent mt-2">{stats?.recentRecordsLast7Days ?? '—'}</p></div>
-                                            <div className="w-14 h-14 rounded-xl icon-container-amber flex items-center justify-center"><TrendingUp className="w-7 h-7" /></div>
+
+                            {/* Two-column layout */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                {/* LEFT — Records by Type (8/12) */}
+                                <div className="lg:col-span-8">
+                                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                                        <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center">
+                                                <Database className="w-4 h-4 text-primary-600" />
+                                            </div>
+                                            <h3 className="text-sm font-bold text-slate-800 dark:text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>Records by Type</h3>
+                                        </div>
+                                        <div className="p-5">
+                                            {stats?.recordsByType ? (
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                    {stats.recordsByType.map((item, idx) => (
+                                                        <div key={idx} className="group p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 hover:shadow-md hover:-translate-y-0.5 transition-all">
+                                                            <p className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>{item.count}</p>
+                                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.08em] mt-1">{item._id || 'Unknown'}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : <p className="text-slate-400 text-sm">No data available</p>}
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-12 gap-6 mb-7">
-                                <div className={`col-span-12 lg:col-span-8 card transition-all duration-700 ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`} style={{ transitionDelay: '400ms' }}>
-                                    <div className="flex items-center gap-3 mb-6"><div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center"><Database className="w-6 h-6 text-primary-600" /></div><h3 className="text-lg font-bold text-slate-900">Records by Type</h3></div>
-                                    {stats?.recordsByType ? (
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                            {stats.recordsByType.map((item, idx) => (
-                                                <div key={idx} className="group p-5 rounded-xl bg-gradient-to-br from-slate-50 to-white border hover:shadow-lg transition-all"><p className="text-3xl font-bold text-gradient">{item.count}</p><p className="text-sm text-slate-500 mt-2">{item._id || 'Unknown'}</p></div>
-                                            ))}
+
+                                {/* RIGHT — Admin Access Level (4/12) */}
+                                <div className="lg:col-span-4">
+                                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                                        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+                                            <h3 className="text-sm font-bold text-slate-800 dark:text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>Admin Access Level</h3>
                                         </div>
-                                    ) : <p className="text-slate-400">No data available</p>}
-                                </div>
-                                <div className={`col-span-12 lg:col-span-4 p-6 bg-blue-50 border border-blue-200 rounded-2xl transition-all duration-700 ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`} style={{ transitionDelay: '450ms' }}>
-                                    <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-4"><Shield className="w-6 h-6 text-blue-600" /></div>
-                                    <p className="font-bold text-blue-900 mb-2">Admin Access Level</p>
-                                    <p className="text-blue-700 text-sm leading-relaxed">Medical record content is encrypted and not directly viewable by administrators to ensure patient privacy.</p>
+                                        <div className="p-5">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 flex items-center justify-center shrink-0">
+                                                    <Shield className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-slate-800 dark:text-white text-xs">Restricted Access</p>
+                                                    <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">Privacy Protected</p>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
+                                                Medical record content is encrypted and not directly viewable by administrators to ensure patient privacy.
+                                            </p>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                                        <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">Encryption</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-emerald-600 font-bold">AES-256</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                                        <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">HIPAA</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-blue-600 font-bold uppercase">Compliant</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="w-2 h-2 rounded-full bg-violet-500" />
+                                                        <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">Audit Trail</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-violet-600 font-bold uppercase">Active</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
