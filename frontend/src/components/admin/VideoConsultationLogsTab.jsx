@@ -3,7 +3,7 @@ import { Video, Shield, Clock, Wifi, Search, Filter, Activity, Cpu, Calendar } f
 import teleconsultationApi from '../../api/teleconsultationApi';
 
 // Helper component for statistics
-const StatCard = ({ icon: Icon, label, value, gradientClassName }) => (
+const StatCard = ({ icon, label, value, gradientClassName }) => (
     <div className={`p-6 rounded-2xl text-white shadow-lg ${gradientClassName} relative overflow-hidden group`}>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform duration-500"></div>
         <div className="relative z-10 flex justify-between items-center">
@@ -12,7 +12,7 @@ const StatCard = ({ icon: Icon, label, value, gradientClassName }) => (
                 <h3 className="text-4xl font-black">{value ?? '—'}</h3>
             </div>
             <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
-                <Icon className="w-7 h-7 text-white" />
+                {React.createElement(icon, { className: "w-7 h-7 text-white" })}
             </div>
         </div>
     </div>

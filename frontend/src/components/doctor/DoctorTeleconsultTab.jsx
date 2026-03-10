@@ -17,7 +17,7 @@ import { useAuth } from '../../context/AuthContext';
  */
 
 const DoctorTeleconsultTab = () => {
-    const { user, token } = useAuth();
+    const { token } = useAuth();
     const [view, setView] = useState('dashboard'); // dashboard | call | prescription | history
     const [pendingRequests, setPendingRequests] = useState([]);
     const [activeSession, setActiveSession] = useState(null);

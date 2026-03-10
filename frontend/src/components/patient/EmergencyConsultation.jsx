@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phone, AlertTriangle, Clock, Video, FileText, Download, CheckCircle, XCircle, Stethoscope, Activity, History, ChevronRight } from 'lucide-react';
 import { io } from 'socket.io-client';
 import teleconsultationApi from '../../api/teleconsultationApi';
@@ -27,7 +27,7 @@ const SPECIALTIES = [
 ];
 
 const EmergencyConsultation = () => {
-    const { user, token } = useAuth();
+    const { token } = useAuth();
     const [view, setView] = useState('home'); // home | request | waiting | call | post-call | history
     const [symptoms, setSymptoms] = useState('');
     const [specialty, setSpecialty] = useState('');
@@ -126,6 +126,7 @@ const EmergencyConsultation = () => {
                 const data = await teleconsultationApi.getPrescription(activeSession.sessionId);
                 setPrescription(data.prescription || null);
             } catch (err) {
+                console.error(err);
                 // No prescription yet, that's ok
             }
         }
@@ -148,6 +149,7 @@ const EmergencyConsultation = () => {
         try {
             await teleconsultationApi.downloadPrescriptionPDF(sessionId);
         } catch (err) {
+            console.error(err);
             alert('Failed to download prescription');
         }
     };

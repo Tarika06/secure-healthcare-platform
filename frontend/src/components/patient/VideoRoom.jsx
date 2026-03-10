@@ -283,7 +283,7 @@ const VideoRoom = ({ sessionId, session, onCallEnd }) => {
             mounted = false;
             cleanup();
         };
-    }, [sessionId, token, cleanup]);
+    }, [sessionId, token, cleanup, onCallEnd]);
 
     // Toggle microphone
     const toggleMute = () => {
