@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
 import DoctorAppointmentsTab from '../../components/doctor/DoctorAppointmentsTab';
+import NotificationsPopover from '../../components/NotificationsPopover';
 
 // Helper Components
 const StatCard = ({ iconComponent: IconComponent, label, value, gradient, delay, mounted }) => {
@@ -286,7 +287,8 @@ const DoctorDashboard = () => {
                                 Welcome, <span className="text-teal-300">Dr. {user?.firstName}</span>
                             </h1>
                         </div>
-                        <div className="flex items-center gap-4 group cursor-default relative z-10">
+                        <div className="flex items-center gap-4 group relative z-10">
+                            <NotificationsPopover />
                             <div className="text-right hidden sm:block">
                                 <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest leading-none mb-1.5">Medical ID</p>
                                 <p className="text-sm font-bold text-teal-50 leading-none shadow-sm">{user?.userId || 'MD-STAFF'}</p>
@@ -350,10 +352,10 @@ const DoctorDashboard = () => {
                                 {selectedCollab ? (
                                     <>
                                         <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center"><div><h3 className="text-sm font-bold">Workspace: {selectedCollab.patientId}</h3><p className="text-[10px] text-blue-600 font-bold">{selectedCollab.accessScope}</p></div>
-                                        {selectedCollab.status === 'PENDING' && selectedCollab.consultingDoctorId === user.userId && (<div className="flex gap-2"><button onClick={() => handleRespondToCollab(selectedCollab._id, 'DECLINED')} className="px-3 py-1.5 text-[10px] font-bold text-red-600 bg-red-50 rounded-lg">DECLINE</button><button onClick={() => handleRespondToCollab(selectedCollab._id, 'ACCEPTED')} className="px-3 py-1.5 text-[10px] font-bold text-white bg-blue-600 rounded-lg">ACCEPT</button></div>)}
-                                        {selectedCollab.status !== 'PENDING' && selectedCollab.status !== 'ACCEPTED' && (
-                                            <span className="px-3 py-1 bg-slate-200 text-slate-600 font-bold text-[10px] rounded-lg">{selectedCollab.status}</span>
-                                        )}
+                                            {selectedCollab.status === 'PENDING' && selectedCollab.consultingDoctorId === user.userId && (<div className="flex gap-2"><button onClick={() => handleRespondToCollab(selectedCollab._id, 'DECLINED')} className="px-3 py-1.5 text-[10px] font-bold text-red-600 bg-red-50 rounded-lg">DECLINE</button><button onClick={() => handleRespondToCollab(selectedCollab._id, 'ACCEPTED')} className="px-3 py-1.5 text-[10px] font-bold text-white bg-blue-600 rounded-lg">ACCEPT</button></div>)}
+                                            {selectedCollab.status !== 'PENDING' && selectedCollab.status !== 'ACCEPTED' && (
+                                                <span className="px-3 py-1 bg-slate-200 text-slate-600 font-bold text-[10px] rounded-lg">{selectedCollab.status}</span>
+                                            )}
                                         </div>
                                         <div className="flex-1 flex overflow-hidden">
                                             <div className="flex-1 flex flex-col border-r border-slate-100">

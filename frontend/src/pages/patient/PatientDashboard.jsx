@@ -14,6 +14,8 @@ import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
 import gdprApi from '../../api/gdprApi';
 import PatientAppointmentsTab from '../../components/patient/PatientAppointmentsTab';
+import HealthTipCard from '../../components/patient/HealthTipCard';
+import NotificationsPopover from '../../components/NotificationsPopover';
 
 // Helper Components
 const StatCard = ({ icon: Icon, label, value, gradient, delay }) => {
@@ -345,7 +347,8 @@ const PatientDashboard = () => {
                                 Welcome back, <span className="text-teal-300">{user.firstName}</span>
                             </h1>
                         </div>
-                        <div className="flex items-center gap-4 group cursor-default relative z-10">
+                        <div className="flex items-center gap-4 group relative z-10">
+                            <NotificationsPopover />
                             <div className="text-right hidden sm:block">
                                 <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest leading-none mb-1.5">Authenticated ID</p>
                                 <p className="text-sm font-bold text-teal-50 leading-none shadow-sm">{user.userId}</p>
@@ -401,6 +404,9 @@ const PatientDashboard = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Health Tip Card at the bottom of the overview tab */}
+                            <HealthTipCard />
                         </div>
                     )}
 

@@ -128,6 +128,7 @@ app.use("/api/pm", require("./routes/patientManagement"));  // Alias
 app.use("/api/gdpr", require("./routes/gdprRoutes"));       // Direct GDPR access
 app.use("/api/alerts", require("./routes/alertRoutes"));
 app.use("/api/appointments", require("./routes/appointmentRoutes"));
+app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/mfa", require("./middleware/authenticate"), require("./routes/mfaRoutes"));
 try {
   app.use("/api/deletion", require("./routes/deletionRoutes"));
