@@ -55,7 +55,13 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Handle preflight OPTIONS for all routes (Express v5 wildcard syntax)
+// GLOBAL REQUEST LOGGER for debugging
+app.use((req, res, next) => {
+  console.log(`🔌 [${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// Handle preflight OPTIONS
 app.options('/{*path}', cors(corsOptions));
 
 
@@ -136,6 +142,7 @@ try {
   console.error("❌ FAILED to load deletion routes:", err.message);
 }
 app.use("/api/collaboration", require("./routes/collaborationRoutes"));
+app.use("/api/chat", require("./routes/chatRoutes"));
 
 // Import deletion cron job
 const { startDeletionCron } = require("./services/deletionCron");

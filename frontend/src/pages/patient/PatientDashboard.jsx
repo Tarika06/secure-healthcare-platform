@@ -14,6 +14,7 @@ import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
 import gdprApi from '../../api/gdprApi';
 import PatientAppointmentsTab from '../../components/patient/PatientAppointmentsTab';
+import ChatWidget from '../../components/ChatWidget';
 
 // Helper Components
 const StatCard = ({ icon: Icon, label, value, gradient, delay }) => {
@@ -633,35 +634,7 @@ const PatientDashboard = () => {
             </main>
 
             <MobileAppSimulator />
-
-            {/* MFA Verification Modal */}
-            {showMfaModal && (
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in">
-                    <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl p-10 border border-white/20 transform transition-all">
-                        <div className="text-center mb-8">
-                            <div className="w-20 h-20 rounded-3xl bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center mx-auto mb-6 shadow-sm"><ShieldAlert className="w-12 h-12 text-indigo-600" /></div>
-                            <h3 className="text-3xl font-black text-slate-900 dark:text-white">Verify Identity</h3>
-                            <p className="text-slate-500 font-medium text-sm mt-3">Confirm this sensitive action by entering the 6-digit code from your linked authenticator device.</p>
-                        </div>
-                        <div className="relative mb-8">
-                            <input
-                                type="text"
-                                value={mfaCode}
-                                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                placeholder="000 000"
-                                className="w-full text-center text-5xl font-black tracking-[0.2em] py-6 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-[1.5rem] focus:border-indigo-500 outline-none transition-all"
-                            />
-                        </div>
-                        {mfaError && <div className="mb-8 p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-2 justify-center font-bold text-sm border border-red-100"><XCircle className="w-5 h-5" /> {mfaError}</div>}
-                        <div className="flex gap-4">
-                            <button onClick={() => setShowMfaModal(false)} className="flex-1 py-4 font-black text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-2xl transition-all">Cancel</button>
-                            <button onClick={handleMfaVerify} disabled={mfaVerifying || mfaCode.length < 6} className="btn-primary flex-1 py-4 text-lg shadow-xl shadow-primary-500/20">
-                                {mfaVerifying ? 'Verifying...' : 'Confirm'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ChatWidget />
         </div>
     );
 };
