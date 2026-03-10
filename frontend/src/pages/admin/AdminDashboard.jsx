@@ -4,7 +4,7 @@ import {
     Shield, Users, FileText, BarChart3, Search, AlertTriangle,
     TrendingUp, Activity, Database, Clock, CheckCircle, XCircle,
     Cpu, AlertCircle, Trash2, Smartphone, MailCheck, Lock, Calendar,
-    PieChart, Target
+    PieChart, Target, Sparkles
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
