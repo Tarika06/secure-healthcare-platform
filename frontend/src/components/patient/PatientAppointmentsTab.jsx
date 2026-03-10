@@ -18,6 +18,7 @@ const PatientAppointmentsTab = () => {
     const [selectedSlot, setSelectedSlot] = useState('');
     const [reason, setReason] = useState('');
     const [availableSlots, setAvailableSlots] = useState(null);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     // Modal State
     const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -36,6 +37,31 @@ const PatientAppointmentsTab = () => {
             setSelectedSlot('');
         }
     }, [selectedDoctor, selectedDate]);
+
+    // Real-time clock: refresh every 60 seconds so slots auto-update
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+            // If today is selected, auto-deselect a slot that just became past
+            if (selectedDate === new Date().toISOString().split('T')[0] && selectedSlot) {
+                const [h, m] = selectedSlot.split(':').map(Number);
+                const now = new Date();
+                if (h * 60 + m <= now.getHours() * 60 + now.getMinutes()) {
+                    setSelectedSlot('');
+                }
+            }
+        }, 60000);
+        return () => clearInterval(timer);
+    }, [selectedDate, selectedSlot]);
+
+    // Helper: check if a slot is in the past for the selected date
+    const isSlotPast = (slot) => {
+        if (!selectedDate) return false;
+        const todayStr = currentTime.toISOString().split('T')[0];
+        if (selectedDate !== todayStr) return false;
+        const [h, m] = slot.split(':').map(Number);
+        return h * 60 + m <= currentTime.getHours() * 60 + currentTime.getMinutes();
+    };
 
     const fetchAppointments = async () => {
         try {
@@ -223,32 +249,38 @@ const PatientAppointmentsTab = () => {
                                 <div>
                                     <label className="label flex justify-between">
                                         Time Slot
-                                        {availableSlots && <span className="text-xs font-normal text-slate-500">{availableSlots.length} available</span>}
+                                        {availableSlots && <span className="text-xs font-normal text-slate-500">{availableSlots.filter(s => !isSlotPast(s)).length} available</span>}
                                     </label>
 
                                     {!availableSlots ? (
                                         <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center text-sm text-slate-500 dark:text-slate-400">
                                             Loading slots...
                                         </div>
-                                    ) : availableSlots.length === 0 ? (
+                                    ) : availableSlots.filter(s => !isSlotPast(s)).length === 0 ? (
                                         <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/50 text-center text-sm text-rose-600 dark:text-rose-400 font-medium">
                                             No slots available for this date.
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-3 gap-2">
-                                            {availableSlots.map(slot => (
-                                                <button
-                                                    key={slot}
-                                                    type="button"
-                                                    onClick={() => setSelectedSlot(slot)}
-                                                    className={`py-2 px-1 text-sm rounded-lg border transition-all ${selectedSlot === slot
-                                                        ? 'bg-teal-50 dark:bg-teal-900/40 border-teal-500 text-teal-700 dark:text-teal-300 font-bold shadow-sm'
-                                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-teal-300 dark:hover:border-teal-600'
+                                            {availableSlots.map(slot => {
+                                                const past = isSlotPast(slot);
+                                                return (
+                                                    <button
+                                                        key={slot}
+                                                        type="button"
+                                                        disabled={past}
+                                                        onClick={() => !past && setSelectedSlot(slot)}
+                                                        className={`py-2 px-1 text-sm rounded-lg border transition-all ${past
+                                                            ? 'bg-slate-100 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-600 opacity-40 cursor-not-allowed line-through'
+                                                            : selectedSlot === slot
+                                                                ? 'bg-teal-50 dark:bg-teal-900/40 border-teal-500 text-teal-700 dark:text-teal-300 font-bold shadow-sm'
+                                                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-teal-300 dark:hover:border-teal-600'
                                                         }`}
-                                                >
-                                                    {slot}
-                                                </button>
-                                            ))}
+                                                    >
+                                                        {slot}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>

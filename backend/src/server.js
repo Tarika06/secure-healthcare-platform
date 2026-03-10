@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const http = require("http");
 const cors = require("cors");
 const connectDB = require("./config/database");
 
@@ -136,15 +137,23 @@ try {
   console.error("❌ FAILED to load deletion routes:", err.message);
 }
 app.use("/api/collaboration", require("./routes/collaborationRoutes"));
+app.use("/api/consultation", require("./routes/consultationRoutes"));
 
 // Import deletion cron job
 const { startDeletionCron } = require("./services/deletionCron");
+const { initSignalingServer } = require("./services/signalingServer");
 
 const startServer = async () => {
   await connectDB();
 
-  app.listen(process.env.PORT || 5000, () => {
-    console.log(`Server running on port ${process.env.PORT || 5000}`);
+  const server = http.createServer(app);
+
+  // Initialize Socket.IO signaling server for WebRTC
+  const io = initSignalingServer(server, corsOptions);
+  app.set("io", io);
+
+  server.listen(process.env.PORT || 5001, () => {
+    console.log(`Server running on port ${process.env.PORT || 5001}`);
 
     // Start the deletion cron job
     startDeletionCron();

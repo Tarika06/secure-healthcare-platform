@@ -5,7 +5,7 @@ import {
     Eye, Heart, Clock, Activity, Download, Trash2,
     ArrowRight, Sparkles, KeyRound, AlertTriangle,
     ShieldAlert, Smartphone, Lock, X, Calendar, ScanLine,
-    Target, ClipboardList, Stethoscope
+    Target, ClipboardList, Stethoscope, Video
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import MedicalCard from '../../components/MedicalCard';
@@ -14,6 +14,7 @@ import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
 import gdprApi from '../../api/gdprApi';
 import PatientAppointmentsTab from '../../components/patient/PatientAppointmentsTab';
+import EmergencyConsultation from '../../components/patient/EmergencyConsultation';
 
 // Helper Components
 const StatCard = ({ icon: Icon, label, value, gradient, delay }) => {
@@ -323,6 +324,7 @@ const PatientDashboard = () => {
                     { id: 'records', label: 'Records', icon: FileText },
                     { id: 'report', label: 'My Report', icon: ClipboardList },
                     { id: 'consent', label: 'Consent', icon: Shield, badge: pendingConsents.length },
+                    { id: 'teleconsult', label: 'Teleconsult', icon: Video },
                     { id: 'history', label: 'Access Log', icon: Eye },
                     { id: 'privacy', label: 'Privacy', icon: Shield }
                 ]}
@@ -407,6 +409,12 @@ const PatientDashboard = () => {
                     {activeTab === 'appointments' && (
                         <div className="animate-fade-in">
                             <PatientAppointmentsTab />
+                        </div>
+                    )}
+
+                    {activeTab === 'teleconsult' && (
+                        <div className="animate-fade-in">
+                            <EmergencyConsultation />
                         </div>
                     )}
 

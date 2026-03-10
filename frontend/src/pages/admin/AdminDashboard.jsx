@@ -4,7 +4,7 @@ import {
     Shield, Users, FileText, BarChart3, Search, AlertTriangle,
     TrendingUp, Activity, Database, Clock, CheckCircle, XCircle,
     Cpu, AlertCircle, Trash2, Smartphone, MailCheck, Lock, Calendar,
-    PieChart, Target, Sparkles
+    PieChart, Target, Sparkles, Video
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
@@ -12,6 +12,7 @@ import apiClient from '../../api/client';
 import AlertService from '../../api/AlertService';
 import gdprApi from '../../api/gdprApi';
 import AdminAppointmentsTab from '../../components/admin/AdminAppointmentsTab';
+import VideoConsultationLogsTab from '../../components/admin/VideoConsultationLogsTab';
 
 // Helper Components
 const StatCard = ({ icon: Icon, label, value, gradient, delay }) => {
@@ -267,6 +268,7 @@ const AdminDashboard = () => {
         { id: 'hot-storage', label: 'Hot Storage', icon: Activity },
         { id: 'users', label: 'User Management', icon: Users },
         { id: 'collaboration', label: 'Consultations', icon: MailCheck },
+        { id: 'video-logs', label: 'Video Logs', icon: Video },
         { id: 'alerts', label: 'Security Alerts', icon: Shield },
         { id: 'audit', label: 'Audit Logs', icon: FileText },
         { id: 'deletions', label: 'Pending Deletions', icon: Trash2 },
@@ -603,6 +605,12 @@ const AdminDashboard = () => {
                     {activeTab === 'appointments' && (
                         <div className="animate-fade-in">
                             <AdminAppointmentsTab />
+                        </div>
+                    )}
+
+                    {activeTab === 'video-logs' && (
+                        <div className="animate-fade-in">
+                            <VideoConsultationLogsTab />
                         </div>
                     )}
 

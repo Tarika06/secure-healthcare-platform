@@ -22,10 +22,11 @@ module.exports = (allowedRoles) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    const userRole = req.user.role;
+    const userRole = (req.user.role || "").toUpperCase();
     
-    // Check if user's role is in allowed list
-    if (!allowedRoles.includes(userRole)) {
+    // Check if user's role is in allowed list (case-insensitive)
+    const normalizedAllowed = allowedRoles.map(r => r.toUpperCase());
+    if (!normalizedAllowed.includes(userRole)) {
       await auditService.logAccessDenied(
         req.user.userId,
         req.originalUrl,

@@ -5,7 +5,7 @@ import {
     LayoutDashboard, FileText, Users, Shield, LogOut, BarChart3,
     ClipboardList, Activity, Plus, Eye, Stethoscope,
     FlaskConical, Settings, Sun, Moon, ChevronLeft, ChevronRight,
-    Calendar, MailCheck, ScanLine, PieChart
+    Calendar, MailCheck, ScanLine, PieChart, Video
 } from 'lucide-react';
 import logo from '../assets/logo.png';
 import { useTheme } from '../context/ThemeContext';
@@ -21,6 +21,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
         { icon: FileText, label: 'My Records', path: '/patient/dashboard', tab: 'records' },
         { icon: ClipboardList, label: 'My Report', path: '/patient/dashboard', tab: 'report' },
         { icon: Shield, label: 'Consent Manager', path: '/patient/dashboard', tab: 'consent', badge: pendingConsents },
+        { icon: Video, label: 'Teleconsult', path: '/patient/dashboard', tab: 'teleconsult' },
         { icon: Eye, label: 'Access History', path: '/patient/dashboard', tab: 'history' },
         { icon: Shield, label: 'Privacy & GDPR', path: '/patient/dashboard', tab: 'privacy' }
     ];
@@ -30,6 +31,7 @@ const Sidebar = ({ role, onLogout, pendingConsents = 0, items, activeItem, onIte
         { icon: Calendar, label: 'My Schedule', path: '/doctor/dashboard', tab: 'appointments' },
         { icon: ClipboardList, label: 'My Records', path: '/doctor/dashboard', tab: 'myrecords' },
         { icon: MailCheck, label: 'Consultations', path: '/doctor/dashboard', tab: 'collaboration' },
+        { icon: Video, label: 'Teleconsult', path: '/doctor/dashboard', tab: 'teleconsult' },
         { icon: Plus, label: 'Create Report', path: '/doctor/dashboard', tab: 'create' },
         { icon: Users, label: 'Patients', path: '/doctor/dashboard', tab: 'patients' }
     ];

@@ -17,7 +17,7 @@ const MfaSetupPage = () => {
     const inputRefs = useRef([]);
     const disableInputRefs = useRef([]);
 
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const navigate = useNavigate();
 
     const checkMfaStatus = useCallback(async () => {
@@ -90,6 +90,7 @@ const MfaSetupPage = () => {
         try {
             await apiClient.post('/mfa/verify-setup', { code: fullCode });
             setStep('success');
+            if (refreshUser) await refreshUser();
         } catch (err) {
             console.error('MFA verify setup failed:', err);
             setError(err.response?.data?.message || 'Invalid code. Please try again.');
@@ -114,6 +115,7 @@ const MfaSetupPage = () => {
             await apiClient.post('/mfa/disable', { code: fullCode });
             setStep('setup');
             setDisableCode(['', '', '', '', '', '']);
+            if (refreshUser) await refreshUser();
         } catch (err) {
             console.error('MFA disable failed:', err);
             setError(err.response?.data?.message || 'Invalid code. Please try again.');

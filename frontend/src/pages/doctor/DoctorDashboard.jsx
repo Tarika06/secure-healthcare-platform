@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import consentApi from '../../api/consentApi';
 import DoctorAppointmentsTab from '../../components/doctor/DoctorAppointmentsTab';
+import DoctorTeleconsultTab from '../../components/doctor/DoctorTeleconsultTab';
 
 // Helper Components
 const StatCard = ({ iconComponent: IconComponent, label, value, gradient, delay, mounted }) => {
@@ -392,6 +393,12 @@ const DoctorDashboard = () => {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {activeTab === 'teleconsult' && (
+                        <div className="animate-fade-in">
+                            <DoctorTeleconsultTab />
                         </div>
                     )}
                 </div>

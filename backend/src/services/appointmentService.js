@@ -103,6 +103,17 @@ const bookAppointment = async (patientId, { doctorId, date, timeSlot, reason }, 
     throw new Error("Cannot book appointments in the past");
   }
 
+  // 2b. Validate time slot is not in the past for today
+  const todayStr = new Date().toISOString().split("T")[0];
+  if (date === todayStr) {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const [slotH, slotM] = timeSlot.split(":").map(Number);
+    if (slotH * 60 + slotM <= currentMinutes) {
+      throw new Error("Selected time slot is no longer available.");
+    }
+  }
+
   // 3. Validate doctor exists and has DOCTOR role
   const doctor = await User.findOne({ userId: doctorId, role: "DOCTOR" });
   if (!doctor) {
@@ -185,8 +196,20 @@ const getAvailableSlots = async (doctorId, date) => {
   }).select("timeSlot");
 
   const bookedSlots = new Set(booked.map((a) => a.timeSlot));
+  let available = VALID_TIME_SLOTS.filter((slot) => !bookedSlots.has(slot));
 
-  return VALID_TIME_SLOTS.filter((slot) => !bookedSlots.has(slot));
+  // Filter out past time slots if the requested date is today
+  const todayStr = new Date().toISOString().split("T")[0];
+  if (date === todayStr) {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    available = available.filter((slot) => {
+      const [h, m] = slot.split(":").map(Number);
+      return h * 60 + m > currentMinutes;
+    });
+  }
+
+  return available;
 };
 
 /**

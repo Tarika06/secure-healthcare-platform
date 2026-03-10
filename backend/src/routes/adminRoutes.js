@@ -449,4 +449,133 @@ router.get("/access-summary", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/admin/video-consultations/logs
+ * View video consultation logs with pagination and filtering
+ */
+router.get("/video-consultations/logs", async (req, res) => {
+  try {
+    const VideoConsultationLog = require("../models/VideoConsultationLog");
+    const { doctorId, patientId, connectionQuality, sessionId, startDate, endDate, page = 1, limit = 50 } = req.query;
+
+    const query = {};
+    if (doctorId) query.doctorId = { $regex: new RegExp(doctorId, "i") };
+    if (patientId) query.patientId = { $regex: new RegExp(patientId, "i") };
+    if (sessionId) query.sessionId = { $regex: new RegExp(sessionId, "i") };
+    if (connectionQuality) query.connectionQualityRating = connectionQuality;
+    
+    if (startDate || endDate) {
+      query.created_at = {};
+      if (startDate) query.created_at.$gte = new Date(startDate);
+      if (endDate) query.created_at.$lte = new Date(endDate);
+    }
+
+    const logs = await VideoConsultationLog.find(query)
+      .sort({ created_at: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const total = await VideoConsultationLog.countDocuments(query);
+
+    await auditService.logAuditEvent({
+      userId: req.user.userId,
+      action: "ADMIN_VIEW_VIDEO_LOGS",
+      resource: "/api/admin/video-consultations/logs",
+      method: "GET",
+      outcome: "SUCCESS",
+      details: { filters: req.query, resultCount: logs.length }
+    });
+
+    res.json({
+      logs,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching video consultation logs:", error);
+    res.status(500).json({ message: "Error fetching video logs" });
+  }
+});
+
+/**
+ * GET /api/admin/video-consultations/logs/:sessionId
+ * Get detailed session report
+ */
+router.get("/video-consultations/logs/:sessionId", async (req, res) => {
+  try {
+    const VideoConsultationLog = require("../models/VideoConsultationLog");
+    const log = await VideoConsultationLog.findOne({ sessionId: req.params.sessionId });
+
+    if (!log) {
+      return res.status(404).json({ message: "Video session log not found" });
+    }
+
+    await auditService.logAuditEvent({
+      userId: req.user.userId,
+      action: "ADMIN_VIEW_VIDEO_LOG_DETAILS",
+      resource: `/api/admin/video-consultations/logs/${req.params.sessionId}`,
+      method: "GET",
+      outcome: "SUCCESS"
+    });
+
+    res.json({ log });
+  } catch (error) {
+    console.error("Error fetching video log details:", error);
+    res.status(500).json({ message: "Error fetching log details" });
+  }
+});
+
+/**
+ * GET /api/admin/video-consultations/stats
+ * Aggregate stats for video consultations
+ */
+router.get("/video-consultations/stats", async (req, res) => {
+  try {
+    const VideoConsultationLog = require("../models/VideoConsultationLog");
+
+    // Fetch total consultations
+    const totalConsultations = await VideoConsultationLog.countDocuments();
+    
+    // Fetch today's count
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayConsultations = await VideoConsultationLog.countDocuments({ created_at: { $gte: startOfToday } });
+    
+    // Calculate Average Duration (only for completed ones)
+    const logsWithDuration = await VideoConsultationLog.find({ totalCallDurationSeconds: { $gt: 0 } }).select("totalCallDurationSeconds");
+    const avgDuration = logsWithDuration.length > 0 
+      ? Math.round(logsWithDuration.reduce((acc, curr) => acc + curr.totalCallDurationSeconds, 0) / logsWithDuration.length)
+      : 0;
+      
+    // Failed Consultations (No call started timestamp but was requested)
+    const failedConsultations = await VideoConsultationLog.countDocuments({ callStartTimestamp: { $exists: false } });
+
+    // Quality Distribution
+    const excellent = await VideoConsultationLog.countDocuments({ connectionQualityRating: "excellent" });
+    const fair = await VideoConsultationLog.countDocuments({ connectionQualityRating: "fair" });
+    const poor = await VideoConsultationLog.countDocuments({ connectionQualityRating: "poor" });
+
+    res.json({
+      stats: {
+        totalConsultations,
+        todayConsultations,
+        avgDurationSeconds: avgDuration,
+        failedConsultations,
+        qualityDistribution: {
+          excellent,
+          fair,
+          poor
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching video log stats:", error);
+    res.status(500).json({ message: "Error generating stats" });
+  }
+});
+
 module.exports = router;
