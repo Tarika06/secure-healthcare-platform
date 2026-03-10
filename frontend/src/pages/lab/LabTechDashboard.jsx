@@ -5,6 +5,7 @@ import Sidebar from '../../components/Sidebar';
 import MedicalCard from '../../components/MedicalCard';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
+import { Sparkles } from 'lucide-react';
 
 const LabTechDashboard = () => {
     const navigate = useNavigate();
@@ -111,6 +112,32 @@ const LabTechDashboard = () => {
                 <main className="flex-1 p-8 overflow-y-auto">
                     <div className="max-w-full mx-auto">
 
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-teal-900 to-emerald-900 rounded-3xl p-8 mb-10 shadow-2xl relative overflow-hidden flex items-center justify-between animate-fade-in border border-teal-800/50">
+                            {/* Decorative background blurs */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500 rounded-full mix-blend-screen filter blur-[80px] opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
+                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 rounded-full mix-blend-screen filter blur-[60px] opacity-20 transform -translate-x-1/2 translate-y-1/2"></div>
+
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-2 text-teal-200">
+                                    <Sparkles className="w-5 h-5" />
+                                    <span className="text-sm font-bold uppercase tracking-widest">Laboratory Station</span>
+                                </div>
+                                <h1 className="text-4xl font-black tracking-tight text-white">
+                                    Welcome, <span className="text-teal-300">{user?.firstName || 'Technician'}</span>
+                                </h1>
+                            </div>
+                            <div className="flex items-center gap-4 group cursor-default relative z-10">
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest leading-none mb-1.5">Staff ID</p>
+                                    <p className="text-sm font-bold text-teal-50 leading-none shadow-sm">{user?.userId || 'LAB-TECH'}</p>
+                                </div>
+                                <div className="w-14 h-14 rounded-2xl bg-teal-800/50 border border-teal-700/50 flex items-center justify-center text-teal-50 font-black text-xl shadow-inner backdrop-blur-sm group-hover:rotate-6 group-hover:scale-105 transition-all duration-300">
+                                    {user?.firstName?.[0] || 'L'}{user?.lastName?.[0] || 'T'}
+                                </div>
+                            </div>
+                        </div>
+
                         {activeTab === 'upload' && (
                             <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                                 <div className="mb-6">
@@ -204,7 +231,10 @@ const LabTechDashboard = () => {
                             <div className={`animate-fade-in transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                                 <h2 className="text-2xl font-bold mb-6">Upload History</h2>
                                 {loading ? (
-                                    <p>Loading...</p>
+                                    <div className="flex flex-col items-center justify-center py-24">
+                                        <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+                                        <p className="text-slate-500 mt-4">Loading history...</p>
+                                    </div>
                                 ) : uploadHistory.length === 0 ? (
                                     <p>No uploads yet.</p>
                                 ) : (

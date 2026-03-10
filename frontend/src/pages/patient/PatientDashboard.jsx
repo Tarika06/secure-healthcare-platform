@@ -303,7 +303,7 @@ const PatientDashboard = () => {
     };
 
     if (loading) return (
-        <div className={`flex min-h-screen ${isHealthFlowTheme ? 'health-flow-bg flex-col items-center justify-center' : 'bg-slate-50'}`}>
+        <div className={`flex min-h-screen items-center justify-center ${isHealthFlowTheme ? 'health-flow-bg' : 'bg-slate-50'}`}>
             <div className="text-center"><div className="w-16 h-16 border-4 border-slate-200 border-t-primary-600 rounded-full animate-spin mx-auto" /><p className="text-slate-500 mt-4">Syncing healthcare journey...</p></div>
         </div>
     );
@@ -331,22 +331,26 @@ const PatientDashboard = () => {
             <main className="flex-1 overflow-y-auto relative">
                 <div className="max-w-[1600px] mx-auto w-full p-8">
                     {/* Header */}
-                    <div className="flex items-center justify-between mb-8 animate-fade-in">
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <Sparkles className="w-5 h-5 text-teal-500" />
-                                <span className="text-sm font-medium text-teal-600 uppercase tracking-widest">{getGreeting()}</span>
+                    <div className="bg-gradient-to-r from-teal-900 to-emerald-900 rounded-3xl p-8 mb-10 shadow-2xl relative overflow-hidden flex items-center justify-between animate-fade-in border border-teal-800/50">
+                        {/* Decorative background blurs */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500 rounded-full mix-blend-screen filter blur-[80px] opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 rounded-full mix-blend-screen filter blur-[60px] opacity-20 transform -translate-x-1/2 translate-y-1/2"></div>
+
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-2 text-teal-200">
+                                <Sparkles className="w-5 h-5" />
+                                <span className="text-sm font-bold uppercase tracking-widest">{getGreeting()}</span>
                             </div>
-                            <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-                                Welcome back, <span className="text-gradient">{user.firstName}</span>
+                            <h1 className="text-4xl font-black tracking-tight text-white">
+                                Welcome back, <span className="text-teal-300">{user.firstName}</span>
                             </h1>
                         </div>
-                        <div className="flex items-center gap-4 group">
+                        <div className="flex items-center gap-4 group cursor-default relative z-10">
                             <div className="text-right hidden sm:block">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Authenticated</p>
-                                <p className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-none">{user.userId}</p>
+                                <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest leading-none mb-1.5">Authenticated ID</p>
+                                <p className="text-sm font-bold text-teal-50 leading-none shadow-sm">{user.userId}</p>
                             </div>
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white font-black text-xl shadow-lg group-hover:rotate-6 transition-transform">
+                            <div className="w-14 h-14 rounded-2xl bg-teal-800/50 border border-teal-700/50 flex items-center justify-center text-teal-50 font-black text-xl shadow-inner backdrop-blur-sm group-hover:rotate-6 group-hover:scale-105 transition-all duration-300">
                                 {user.firstName?.[0]}{user.lastName?.[0]}
                             </div>
                         </div>
@@ -481,7 +485,7 @@ const PatientDashboard = () => {
                                     <div className="grid grid-cols-12 gap-8">
                                         <div className="col-span-12 lg:col-span-6 space-y-6">
                                             <div className="glass-card">
-                                                <div className="flex items-center gap-3 mb-8"><div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white shadow-lg"><FileText className="w-5 h-5" /></div><h3 className="text-xl font-black text-slate-900">Records by Type</h3></div>
+                                                <div className="flex items-center gap-3 mb-8"><div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white shadow-lg"><FileText className="w-5 h-5" /></div><h3 className="text-xl font-black text-slate-900 dark:text-white">Records by Type</h3></div>
                                                 <div className="space-y-6">
                                                     {Object.entries(healthReport.recordsByType).map(([type, count]) => {
                                                         const maxCount = Math.max(...Object.values(healthReport.recordsByType), 1);
@@ -506,7 +510,7 @@ const PatientDashboard = () => {
                                         </div>
                                         <div className="col-span-12 lg:col-span-6 space-y-6">
                                             <div className="glass-card">
-                                                <div className="flex items-center gap-3 mb-8"><div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center text-white shadow-lg"><Target className="w-5 h-5" /></div><h3 className="text-xl font-black text-slate-900">Records by Purpose</h3></div>
+                                                <div className="flex items-center gap-3 mb-8"><div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center text-white shadow-lg"><Target className="w-5 h-5" /></div><h3 className="text-xl font-black text-slate-900 dark:text-white">Records by Purpose</h3></div>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     {Object.entries(healthReport.recordsByPurpose).map(([purpose, count]) => (
                                                         <div key={purpose} className="p-5 rounded-2xl bg-violet-50 border border-violet-100 group hover:bg-violet-100 transition-colors">
@@ -546,24 +550,28 @@ const PatientDashboard = () => {
 
                     {activeTab === 'privacy' && (
                         <div className="animate-fade-in space-y-10">
-                            <div className="mb-4">
-                                <h2 className="text-3xl font-black text-slate-900 dark:text-white">Privacy Control Center</h2>
-                                <p className="text-slate-500 font-medium">Exercise your rights under GDPR Articles 15, 17, and 20.</p>
+                            <div className="mb-6">
+                                <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Privacy Control Center</h2>
+                                <p className="text-slate-500 font-medium text-lg">Exercise your rights under GDPR Articles 15, 17, and 20.</p>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <div className="glass-card border-l-4 border-primary-500 group relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Download className="w-32 h-32 text-primary-900" /></div>
-                                    <div className="relative z-10 flex flex-col h-full">
-                                        <div className="w-16 h-16 rounded-2xl bg-primary-100 text-primary-600 flex items-center justify-center mb-6 shadow-sm"><Download className="w-8 h-8" /></div>
-                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Data Portability</h3>
-                                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">Request a complete copy of all your medical data and personal information in a structured, machine-readable JSON or a readable PDF report.</p>
-                                        <div className="mt-auto flex flex-wrap gap-4">
-                                            <button onClick={() => handleDownloadData('pdf')} disabled={downloading} className="btn-primary py-3 px-8 shadow-lg shadow-primary-500/20 flex items-center gap-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="glass-card border-l-4 border-primary-500 group relative overflow-hidden flex flex-col min-h-[320px] p-8">
+                                    <div className="absolute -bottom-6 -right-6 text-primary-900 opacity-[0.03] group-hover:scale-110 group-hover:opacity-[0.06] transition-all duration-700 pointer-events-none">
+                                        <Download className="w-56 h-56" strokeWidth={1} />
+                                    </div>
+                                    <div className="relative z-10 flex flex-col flex-1">
+                                        <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mb-6 shadow-sm border border-primary-100">
+                                            <Download className="w-6 h-6" />
+                                        </div>
+                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Data Portability</h3>
+                                        <p className="text-slate-500 font-medium mb-8 leading-relaxed max-w-sm">Request a complete copy of all your medical data and personal information in a structured, machine-readable format.</p>
+                                        <div className="mt-auto flex flex-col sm:flex-row gap-4">
+                                            <button onClick={() => handleDownloadData('pdf')} disabled={downloading} className="btn-primary py-3.5 px-6 shadow-lg shadow-primary-500/20 flex flex-1 items-center justify-center gap-2 font-bold transition-transform active:scale-95">
                                                 {downloading ? <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" /> : <FileText className="w-5 h-5" />}
                                                 Export PDF
                                             </button>
-                                            <button onClick={() => handleDownloadData('json')} disabled={downloading} className="btn-secondary py-3 px-8 flex items-center gap-2">
+                                            <button onClick={() => handleDownloadData('json')} disabled={downloading} className="btn-secondary py-3.5 px-6 flex flex-1 items-center justify-center gap-2 font-bold transition-transform active:scale-95">
                                                 {downloading ? <div className="w-5 h-5 border-3 border-primary-400 border-t-transparent rounded-full animate-spin" /> : <ScanLine className="w-5 h-5" />}
                                                 JSON Archive
                                             </button>
@@ -571,14 +579,18 @@ const PatientDashboard = () => {
                                     </div>
                                 </div>
 
-                                <div className="glass-card border-l-4 border-red-500 group relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Trash2 className="w-32 h-32 text-red-900" /></div>
-                                    <div className="relative z-10 flex flex-col h-full">
-                                        <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-6 shadow-sm"><Trash2 className="w-8 h-8" /></div>
-                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Right to Erasure</h3>
-                                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">Permanently delete your account and all associated health records. This process includes a 7-day security cooling period to prevent accidental loss.</p>
-                                        <div className="mt-auto">
-                                            <button onClick={handleDeleteAccount} disabled={deleting} className="btn-danger py-3 px-8 shadow-lg shadow-red-500/20">
+                                <div className="glass-card border-l-4 border-red-500 group relative overflow-hidden flex flex-col min-h-[320px] p-8">
+                                    <div className="absolute -bottom-6 -right-6 text-red-900 opacity-[0.03] group-hover:scale-110 group-hover:opacity-[0.06] transition-all duration-700 pointer-events-none">
+                                        <Trash2 className="w-56 h-56" strokeWidth={1} />
+                                    </div>
+                                    <div className="relative z-10 flex flex-col flex-1">
+                                        <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mb-6 shadow-sm border border-red-100">
+                                            <Trash2 className="w-6 h-6" />
+                                        </div>
+                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Right to Erasure</h3>
+                                        <p className="text-slate-500 font-medium mb-8 leading-relaxed max-w-sm">Permanently delete your account and all associated health records. Process includes a 7-day security cooling period.</p>
+                                        <div className="mt-auto w-full sm:w-auto">
+                                            <button onClick={handleDeleteAccount} disabled={deleting} className="btn-danger w-full sm:w-auto py-3.5 px-8 shadow-lg shadow-red-500/20 font-bold transition-transform active:scale-95">
                                                 {deleting ? 'Initiating...' : 'Initiate Deletion'}
                                             </button>
                                         </div>

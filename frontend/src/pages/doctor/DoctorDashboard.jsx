@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     FileText, Users, Plus, ShieldAlert, CheckCircle, AlertCircle,
     ClipboardList, Stethoscope, Calendar, TrendingUp, MailCheck,
-    Search, Clock, Send, Target
+    Search, Clock, Send, Target, Sparkles
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Modal from '../../components/Modal';
@@ -204,6 +204,7 @@ const DoctorDashboard = () => {
         if (activeTab === 'myrecords') fetchMyCreatedRecords();
         if (activeTab === 'overview') fetchDashboardStats();
         if (activeTab === 'collaboration') {
+            fetchPatients();
             fetchCollaborations();
             fetchDoctors();
         }
@@ -265,61 +266,37 @@ const DoctorDashboard = () => {
         const search = patientSearch.toLowerCase();
         return fullName.includes(search) || userId.includes(search);
     });
-
-
-
-    const tabs = [
-        { id: 'overview', label: 'Dashboard', icon: TrendingUp },
-        { id: 'appointments', label: 'My Schedule', icon: Calendar },
-        { id: 'myrecords', label: 'My Records', icon: ClipboardList },
-        { id: 'collaboration', label: 'Consultations', icon: MailCheck },
-        { id: 'create', label: 'Create Report', icon: Plus },
-        { id: 'patients', label: 'Patients', icon: Users }
-    ];
-
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white transition-colors duration-500">
             <Sidebar role="DOCTOR" onLogout={handleLogout} user={user} />
 
             <div className="flex-1 overflow-y-auto relative z-10">
-                <div className="sticky top-0 z-20 px-6 py-3 bg-slate-50/80 backdrop-blur-md border-b border-white/40 dark:bg-slate-900/80 dark:border-white/10">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-                                <Stethoscope className="h-5 w-5 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-lg font-heading font-bold text-slate-900">Dr. {user?.firstName} {user?.lastName}</h1>
-                                {user?.specialty && <p className="text-xs text-slate-500">{user.specialty}</p>}
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                            {tabs.map((tab) => {
-                                const TabIcon = tab.icon;
-                                return (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => navigate(`/doctor/dashboard?tab=${tab.id}`)}
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${activeTab === tab.id
-                                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
-                                            : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
-                                            }`}
-                                    >
-                                        <TabIcon className="w-4 h-4" />
-                                        <span className="hidden lg:inline">{tab.label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        <button onClick={() => navigate('/doctor/dashboard?tab=create')} className="btn-glow text-sm py-2.5 px-5 flex items-center gap-2 hidden xl:flex">
-                            <Plus className="w-4 h-4" /> New Report
-                        </button>
-                    </div>
-                </div>
-
                 <div className="max-w-7xl mx-auto px-6 py-8">
+                    <div className="bg-gradient-to-r from-teal-900 to-emerald-900 rounded-3xl p-8 mb-10 shadow-2xl relative overflow-hidden flex items-center justify-between animate-fade-in border border-teal-800/50">
+                        {/* Decorative background blurs */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500 rounded-full mix-blend-screen filter blur-[80px] opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500 rounded-full mix-blend-screen filter blur-[60px] opacity-20 transform -translate-x-1/2 translate-y-1/2"></div>
+
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-2 text-teal-200">
+                                <Sparkles className="w-5 h-5" />
+                                <span className="text-sm font-bold uppercase tracking-widest">Doctor's Lounge</span>
+                            </div>
+                            <h1 className="text-4xl font-black tracking-tight text-white">
+                                Welcome, <span className="text-teal-300">Dr. {user?.firstName}</span>
+                            </h1>
+                        </div>
+                        <div className="flex items-center gap-4 group cursor-default relative z-10">
+                            <div className="text-right hidden sm:block">
+                                <p className="text-[10px] font-black text-teal-300/80 uppercase tracking-widest leading-none mb-1.5">Medical ID</p>
+                                <p className="text-sm font-bold text-teal-50 leading-none shadow-sm">{user?.userId || 'MD-STAFF'}</p>
+                            </div>
+                            <div className="w-14 h-14 rounded-2xl bg-teal-800/50 border border-teal-700/50 flex items-center justify-center text-teal-50 font-black text-xl shadow-inner backdrop-blur-sm group-hover:rotate-6 group-hover:scale-105 transition-all duration-300">
+                                {user?.firstName?.[0] || 'D'}{user?.lastName?.[0] || 'R'}
+                            </div>
+                        </div>
+                    </div>
+
                     {activeTab === 'overview' && (
                         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
                             <StatCard iconComponent={FileText} label="Records Created" value={dashboardStats?.recordsCreated} gradient="from-blue-500 to-indigo-600" delay={100} mounted={mounted} />
@@ -337,14 +314,14 @@ const DoctorDashboard = () => {
 
                     {activeTab === 'myrecords' && (
                         <div className="animate-fade-in">
-                            <div className="mb-6"><h2 className="text-2xl font-bold text-slate-900">My Created Records</h2></div>
+                            <div className="mb-6"><h2 className="text-2xl font-bold text-slate-900 dark:text-white">My Created Records</h2></div>
                             {loading ? <div className="text-center py-12"><div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" /></div> : myCreatedRecords.length === 0 ? <div className="glass-card text-center py-16"><ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500">No records created by you yet.</p></div> : <div className="grid gap-4">{myCreatedRecords.map(record => <MedicalCard key={record._id} record={record} />)}</div>}
                         </div>
                     )}
 
                     {activeTab === 'create' && (
                         <div className="max-w-3xl animate-fade-in">
-                            <div className="mb-6"><h2 className="text-2xl font-bold text-slate-900">Create Medical Report</h2></div>
+                            <div className="mb-6"><h2 className="text-2xl font-bold text-slate-900 dark:text-white">Create Medical Report</h2></div>
                             <form onSubmit={handleCreateReport} className="glass-card space-y-6">
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div><label className="label">Patient</label><select value={reportForm.patientId} onChange={(e) => setReportForm({ ...reportForm, patientId: e.target.value })} required className="input-field"><option value="">Select Patient</option>{patients.map(p => <option key={p.userId} value={p.userId}>{p.firstName} {p.lastName} ({p.userId})</option>)}</select></div>
@@ -376,27 +353,28 @@ const DoctorDashboard = () => {
                                         <div className="flex-1 flex overflow-hidden">
                                             <div className="flex-1 flex flex-col border-r border-slate-100">
                                                 <div className="flex-1 overflow-y-auto p-4 space-y-4">{collabMessages.map(m => (<div key={m._id} className={`flex ${m.senderId === user.userId ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[80%] p-3 rounded-2xl ${m.senderId === user.userId ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800'}`}><p className="text-xs">{m.message}</p></div></div>))}</div>
-                                                <div className="p-3 border-t bg-white"><form onSubmit={handleSendMessage} className="flex gap-2"><input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type message..." disabled={selectedCollab.status !== 'ACCEPTED'} className="flex-1 px-4 py-2 bg-slate-50 border rounded-xl text-xs focus:outline-none" /><button type="submit" disabled={selectedCollab.status !== 'ACCEPTED'} className="p-2 bg-blue-600 text-white rounded-xl"><Send className="w-4 h-4" /></button></form></div>
+                                                <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+                                                    <form onSubmit={handleSendMessage} className="flex gap-2"><input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type message..." disabled={selectedCollab.status !== 'ACCEPTED'} className="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none dark:text-white" /><button type="submit" disabled={selectedCollab.status !== 'ACCEPTED'} className="p-2 bg-blue-600 text-white rounded-xl"><Send className="w-4 h-4" /></button></form></div>
                                             </div>
-                                            <div className="w-80 overflow-y-auto p-4 bg-white"><h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Shared History</h4>{sharedRecords.map(rec => (<div key={rec._id} className="p-3 bg-slate-50 border rounded-xl mb-3"><p className="text-[10px] font-bold uppercase text-blue-600 mb-1">{rec.recordType}</p><p className="text-[10px] font-bold truncate">{rec.title}</p><p className="text-[9px] text-slate-500 line-clamp-2">{rec.diagnosis}</p></div>))}</div>
+                                            <div className="w-80 overflow-y-auto p-4 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800"><h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Shared History</h4>{sharedRecords.map(rec => (<div key={rec._id} className="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl mb-3"><p className="text-[10px] font-bold uppercase text-blue-600 dark:text-blue-400 mb-1">{rec.recordType}</p><p className="text-[10px] font-bold truncate dark:text-white">{rec.title}</p><p className="text-[9px] text-slate-500 dark:text-slate-400 line-clamp-2">{rec.diagnosis}</p></div>))}</div>
                                         </div>
                                     </>
-                                ) : (<div className="flex-1 flex flex-col items-center justify-center text-center p-10"><MailCheck className="w-12 h-12 text-blue-300 mb-4 animate-float" /><h3 className="text-lg font-bold">Medical Collaboration</h3><p className="text-xs text-slate-500 max-w-xs mt-2">Connect with specialists for peer reviews and diagnostic consultations.</p><button onClick={() => setShowRequestCollabModal(true)} className="mt-6 btn-primary px-6 py-2">NEW CONSULTATION</button></div>)}
+                                ) : (<div className="flex-1 flex flex-col items-center justify-center text-center p-10"><MailCheck className="w-12 h-12 text-blue-300 dark:text-blue-500 mb-4 animate-float" /><h3 className="text-lg font-bold dark:text-white">Medical Collaboration</h3><p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mt-2">Connect with specialists for peer reviews and diagnostic consultations.</p><button onClick={() => setShowRequestCollabModal(true)} className="mt-6 btn-primary px-6 py-2">NEW CONSULTATION</button></div>)}
                             </div>
                         </div>
                     )}
 
                     {activeTab === 'patients' && (
                         <div className="animate-fade-in">
-                            <div className="mb-6"><h2 className="text-2xl font-bold text-slate-900">Patient Directory</h2><div className="mt-4 relative max-w-md"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input type="text" value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} placeholder="Search name or ID..." className="input-field pl-10" /></div></div>
+                            <div className="mb-6"><h2 className="text-2xl font-bold text-slate-900 dark:text-white">Patient Directory</h2><div className="mt-4 relative max-w-md"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" /><input type="text" value={patientSearch} onChange={(e) => setPatientSearch(e.target.value)} placeholder="Search name or ID..." className="input-field pl-10 dark:bg-slate-800 dark:border-slate-700 dark:text-white" /></div></div>
                             {loading ? <div className="text-center py-12"><div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" /></div> : (
                                 <div className="grid gap-6">
                                     {filteredPatients.map((patient) => (
                                         <div key={patient.userId} className="glass-card hover:shadow-lg transition-all p-0 overflow-hidden">
-                                            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                                                <div className="flex items-center gap-4"><div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">{patient.firstName?.[0]}</div><div><h3 className="font-bold text-slate-900">{patient.firstName} {patient.lastName}</h3><p className="text-xs text-slate-500">ID: {patient.userId}</p></div></div>
+                                            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                                <div className="flex items-center gap-4"><div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">{patient.firstName?.[0]}</div><div><h3 className="font-bold text-slate-900 dark:text-white">{patient.firstName} {patient.lastName}</h3><p className="text-xs text-slate-500 dark:text-slate-400">ID: {patient.userId}</p></div></div>
                                                 <div className="flex gap-2">
-                                                    {patient.hasConsent ? (<button onClick={() => handleViewPatientRecords(patient)} className="btn-primary py-2 px-4 text-xs">View Records</button>) : (patient.consentPending || pendingConsentIds.includes(patient.userId)) ? (<span className="px-3 py-2 bg-amber-50 text-amber-600 rounded-xl text-xs font-bold border border-amber-200">Consent Pending</span>) : (<button onClick={() => { setConsentSentPatient(patient); setConfirmConsentModal(true); }} className="btn-outline py-2 px-4 text-xs font-bold font-heading">Request Access</button>)}
+                                                    {patient.hasConsent ? (<button onClick={() => handleViewPatientRecords(patient)} className="btn-primary py-2 px-4 text-xs font-bold font-heading">View Records</button>) : (patient.consentPending || pendingConsentIds.includes(patient.userId)) ? (<span className="px-3 py-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-bold border border-amber-200 dark:border-amber-800">Consent Pending</span>) : (<button onClick={() => { setConsentSentPatient(patient); setConfirmConsentModal(true); }} className="btn-outline py-2 px-4 text-xs font-bold font-heading text-slate-900 dark:text-white border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">Request Access</button>)}
                                                 </div>
                                             </div>
                                             {selectedPatient?.userId === patient.userId && (
@@ -448,12 +426,34 @@ const DoctorDashboard = () => {
             <Modal isOpen={showRequestCollabModal} onClose={() => setShowRequestCollabModal(false)} title="Peer Consultation" icon={Users}>
                 <form onSubmit={handleRequestCollaboration} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className="label">Patient ID</label><select value={requestCollabForm.patientId} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, patientId: e.target.value })} required className="input-field">{patients.map(p => <option key={p.userId} value={p.userId}>{p.firstName} {p.lastName}</option>)}</select></div>
-                        <div><label className="label">Consulting Specialist</label><select value={requestCollabForm.consultingDoctorId} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, consultingDoctorId: e.target.value })} required className="input-field">{doctors.filter(d => d.userId !== user.userId).map(d => <option key={d.userId} value={d.userId}>Dr. {d.firstName} {d.lastName}</option>)}</select></div>
+                        <div>
+                            <label className="label">Patient ID</label>
+                            <select value={requestCollabForm.patientId} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, patientId: e.target.value })} required className="input-field dark:bg-slate-800 dark:text-white">
+                                <option value="" disabled className="dark:bg-slate-900 dark:text-slate-400">Select Patient...</option>
+                                {patients.map(p => <option key={p.userId} value={p.userId} className="dark:bg-slate-900 dark:text-white">{p.firstName} {p.lastName} ({p.userId})</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="label">Consulting Specialist</label>
+                            <select value={requestCollabForm.consultingDoctorId} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, consultingDoctorId: e.target.value })} required className="input-field dark:bg-slate-800 dark:text-white">
+                                <option value="" disabled className="dark:bg-slate-900 dark:text-slate-400">Select Specialist...</option>
+                                {doctors.filter(d => d.userId !== user?.userId).length === 0 ? (
+                                    <option disabled className="dark:bg-slate-900 dark:text-slate-400">No other specialists available</option>
+                                ) : (
+                                    doctors.filter(d => d.userId !== user?.userId).map(d => <option key={d.userId} value={d.userId} className="dark:bg-slate-900 dark:text-white">Dr. {d.firstName} {d.lastName}</option>)
+                                )}
+                            </select>
+                        </div>
                     </div>
-                    <div><label className="label">Access Scope</label><select value={requestCollabForm.accessScope} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, accessScope: e.target.value })} className="input-field"><option value="SUMMARY">Clinical Summary</option><option value="FULL">Full Record</option></select></div>
+                    <div>
+                        <label className="label">Access Scope</label>
+                        <select value={requestCollabForm.accessScope} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, accessScope: e.target.value })} className="input-field dark:bg-slate-800 dark:text-white">
+                            <option value="SUMMARY" className="dark:bg-slate-900 dark:text-white">Clinical Summary</option>
+                            <option value="FULL" className="dark:bg-slate-900 dark:text-white">Full Record</option>
+                        </select>
+                    </div>
                     <div><label className="label">Details</label><textarea value={requestCollabForm.message} onChange={(e) => setRequestCollabForm({ ...requestCollabForm, message: e.target.value })} required rows="3" className="input-field" placeholder="Diagnostic questions..." /></div>
-                    <div className="flex gap-3 pt-4"><button type="button" onClick={() => setShowRequestCollabModal(false)} className="flex-1 px-4 py-2.5 bg-slate-100 rounded-xl font-bold">CANCEL</button><button type="submit" className="flex-1 btn-primary py-2.5">SEND REQUEST</button></div>
+                    <div className="flex gap-3 pt-4"><button type="button" onClick={() => setShowRequestCollabModal(false)} className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-bold transition-colors">CANCEL</button><button type="submit" className="flex-1 btn-primary py-2.5">SEND REQUEST</button></div>
                 </form>
             </Modal>
         </div>
