@@ -93,12 +93,17 @@ app.get("/api/health", async (req, res) => {
     3: "disconnecting",
   };
 
+  let appVersion = "1.0.0";
+  try { appVersion = require("../../package.json").version; } catch (e) {
+    try { appVersion = require("../package.json").version; } catch (e2) { /* fallback */ }
+  }
+
   res.status(dbState === 1 ? 200 : 503).json({
     status: dbState === 1 ? "healthy" : "unhealthy",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     database: dbStatus[dbState] || "unknown",
-    version: require("../../package.json").version,
+    version: appVersion,
   });
 });
 
@@ -124,7 +129,12 @@ app.use("/api/gdpr", require("./routes/gdprRoutes"));       // Direct GDPR acces
 app.use("/api/alerts", require("./routes/alertRoutes"));
 app.use("/api/appointments", require("./routes/appointmentRoutes"));
 app.use("/api/mfa", require("./middleware/authenticate"), require("./routes/mfaRoutes"));
-app.use("/api/deletion", require("./routes/deletionRoutes"));
+try {
+  app.use("/api/deletion", require("./routes/deletionRoutes"));
+  console.log("✅ Deletion routes loaded successfully");
+} catch (err) {
+  console.error("❌ FAILED to load deletion routes:", err.message);
+}
 app.use("/api/collaboration", require("./routes/collaborationRoutes"));
 
 // Import deletion cron job
